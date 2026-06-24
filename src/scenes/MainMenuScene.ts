@@ -15,8 +15,9 @@ const LOGO_HEIGHT = 200;
 const FOOTER_MARGIN = 0;
 const FOOTER_FONT_SIZE = 21;
 const GAME_VERSION = '1.0.0';
-const WELCOME_PLAYED_KEY = 'antiwar2_welcome_played';
 const VERSION_URL = 'https://feuerware.com';
+
+let welcomePlayed = false;
 const CREDIT_URL = 'https://github.com/alexanderthurn/antiwar2';
 
 export class MainMenuScene extends Container implements MenuActionsHost {
@@ -65,9 +66,9 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     onSettings: () => void,
   ): Promise<void> {
     this.addChild(await createMenuBackground());
-    if (!localStorage.getItem(WELCOME_PLAYED_KEY)) {
+    if (!welcomePlayed) {
       playSound(sfxPath('welcome.ogg'), 0.55);
-      localStorage.setItem(WELCOME_PLAYED_KEY, '1');
+      welcomePlayed = true;
     }
 
     const centerX = DESIGN.width / 2;
