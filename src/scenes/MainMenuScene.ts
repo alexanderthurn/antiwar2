@@ -1,4 +1,5 @@
 import { Container } from 'pixi.js';
+import packageJson from '../../package.json';
 import { playSound, sfxPath } from '../audio/SoundManager';
 import { DESIGN } from '../core/DesignSpace';
 import { loadTexture } from '../data/AssetLoader';
@@ -14,7 +15,6 @@ const LOGO_PATH = 'assets/gfx/logo.png';
 const LOGO_HEIGHT = 200;
 const FOOTER_MARGIN = 0;
 const FOOTER_FONT_SIZE = 21;
-const GAME_VERSION = '1.0.0';
 const CREDIT_URL = 'https://feuerware.com';
 
 let welcomePlayed = false;
@@ -93,7 +93,7 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     const footerLineH = kewlLineHeight(FOOTER_FONT_SIZE);
     const footerY = DESIGN.height - FOOTER_MARGIN - footerLineH;
 
-    const versionText = `Version: ${GAME_VERSION}`;
+    const versionText = `Version: ${packageJson.version}`;
     this.addChild(
       this.makeFooterLink(
         'menu-version',
