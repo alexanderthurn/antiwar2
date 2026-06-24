@@ -71,7 +71,7 @@
     "assets": {
       "tower": "assets/gfx/tower.png",
       "cannon": "assets/gfx/cannon.png",
-      "crosshair": "assets/gfx/crosshair.png",
+      "crosshair": "assets/gfx/crosshair2.png",
       "human": "assets/gfx/human.png",
       "ground": "assets/gfx/backgrounds/ground2.png",
       "background": "assets/gfx/backgrounds/whitehouse.jpg"
