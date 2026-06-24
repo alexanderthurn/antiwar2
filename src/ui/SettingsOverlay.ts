@@ -8,6 +8,7 @@ import {
 import { createFocusableButton } from '../input/FocusableButton';
 import type { MenuActionsHost } from '../input/MenuActionsHost';
 import type { UiAction } from '../input/UiMenuController';
+import { playMenuClick } from '../audio/UiSounds';
 import { kewlBlockGap, kewlLineHeight, kewlString, kewlText } from './KewlFont';
 import { createMenuBackground } from './MenuBackground';
 
@@ -50,6 +51,7 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
         onPress: () => {
           const s = settingsStore.get();
           settingsStore.set({ soundEnabled: !s.soundEnabled });
+          playMenuClick();
         },
       },
       {
@@ -58,6 +60,7 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
         onPress: () => {
           const s = settingsStore.get();
           settingsStore.set({ musicEnabled: !s.musicEnabled });
+          playMenuClick();
         },
       },
       {
@@ -142,6 +145,7 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
       w: rowW,
       center: true,
       fontSize: ROW_FONT,
+      playClick: false,
       onPress,
     });
     this.addChild(view);

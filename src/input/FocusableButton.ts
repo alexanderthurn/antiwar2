@@ -56,6 +56,8 @@ export interface FocusableButtonOptions {
   enabled?: () => boolean;
   /** When true, anchor label at horizontal center of w (default: left-aligned). */
   center?: boolean;
+  /** When false, the caller plays menu click after changing state (e.g. settings toggles). */
+  playClick?: boolean;
 }
 
 /** Text-only menu button for pointer tap and unified menu focus. */
@@ -92,7 +94,7 @@ export function createFocusableButton(opts: FocusableButtonOptions): { view: Con
 
   const activate = () => {
     if (opts.enabled?.() === false) return;
-    playMenuClick();
+    if (opts.playClick !== false) playMenuClick();
     opts.onPress();
   };
 

@@ -6,7 +6,9 @@ export const AUDIO_ENABLED = true;
 
 const cache = new Map<string, HTMLAudioElement>();
 let music: HTMLAudioElement | null = null;
-let musicPath: string | null = null;
+/** Resolved URL of the track that should be playing for the current scene (kept while muted). */
+let activeMusicSrc: string | null = null;
+let musicElementSrc: string | null = null;
 
 function resolvePath(path: string): string {
   return publicUrl(path);
@@ -42,45 +44,44 @@ export function playSound(path: string, volume = 0.7): void {
 
 export function playMusic(path: string): void {
   if (!AUDIO_ENABLED) return;
-  const src = resolvePath(path);
+  activeMusicSrc = resolvePath(path);
+  applyMusicPlayback();
+}
+
+export function stopMusic(): void {
+  music?.pause();
+  if (music) music.currentTime = 0;
+  music = null;
+  activeMusicSrc = null;
+  musicElementSrc = null;
+}
+
+function applyMusicPlayback(): void {
+  if (!activeMusicSrc) return;
   const vol = musicVolume();
   if (vol <= 0) {
-    stopMusic();
+    music?.pause();
     return;
   }
-  if (music && musicPath === src && !music.paused) {
+  if (music && musicElementSrc === activeMusicSrc) {
     music.volume = vol;
+    if (music.paused) void music.play().catch(() => {});
     return;
   }
-  stopMusic();
-  musicPath = src;
-  music = new Audio(src);
+  music?.pause();
+  music = new Audio(activeMusicSrc);
+  musicElementSrc = activeMusicSrc;
   music.loop = true;
   music.volume = vol;
   void music.play().catch(() => {});
 }
 
-export function stopMusic(): void {
-  if (!music) return;
-  music.pause();
-  music.currentTime = 0;
-  music = null;
-  musicPath = null;
-}
-
 export function syncMusicFromSettings(): void {
-  if (!music) return;
-  const vol = musicVolume();
-  if (vol <= 0) {
-    stopMusic();
-    return;
-  }
-  music.volume = vol;
-  if (music.paused) void music.play().catch(() => {});
+  applyMusicPlayback();
 }
 
 export function sfxPath(relative: string): string {
   return relative.startsWith('assets/') ? relative : `assets/sfx/${relative}`;
 }
 
-settingsStore.subscribe(() => syncMusicFromSettings());
+settingsStore.subscribe(() => applyMusicPlayback());
