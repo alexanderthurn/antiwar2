@@ -1,0 +1,2065 @@
+{
+  "schemaVersion": 1,
+  "id": 4,
+  "meta": {
+    "name": "Overlord",
+    "author": "Mangoo / pop",
+    "description": "Big Brother is watching you!",
+    "thumbnail": "assets/gfx/thumbs/cia.png"
+  },
+  "config": {
+    "startMoney": 500,
+    "startHumans": 3,
+    "startRockets": 10,
+    "startHumanHp": 50,
+    "startHumanMoney": 300,
+    "startRocketPower": 50,
+    "startRocketSpeed": 20,
+    "startAimTime": 1000,
+    "aimPower": 1,
+    "maxHumans": 10,
+    "maxRockets": 10,
+    "humanHpRefresh": 1,
+    "moneyFactor": 1,
+    "crashingRockets": 0,
+    "buttonsDisabled": {
+      "human": true,
+      "humanHp": false,
+      "humanMoney": true,
+      "rocket": true,
+      "rocketSpeed": true,
+      "rocketPower": false,
+      "aim": true
+    },
+    "upgrades": {
+      "human": {
+        "price": 100,
+        "priceFactor": 1,
+        "statFactor": null
+      },
+      "humanHp": {
+        "price": 100,
+        "priceFactor": 1.05,
+        "statFactor": 1.1
+      },
+      "humanMoney": {
+        "price": 100,
+        "priceFactor": 1.1,
+        "statFactor": 1.1
+      },
+      "rocket": {
+        "price": 100,
+        "priceFactor": 3,
+        "statFactor": null
+      },
+      "rocketSpeed": {
+        "price": 100,
+        "priceFactor": 1.5,
+        "statFactor": 1.1
+      },
+      "rocketPower": {
+        "price": 100,
+        "priceFactor": 1.1,
+        "statFactor": 1.1
+      },
+      "aim": {
+        "price": 100,
+        "priceFactor": 1,
+        "statFactor": 0.5
+      }
+    },
+    "assets": {
+      "tower": "assets/gfx/tower.png",
+      "cannon": "assets/gfx/cannon.png",
+      "crosshair": "assets/gfx/crosshair1.png",
+      "human": "assets/gfx/human.png",
+      "ground": "assets/gfx/backgrounds/ground4.png",
+      "background": "assets/gfx/backgrounds/level3.jpg"
+    }
+  },
+  "bombs": {
+    "BOMB_EI": {
+      "image": "assets/gfx/BOMBS/bomb_nuke.png",
+      "scale": [
+        0.5,
+        0.5
+      ],
+      "hp": 10,
+      "damage": 80,
+      "speed": 1.4,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 3,
+        "power": 15,
+        "range": 3.5,
+        "lifetime": 20
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_EI2": {
+      "image": "assets/gfx/BOMBS/torpedo.png",
+      "scale": [
+        0.5,
+        0.5
+      ],
+      "hp": 10,
+      "damage": 49,
+      "speed": 5,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 5,
+        "range": 1,
+        "lifetime": 20
+      },
+      "trail": 0,
+      "checkOutOfScreen": true
+    },
+    "BOMB_EI3": {
+      "image": "assets/gfx/BOMBS/buschfeuer.png",
+      "scale": [
+        0.2,
+        0.2
+      ],
+      "hp": 10,
+      "damage": 700,
+      "speed": 4.5,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 1,
+        "range": 1,
+        "lifetime": 5
+      },
+      "trail": 0.2,
+      "checkOutOfScreen": true
+    },
+    "BOMB_PLAYER": {
+      "image": "assets/gfx/BOMBS/player_rocket.png",
+      "scale": [
+        0.4,
+        0.4
+      ],
+      "hp": 100,
+      "damage": 100,
+      "speed": 2,
+      "rotationSpeed": 40,
+      "explosion": {
+        "type": 0,
+        "power": 0,
+        "range": 0,
+        "lifetime": 0
+      },
+      "trail": 0,
+      "checkOutOfScreen": true
+    }
+  },
+  "airplanes": {
+    "SCHNAPPI": {
+      "hp": 500,
+      "speed": 4,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_EI"
+      ],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        0,
+        422,
+        200
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/satelit2.png",
+      "scale": [
+        0.75,
+        0.75
+      ],
+      "scream": "bloodscream.ogg"
+    },
+    "SCHNAPPI2": {
+      "hp": 2000,
+      "speed": 6,
+      "rotationSpeed": 20,
+      "weapons": [
+        "BOMB_EI2"
+      ],
+      "ai": "FIGHTERSIMPLE",
+      "aiParams": [
+        0,
+        703,
+        50
+      ],
+      "drawStyle": 1,
+      "image": "assets/gfx/AIRPLANES/satelit.png",
+      "scale": [
+        1,
+        1
+      ],
+      "scream": "bloodscream.ogg"
+    },
+    "SCHNAPPI3": {
+      "hp": 600000,
+      "speed": 7,
+      "rotationSpeed": 30,
+      "weapons": [
+        "BOMB_EI3"
+      ],
+      "ai": "FIGHTERSIMPLE",
+      "aiParams": [
+        -281,
+        422,
+        10
+      ],
+      "drawStyle": 1,
+      "image": "assets/gfx/AIRPLANES/direktor.png",
+      "scale": [
+        1.8,
+        1.8
+      ],
+      "scream": "bloodscream.ogg"
+    }
+  },
+  "rounds": [
+    {
+      "name": "LEVEL1_TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "LEVEL1_TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2063,
+          "y": -422,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "LEVEL1_TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": 2063,
+          "y": -422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": 2063,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "LEVEL1_TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2063,
+          "y": -422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2063,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2063,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2063,
+          "y": -984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2063,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 938,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 938,
+          "y": -380,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "LEVEL1_TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 5,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": 2063,
+          "y": -422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": 2063,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": 2063,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": 2063,
+          "y": -984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": 2063,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": 938,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": 938,
+          "y": -380,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": 938,
+          "y": -422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 40,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2250,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2250,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2250,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2250,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2250,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2250,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -1312,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -1312,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -1312,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -1312,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 3563,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 3563,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 3563,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 3563,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 3563,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 3563,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 3563,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 3563,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2250,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2250,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2250,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2250,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2250,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2250,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -187,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -1312,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -1312,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -1312,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -1312,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 3563,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 3563,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 3563,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 3563,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 3563,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 3563,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 3563,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 3563,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": []
+    }
+  ]
+}

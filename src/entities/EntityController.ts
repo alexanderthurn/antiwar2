@@ -1,0 +1,534 @@
+import { Graphics, Sprite, type Container } from 'pixi.js';
+import { DESIGN } from '../core/DesignSpace';
+import type { AirplaneDef, BombDef, LevelPack } from '../data/types';
+import { pointHitsSprite, rocketHitsSprite, rocketSweepStep } from '../systems/collision';
+import { createPatrolMotion, updateAirplaneAI, type AIUpdateContext } from './AISystem';
+import { CombatEntity } from './CombatEntity';
+import { traitsForAirplane, traitsForEnemyBomb, traitsForPlayerProjectile } from './entityProfiles';
+
+const TICK_SCALE = 60;
+const MAX_SUBMUNITION_DEPTH = 4;
+
+export interface BombSpawnContext {
+  loadTex: (path: string) => Promise<import('pixi.js').Texture>;
+  layer: { addChild(s: Sprite): void };
+}
+
+export interface EntityControllerCallbacks {
+  onEntityDeath(entity: CombatEntity): void;
+  onGroundExplosion(
+    x: number,
+    y: number,
+    range: number,
+    damage: number,
+    explosionType: number,
+    rumble: 'plane' | 'explosion' | 'none',
+  ): void;
+  onDropBomb(parent: CombatEntity, bombDef: BombDef, x: number, y: number): void;
+  onSkyBomb(bombDef: BombDef, x: number): void;
+  onSpawnChildAirplane(typeName: string, x: number, y: number): void;
+  onProjectileRemoved(ownerSlot: number): void;
+  onProjectileHit(
+    ownerSlot: number,
+    target: CombatEntity,
+    damage: number,
+    killed: boolean,
+    guided: boolean,
+    hitX: number,
+    hitY: number,
+  ): void;
+}
+
+interface PendingDeath {
+  entity: CombatEntity;
+  submunitions: boolean;
+  callEntityDeath: boolean;
+  despawn: boolean;
+  groundExplosion?: {
+    x: number;
+    y: number;
+    range: number;
+    damage: number;
+    type: number;
+    rumble: 'plane' | 'explosion' | 'none';
+  };
+}
+
+export class EntityController {
+  readonly entities: CombatEntity[] = [];
+  private homingLines = new Graphics();
+  private deathQueue: PendingDeath[] = [];
+  private queuedDeath = new Set<CombatEntity>();
+  private crashingRockets = 0;
+
+  attachHomingLines(layer: Container): void {
+    layer.addChildAt(this.homingLines, 0);
+  }
+
+  clear(): void {
+    for (const e of this.entities) e.sprite.destroy();
+    this.entities.length = 0;
+    this.homingLines.clear();
+    this.deathQueue.length = 0;
+    this.queuedDeath.clear();
+  }
+
+  living(): CombatEntity[] {
+    return this.entities.filter((e) => e.alive);
+  }
+
+  projectiles(): CombatEntity[] {
+    return this.entities.filter((e) => e.alive && e.traits.isPlayerProjectile);
+  }
+
+  crashingPlanes(): CombatEntity[] {
+    return this.entities.filter(
+      (e) => e.alive && e.crashing && e.motion.kind === 'fall' && e.motion.crashPlane,
+    );
+  }
+
+  fallingBombs(): CombatEntity[] {
+    return this.entities.filter(
+      (e) => e.alive && e.motion.kind === 'fall' && !e.traits.isPlayerProjectile && !e.crashing,
+    );
+  }
+
+  roundWinTargetsAlive(): number {
+    return this.entities.filter((e) => e.alive && e.traits.countsForRoundWin).length;
+  }
+
+  findLockTargetAt(x: number, y: number): CombatEntity | null {
+    for (let i = this.entities.length - 1; i >= 0; i--) {
+      const e = this.entities[i]!;
+      if (!e.alive || !e.traits.lockOnTarget || e.stealthHidden || e.crashing) continue;
+      if (pointHitsSprite(e.sprite, x, y)) return e;
+    }
+    return null;
+  }
+
+  findEndmaster(): CombatEntity | null {
+    for (const e of this.entities) {
+      if (!e.alive || e.motion.kind !== 'patrol') continue;
+      if (e.motion.isEndmaster) return e;
+    }
+    return null;
+  }
+
+  async spawnAirplane(
+    def: AirplaneDef,
+    x: number,
+    y: number,
+    spawnIndex: number,
+    isEndmaster: boolean,
+    loadTex: (path: string) => Promise<import('pixi.js').Texture>,
+    layer: { addChild(s: Sprite): void },
+  ): Promise<CombatEntity> {
+    const tex = await loadTex(def.image);
+    const sprite = new Sprite(tex);
+    sprite.anchor.set(0.5);
+    sprite.scale.set(def.scale[0], def.scale[1]);
+    if (x >= DESIGN.width / 2) sprite.scale.x = -Math.abs(sprite.scale.x);
+    layer.addChild(sprite);
+
+    const motion = createPatrolMotion(def, x, spawnIndex, isEndmaster);
+    const entity = new CombatEntity(sprite, traitsForAirplane(def), motion, {
+      x,
+      y,
+      hp: def.hp,
+      damage: 0,
+      airplaneDef: def,
+    });
+    if (def.stealthTicks && def.stealthTicks > 0) {
+      entity.stealthPhaseTimer = def.stealthTicks;
+      entity.stealthHidden = false;
+      entity.sprite.alpha = 1;
+    }
+    this.entities.push(entity);
+    return entity;
+  }
+
+  spawnPlayerProjectile(
+    sprite: Sprite,
+    def: BombDef,
+    stats: {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      damage: number;
+      ownerSlot: number;
+      homingTarget: CombatEntity | null;
+      guidedShot?: boolean;
+    },
+    layer: { addChild(s: Sprite): void },
+  ): CombatEntity {
+    layer.addChild(sprite);
+    const entity = new CombatEntity(sprite, traitsForPlayerProjectile(def), { kind: 'projectile' }, {
+      x: stats.x,
+      y: stats.y,
+      vx: stats.vx,
+      vy: stats.vy,
+      hp: def.hp,
+      damage: stats.damage,
+      turnRateDeg: def.rotationSpeed,
+      bombDef: def,
+    });
+    entity.ownerSlot = stats.ownerSlot;
+    entity.homingTarget = stats.homingTarget;
+    entity.guidedShot = stats.guidedShot ?? false;
+    this.entities.push(entity);
+    return entity;
+  }
+
+  async spawnFallingBomb(
+    def: BombDef,
+    x: number,
+    y: number,
+    loadTex: (path: string) => Promise<import('pixi.js').Texture>,
+    layer: { addChild(s: Sprite): void },
+    submunitionDepth = 0,
+  ): Promise<CombatEntity> {
+    const tex = await loadTex(def.image);
+    const sprite = new Sprite(tex);
+    sprite.anchor.set(0.5);
+    sprite.scale.set(def.scale[0], def.scale[1]);
+    layer.addChild(sprite);
+
+    const entity = new CombatEntity(sprite, traitsForEnemyBomb(def), { kind: 'fall' }, {
+      x,
+      y,
+      vy: def.speed * TICK_SCALE,
+      hp: def.hp,
+      damage: def.explosion.power,
+      explosionRange: def.explosion.range * 40,
+      bombDef: def,
+    });
+    entity.submunitionDepth = submunitionDepth;
+    this.entities.push(entity);
+    return entity;
+  }
+
+  /** Instantly destroy all on-screen targets the player can shoot (planes, bombs). */
+  killVisibleEnemies(
+    level: LevelPack,
+    spawnCtx: BombSpawnContext,
+    cb: EntityControllerCallbacks,
+  ): number {
+    const margin = 80;
+    let count = 0;
+
+    for (const target of this.entities) {
+      if (!target.alive || !target.traits.hittableByPlayer || target.traits.isPlayerProjectile) {
+        continue;
+      }
+      if (
+        target.x < -margin ||
+        target.x > DESIGN.width + margin ||
+        target.y < -margin ||
+        target.y > DESIGN.height + margin
+      ) {
+        continue;
+      }
+
+      const isPlane = target.traits.countsForRoundWin;
+      this.queueDeath({
+        entity: target,
+        submunitions: target.motion.kind === 'fall',
+        callEntityDeath: true,
+        despawn: !isPlane,
+      });
+      count += 1;
+    }
+
+    if (count > 0) this.flushDeaths(level, spawnCtx, cb);
+    return count;
+  }
+
+  /** Mark for removal at end of frame — never splices during simulation. */
+  private queueDeath(death: PendingDeath): void {
+    if (this.queuedDeath.has(death.entity)) return;
+    this.queuedDeath.add(death.entity);
+    death.entity.alive = false;
+    this.deathQueue.push(death);
+  }
+
+  private spawnSubmunitions(
+    entity: CombatEntity,
+    level: LevelPack,
+    ctx: BombSpawnContext,
+  ): void {
+    const def = entity.bombDef;
+    if (!def?.onDeath?.bomb || def.onDeath.count <= 0) return;
+    if (entity.submunitionDepth >= MAX_SUBMUNITION_DEPTH) return;
+    const childDef = level.bombs[def.onDeath.bomb];
+    if (!childDef) return;
+
+    const count = def.onDeath.count;
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+      const radius = 12 + Math.random() * 40;
+      const sx = entity.x + Math.cos(angle) * radius;
+      const sy = entity.y + Math.sin(angle) * radius * 0.35;
+      void this.spawnFallingBomb(
+        childDef,
+        sx,
+        sy,
+        ctx.loadTex,
+        ctx.layer,
+        entity.submunitionDepth + 1,
+      );
+    }
+  }
+
+  private flushDeaths(
+    level: LevelPack,
+    spawnCtx: BombSpawnContext,
+    cb: EntityControllerCallbacks,
+  ): void {
+    const batch = this.deathQueue.splice(0);
+    this.queuedDeath.clear();
+
+    for (const death of batch) {
+      const e = death.entity;
+      if (death.submunitions) this.spawnSubmunitions(e, level, spawnCtx);
+      if (death.groundExplosion) {
+        const g = death.groundExplosion;
+        cb.onGroundExplosion(g.x, g.y, g.range, g.damage, g.type, g.rumble);
+      }
+      if (death.callEntityDeath) cb.onEntityDeath(e);
+
+      if (death.despawn) {
+        e.sprite.destroy();
+        const idx = this.entities.indexOf(e);
+        if (idx >= 0) this.entities.splice(idx, 1);
+      } else {
+        e.sprite.visible = false;
+      }
+    }
+  }
+
+  update(dt: number, level: LevelPack, spawnCtx: BombSpawnContext, cb: EntityControllerCallbacks): void {
+    this.crashingRockets = level.config.crashingRockets ?? 0;
+    this.updateStealth(dt);
+    this.updateAirplanes(dt, level, cb);
+    this.updateFalling(dt, cb);
+    this.updateProjectiles(dt, cb);
+    this.flushDeaths(level, spawnCtx, cb);
+    this.redrawHomingLines();
+  }
+
+  private updateStealth(dt: number): void {
+    for (const e of this.entities) {
+      if (!e.alive || e.motion.kind !== 'patrol' || !e.airplaneDef?.stealthTicks) continue;
+      const period = e.airplaneDef.stealthTicks;
+      e.stealthPhaseTimer -= dt;
+      if (e.stealthPhaseTimer > 0) continue;
+      e.stealthHidden = !e.stealthHidden;
+      e.stealthPhaseTimer = period;
+      e.sprite.alpha = e.stealthHidden ? 0.08 : 1;
+    }
+  }
+
+  private updateAirplanes(dt: number, level: LevelPack, cb: EntityControllerCallbacks): void {
+    const ctx: AIUpdateContext = {
+      dt,
+      level,
+      dropBomb: (parent, bombDef, x, y) => cb.onDropBomb(parent, bombDef, x, y),
+      spawnChild: (_parent, typeName, x, y) => cb.onSpawnChildAirplane(typeName, x, y),
+      skyBomb: (bombDef, x) => cb.onSkyBomb(bombDef, x),
+    };
+
+    for (const e of this.entities) {
+      if (!e.alive || e.motion.kind !== 'patrol') continue;
+      updateAirplaneAI(e, e.motion, ctx);
+      e.syncSprite();
+    }
+  }
+
+  private updateFalling(dt: number, _cb: EntityControllerCallbacks): void {
+    for (let i = this.entities.length - 1; i >= 0; i--) {
+      const e = this.entities[i]!;
+      if (!e.alive || e.motion.kind !== 'fall') continue;
+      const motion = e.motion;
+
+      if (motion.crashPlane) {
+        e.x += (motion.vx ?? 0) * dt;
+        e.vy += 320 * dt;
+        e.y += e.vy * dt;
+        e.sprite.rotation += (motion.spin ?? 0) * dt;
+        e.syncSprite();
+        if (e.y >= DESIGN.groundY) {
+          const range = Math.min(160, 40 + e.maxHp / 200);
+          this.queueDeath({
+            entity: e,
+            submunitions: false,
+            callEntityDeath: true,
+            despawn: true,
+            groundExplosion: {
+              x: e.x,
+              y: DESIGN.groundY,
+              range,
+              damage: Math.max(50, Math.round(e.maxHp / 20)),
+              type: e.maxHp > 8000 ? 3 : 1,
+              rumble: 'plane',
+            },
+          });
+        }
+        continue;
+      }
+
+      e.y += e.vy * dt;
+      e.syncSprite();
+      if (e.y >= DESIGN.groundY) {
+        this.queueDeath({
+          entity: e,
+          submunitions: true,
+          callEntityDeath: false,
+          despawn: true,
+          groundExplosion:
+            e.traits.hurtsHumansOnGround && e.bombDef
+              ? {
+                  x: e.x,
+                  y: DESIGN.groundY,
+                  range: e.explosionRange,
+                  damage: e.damage,
+                  type: e.bombDef.explosion.type,
+                  rumble: e.traits.deathRumble,
+                }
+              : undefined,
+        });
+      }
+    }
+  }
+
+  private startPlaneCrash(entity: CombatEntity): void {
+    const dir =
+      entity.motion.kind === 'patrol'
+        ? entity.motion.dir
+        : ((entity.sprite.scale.x < 0 ? -1 : 1) as 1 | -1);
+    entity.crashing = true;
+    entity.hp = 0;
+    entity.stealthHidden = false;
+    entity.sprite.alpha = 1;
+    entity.motion = {
+      kind: 'fall',
+      crashPlane: true,
+      vx: dir * 140,
+      spin: dir * 2.8,
+    };
+    entity.vy = 100;
+  }
+
+  private isPlayerProjectileOutOfScreen(proj: CombatEntity): boolean {
+    return (
+      proj.x < 0 ||
+      proj.x > DESIGN.width ||
+      proj.y < 0 ||
+      proj.y > DESIGN.height
+    );
+  }
+
+  private updateProjectiles(dt: number, cb: EntityControllerCallbacks): void {
+    for (let i = this.entities.length - 1; i >= 0; i--) {
+      const proj = this.entities[i]!;
+      if (!proj.alive || !proj.traits.isPlayerProjectile) continue;
+
+      proj.steerHoming(dt, TICK_SCALE);
+
+      const startX = proj.x;
+      const startY = proj.y;
+      const totalDx = proj.vx * dt;
+      const totalDy = proj.vy * dt;
+      const travel = Math.hypot(totalDx, totalDy);
+      const stepSize = rocketSweepStep(proj.sprite);
+      const substeps = Math.max(1, Math.ceil(travel / stepSize));
+
+      let prevX = startX;
+      let prevY = startY;
+      let spent = false;
+
+      for (let s = 1; s <= substeps; s++) {
+        const t = s / substeps;
+        proj.x = startX + totalDx * t;
+        proj.y = startY + totalDy * t;
+        proj.syncSprite();
+
+        if (this.isPlayerProjectileOutOfScreen(proj)) {
+          cb.onProjectileRemoved(proj.ownerSlot);
+          this.queueDeath({ entity: proj, submunitions: false, callEntityDeath: false, despawn: true });
+          spent = true;
+          break;
+        }
+
+        if (this.projectileHitsTarget(proj, prevX, prevY, cb)) {
+          cb.onProjectileRemoved(proj.ownerSlot);
+          this.queueDeath({ entity: proj, submunitions: false, callEntityDeath: false, despawn: true });
+          spent = true;
+          break;
+        }
+        prevX = proj.x;
+        prevY = proj.y;
+      }
+
+      if (spent) continue;
+
+      if (this.isPlayerProjectileOutOfScreen(proj)) {
+        cb.onProjectileRemoved(proj.ownerSlot);
+        this.queueDeath({ entity: proj, submunitions: false, callEntityDeath: false, despawn: true });
+      }
+    }
+  }
+
+  private projectileHitsTarget(
+    proj: CombatEntity,
+    prevX: number,
+    prevY: number,
+    cb: EntityControllerCallbacks,
+  ): boolean {
+    for (const target of this.entities) {
+      if (!target.alive || target === proj || !target.traits.hittableByPlayer || target.crashing) {
+        continue;
+      }
+      if (target.stealthHidden && !target.traits.countsForRoundWin) continue;
+      if (!rocketHitsSprite(proj.sprite, target.sprite, prevX, prevY)) continue;
+
+      target.hp -= proj.damage;
+      const killed = target.hp <= 0;
+      if (target.traits.countsForRoundWin) target.rocketHitCount += 1;
+      cb.onProjectileHit(proj.ownerSlot, target, proj.damage, killed, proj.guidedShot, proj.x, proj.y);
+      if (killed) {
+        const isPlane = target.traits.countsForRoundWin;
+        const shouldCrash =
+          isPlane &&
+          this.crashingRockets > 0 &&
+          target.rocketHitCount >= this.crashingRockets;
+        if (shouldCrash) {
+          this.startPlaneCrash(target);
+        } else {
+          this.queueDeath({
+            entity: target,
+            submunitions: target.motion.kind === 'fall',
+            callEntityDeath: true,
+            despawn: !isPlane,
+          });
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+
+  private redrawHomingLines(): void {
+    this.homingLines.clear();
+    let hasLine = false;
+    for (const proj of this.projectiles()) {
+      const target = proj.homingTarget;
+      if (!target?.alive || !target.traits.homingTarget || target.stealthHidden) continue;
+      this.homingLines.moveTo(proj.x, proj.y).lineTo(target.x, target.y);
+      hasLine = true;
+    }
+    if (hasLine) {
+      this.homingLines.stroke({ color: 0xff2222, width: 2, alpha: 0.8 });
+    }
+  }
+}

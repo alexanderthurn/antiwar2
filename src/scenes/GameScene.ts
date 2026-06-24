@@ -1,0 +1,1310 @@
+import { BitmapText, Container, Graphics, Rectangle, Sprite, Texture, type Texture as Tex } from 'pixi.js';
+import { playSound, sfxPath } from '../audio/SoundManager';
+import { createLevelAudio, type LevelAudio } from '../audio/LevelSounds';
+import { DESIGN, V1_SPRITES, towerXForSlot } from '../core/DesignSpace';
+import { settingsStore } from '../core/SettingsStore';
+import { LevelSession, type UpgradeKey } from '../core/LevelSession';
+import { DEV_DEEP_LINK_ENABLED, type DevGameState } from '../core/DevDeepLink';
+import { loadTexture, preloadRound } from '../data/AssetLoader';
+import type { BombDef, LevelPack, RoundDef } from '../data/types';
+import { CombatEntity } from '../entities/CombatEntity';
+import { EntityController } from '../entities/EntityController';
+import { PlayerManager } from '../multiplayer/PlayerManager';
+import type { InputSystem } from '../input/InputSystem';
+import { PlayerSlot } from '../multiplayer/PlayerSlot';
+import { WeatherLayer } from '../systems/WeatherLayer';
+import { NightVisionLayer } from '../systems/NightVisionLayer';
+import { ExplosionManager } from '../systems/ExplosionManager';
+import { ParticleFxManager } from '../systems/particles/ParticleFxManager';
+import { KillStreakManager } from '../systems/KillStreakTracker';
+import { BossHpBar } from '../ui/BossHpBar';
+import { EntityHpBarOverlay } from '../ui/EntityHpBarOverlay';
+import { JoinPanel } from '../ui/JoinPanel';
+import { KillStreakBanner } from '../ui/KillStreakBanner';
+import { PauseOverlay } from '../ui/PauseOverlay';
+import { TouchControls } from '../ui/TouchControls';
+import { ShopOverlay } from '../ui/ShopOverlay';
+import { SettingsOverlay } from '../ui/SettingsOverlay';
+import type { MenuActionsHost } from '../input/MenuActionsHost';
+import type { UiAction } from '../input/UiMenuController';
+import type { UiMenuController } from '../input/UiMenuController';
+import { kewlString, kewlText } from '../ui/KewlFont';
+
+const TICK_SCALE = 60;
+const HUMAN_FRAME_W = 256;
+const HUMAN_FRAME_H = 344;
+const HUMAN_FRAME_COLS = 3;
+/** human.png rows (1-based): 2 = walk right, 4 = walk left — 3 frames per row. */
+const HUMAN_ROW_WALK_RIGHT = 1;
+const HUMAN_ROW_WALK_LEFT = 3;
+const HUMAN_SCALE = 0.2;
+const HUMAN_WALK_PX_PER_FRAME = 7;
+const GROUND_FEET_Y = DESIGN.groundY+2;
+const CIVILIAN_WALK_SPEED = 50;
+const CIVILIAN_MIN_X = 120;
+const CIVILIAN_MAX_X = DESIGN.width - 120;
+
+/** Top-right player roster — disabled until the UI is redesigned. */
+const SHOW_JOIN_PANEL = false;
+const PLAYER_ROCKET_DISPLAY_SCALE = 1.25;
+const END_SCREEN_ANIM_S = 2.4;
+/** Seconds between player rocket shots while fire is held (lower = faster). */
+const PLAYER_FIRE_COOLDOWN_S = 0.5;
+/** Damage multiplier for rockets fired with an active lock-on target. */
+const LOCK_ON_ROCKET_DAMAGE_FACTOR = 2.0;
+
+type Phase = 'intro' | 'playing' | 'shop' | 'levelComplete' | 'gameOver' | 'paused';
+
+interface AirplaneSpawn {
+  type: string;
+  x: number;
+  y: number;
+}
+
+interface Civilian {
+  sprite: Sprite;
+  x: number;
+  hp: number;
+  maxHp: number;
+  dir: 1 | -1;
+  alive: boolean;
+  walkDist: number;
+}
+
+export interface DevBootstrap {
+  levelIndex: number;
+  roundIndex: number;
+  upgradePurchases?: Partial<Record<UpgradeKey, number>>;
+  money?: number;
+  skipIntro?: boolean;
+}
+
+export class GameScene extends Container implements MenuActionsHost {
+  private level!: LevelPack;
+  private round!: RoundDef;
+  private roundIndex = 0;
+  private phase: Phase = 'playing';
+  private session = new LevelSession();
+  private sessionInitialized = false;
+
+  private bgLayer = new Container();
+  private weatherLayer = new WeatherLayer();
+  private trailLayer = new Container();
+  private nightVisionLayer = new NightVisionLayer();
+  private entityLayer = new Container();
+  private fxLayer = new Container();
+  private uiLayer = new Container();
+  private entities = new EntityController();
+  private explosionManager = new ExplosionManager();
+  private particleFx = new ParticleFxManager();
+  private entityHpBars = new EntityHpBarOverlay();
+  private killStreaks = new KillStreakManager();
+  private killStreakBanner: KillStreakBanner | null = null;
+  private players = new PlayerManager();
+
+  private inputRef: InputSystem | null = null;
+  private menuActionsKey = '';
+  private menuSource: object | null = null;
+
+  private playerRocketTex!: Texture;
+  private humanBaseTex!: Tex;
+
+  private civilians: Civilian[] = [];
+  private introOverlay: Container | null = null;
+  private shopOverlay: ShopOverlay | null = null;
+  private joinPanel: JoinPanel | null = null;
+  private bossHpBar: BossHpBar | null = null;
+  private pauseOverlay: PauseOverlay | null = null;
+  private settingsOverlay: SettingsOverlay | null = null;
+  private touchControls: TouchControls | null = null;
+  private touchTowerLeftEnabled = true;
+  private touchTowerRightEnabled = true;
+  private touchFireActive = false;
+  private pauseBeforePhase: Phase = 'playing';
+  private settingsUnsub: (() => void) | null = null;
+
+  private statusText!: BitmapText;
+
+  private airplaneSpawnQueue: AirplaneSpawn[] = [];
+  private pendingAirplaneSpawns = 0;
+  private airplaneSpawnGeneration = 0;
+  private roundBootstrapping = false;
+  private rumbleTimer = 0;
+  private rumbleAmp = 0;
+  private cheatMessageTimer = 0;
+  private endScreenFx: {
+    overlay: Container;
+    label: BitmapText;
+    age: number;
+    onDone: () => void;
+  } | null = null;
+  private campaignLevelIndex = 0;
+  private levelAudio!: LevelAudio;
+
+  /** Return to main menu (pause). */
+  onReturnToMenu?: () => void;
+  /** Return to campaign map (pause / level complete). */
+  onReturnToCampaign?: () => void;
+  /** Level finished — back to campaign map. */
+  onLevelComplete?: () => void;
+  /** Fired when a round/stage begins (for dev URL sync). */
+  onRoundStarted?: (state: DevGameState) => void;
+
+  constructor() {
+    super();
+    this.addChild(
+      this.bgLayer,
+      this.weatherLayer,
+      this.trailLayer,
+      this.entityLayer,
+      this.fxLayer,
+      this.nightVisionLayer,
+      this.uiLayer,
+    );
+    this.fxLayer.addChild(this.entityHpBars);
+    this.entities.attachHomingLines(this.entityLayer);
+    void Promise.all([this.explosionManager.load(), this.particleFx.load()]).then(() => {
+      this.explosionManager.attach(this.fxLayer);
+      this.particleFx.attach(this.trailLayer, this.fxLayer);
+      this.applySettingsEffects();
+    });
+    this.settingsUnsub = settingsStore.subscribe(() => this.applySettingsEffects());
+  }
+
+  destroy(options?: Parameters<Container['destroy']>[0]): void {
+    this.settingsUnsub?.();
+    this.settingsUnsub = null;
+    super.destroy(options);
+  }
+
+  private applySettingsEffects(): void {
+    const quality = settingsStore.get().particleQuality;
+    this.explosionManager.setParticleQuality(quality);
+    this.particleFx.setParticleQuality(quality);
+  }
+
+  async loadLevel(pack: LevelPack, roundIndex = 0, devBootstrap?: DevBootstrap): Promise<void> {
+    this.level = pack;
+    if (devBootstrap) this.campaignLevelIndex = devBootstrap.levelIndex;
+
+    if (!this.sessionInitialized) {
+      this.session.initFromLevel(pack);
+      if (devBootstrap?.money != null) this.session.money = devBootstrap.money;
+      this.sessionInitialized = true;
+    }
+
+    this.clearCombat();
+    this.playerRocketTex = await loadTexture(this.level.bombs.BOMB_PLAYER!.image);
+    this.humanBaseTex = await loadTexture(pack.config.assets.human ?? 'assets/gfx/human.png');
+
+    if (this.civilians.length === 0) {
+      await this.spawnCivilians(pack.config.startHumans);
+      if (devBootstrap?.upgradePurchases && Object.keys(devBootstrap.upgradePurchases).length > 0) {
+        const extraHumans = this.session.applyDevPurchases(devBootstrap.upgradePurchases, pack);
+        for (let i = 0; i < extraHumans; i++) {
+          await this.spawnOneCivilian(
+            CIVILIAN_MIN_X + Math.random() * (CIVILIAN_MAX_X - CIVILIAN_MIN_X),
+          );
+        }
+        this.syncCombatStats();
+        this.refreshCivilianHp();
+      }
+    }
+
+    await this.setupPlayers(pack);
+    this.buildHud();
+    this.levelAudio = createLevelAudio(pack.config.sounds);
+    this.levelAudio.playMusic();
+    const startRoundIndex = devBootstrap?.roundIndex ?? roundIndex;
+    const skipIntro = devBootstrap?.skipIntro ?? false;
+    await this.startRound(startRoundIndex, skipIntro);
+  }
+
+  private async startRound(roundIndex: number, skipIntro = false): Promise<void> {
+    const round = this.level.rounds[roundIndex];
+    if (!round) throw new Error(`Round ${roundIndex} missing in ${this.level.meta.name}`);
+
+    this.roundBootstrapping = true;
+    try {
+      this.roundIndex = roundIndex;
+      this.round = round;
+      this.phase = 'playing';
+      this.wonRound = false;
+      this.position.set(0, 0);
+      this.rumbleTimer = 0;
+      this.clearCombat();
+      this.closeShop();
+      this.syncCombatStats();
+      this.refreshCivilianHp();
+      for (const s of this.players.active()) s.stats.reset();
+      this.killStreaks.resetAll();
+      this.killStreakBanner?.clear();
+      await preloadRound(this.level, roundIndex);
+      await this.buildBackground();
+      this.applyRoundWeather();
+      await this.spawnAirplanes();
+      if (roundIndex > 0) this.levelAudio.playNewRound();
+      if (skipIntro) {
+        if (this.introOverlay) {
+          this.introOverlay.destroy({ children: true });
+          this.introOverlay = null;
+        }
+      } else {
+        void this.showIntro();
+      }
+      this.updateHud();
+      this.notifyRoundStarted();
+    } finally {
+      this.roundBootstrapping = false;
+    }
+  }
+
+  private notifyRoundStarted(): void {
+    if (!DEV_DEEP_LINK_ENABLED) return;
+    this.onRoundStarted?.({
+      levelIndex: this.campaignLevelIndex,
+      roundIndex: this.roundIndex,
+      upgrades: this.session.purchaseSnapshot(),
+      money: this.session.money,
+    });
+  }
+
+  private applyRoundWeather(): void {
+    this.weatherLayer.setWeather(this.round.weather);
+  }
+
+  private wonRound = false;
+
+  private clearCombat(): void {
+    this.entities.clear();
+    this.explosionManager.clear();
+    this.particleFx.clear();
+    this.entityHpBars.clear();
+    this.bossHpBar?.clear();
+    for (const s of this.players.slots) s.rocketsInFlight = 0;
+    this.airplaneSpawnQueue = [];
+    this.airplaneSpawnGeneration += 1;
+    this.pendingAirplaneSpawns = 0;
+    if (this.introOverlay) {
+      this.introOverlay.destroy({ children: true });
+      this.introOverlay = null;
+    }
+  }
+
+  private syncCombatStats(): void {
+    this.players.redistributeCaps(this.session.maxTeamRockets);
+  }
+
+  private entityCallbacks() {
+    return {
+      onEntityDeath: (entity: CombatEntity) => this.handleEntityDeath(entity),
+      onGroundExplosion: (
+        x: number,
+        y: number,
+        range: number,
+        damage: number,
+        explosionType: number,
+        rumble: 'plane' | 'explosion' | 'none',
+      ) => this.handleGroundExplosion(x, y, range, damage, explosionType, rumble),
+      onDropBomb: (_parent: CombatEntity, bombDef: BombDef, x: number, y: number) => {
+        void this.entities.spawnFallingBomb(bombDef, x, y, (p) => this.tex(p), this.entityLayer);
+      },
+      onSkyBomb: (bombDef: BombDef, x: number) => {
+        void this.entities.spawnFallingBomb(bombDef, x, -40, (p) => this.tex(p), this.entityLayer);
+      },
+      onSpawnChildAirplane: (typeName: string, x: number, y: number) => {
+        void this.spawnChildAirplane(typeName, x, y);
+      },
+      onProjectileRemoved: (ownerSlot: number) => {
+        const ps = this.players.slot(ownerSlot);
+        if (ps) ps.rocketsInFlight = Math.max(0, ps.rocketsInFlight - 1);
+      },
+      onProjectileHit: (
+        ownerSlot: number,
+        target: CombatEntity,
+        damage: number,
+        killed: boolean,
+        guided: boolean,
+        hitX: number,
+        hitY: number,
+      ) => {
+        this.entityHpBars.notifyHit(target);
+        this.particleFx.spawnImpact(hitX, hitY, { guided, killed });
+        if (!killed && target.traits.countsForRoundWin && target.airplaneDef?.scream) {
+          this.levelAudio.playNamed(target.airplaneDef.scream, 0.65);
+        }
+        const ps = this.players.slot(ownerSlot);
+        if (!ps) return;
+        ps.stats.hits += 1;
+        ps.stats.damageDealt += damage;
+        if (!killed) return;
+        if (target.traits.countsForRoundWin) {
+          ps.stats.kills += 1;
+          if (guided) ps.stats.lockOnKills += 1;
+          const streak = this.killStreaks.registerKill(ownerSlot);
+          if (streak) {
+            const slot = this.players.slot(ownerSlot);
+            if (!this.killStreakBanner) {
+              this.killStreakBanner = new KillStreakBanner();
+              this.uiLayer.addChild(this.killStreakBanner);
+            }
+            this.killStreakBanner.show(streak, slot?.color() ?? 0xffffff);
+            playSound(sfxPath(streak.sound));
+          }
+        } else if (target.motion.kind === 'fall') {
+          ps.stats.bombsDestroyed += 1;
+        }
+      },
+    };
+  }
+
+  private handleEntityDeath(entity: CombatEntity): void {
+    if (entity.traits.countsForRoundWin) {
+      const deathVoice = entity.airplaneDef?.lastScream ?? entity.airplaneDef?.scream;
+      if (deathVoice) this.levelAudio.playNamed(deathVoice, 0.75);
+    }
+    const expType = entity.maxHp > 8000 ? 3 : entity.bombDef?.explosion.type ?? 1;
+    const radius = entity.traits.countsForRoundWin
+      ? Math.min(160, 40 + entity.maxHp / 200)
+      : (entity.bombDef?.explosion.range ?? 1) * 40;
+    this.explosionManager.spawn(entity.x, entity.y, expType, radius);
+    this.particleFx.spawnExplosion(entity.x, entity.y, expType, radius);
+    this.levelAudio.playExplosion(expType);
+    if (entity.traits.deathRumble === 'plane') this.triggerRumble(true);
+    else if (entity.traits.deathRumble === 'explosion') this.triggerRumble(false);
+
+    for (const p of this.players.active()) {
+      if (p.lockTarget === entity) {
+        p.lockTarget = null;
+        p.lockProgressMs = 0;
+        p.setCrosshairLockVisual(false, false, this.session.aimTimeMs);
+      }
+    }
+    if (entity.traits.countsForRoundWin) this.trySpawnQueuedAirplane();
+  }
+
+  private handleGroundExplosion(
+    x: number,
+    y: number,
+    range: number,
+    damage: number,
+    explosionType: number,
+    rumble: 'plane' | 'explosion' | 'none',
+  ): void {
+    this.damageCiviliansAt(x, GROUND_FEET_Y, range, damage);
+    this.explosionManager.spawn(x, y, explosionType, range);
+    this.particleFx.spawnExplosion(x, y, explosionType, range);
+    this.levelAudio.playExplosion(explosionType);
+    if (rumble === 'plane') this.triggerRumble(true);
+    else if (rumble === 'explosion') this.triggerRumble(false);
+  }
+
+  private async spawnChildAirplane(typeName: string, x: number, y: number): Promise<void> {
+    const def = this.level.airplanes[typeName];
+    if (!def) return;
+    await this.entities.spawnAirplane(def, x, y, -1, false, (p) => this.tex(p), this.entityLayer);
+  }
+
+  private spawnAirplaneAt(
+    type: string,
+    x: number,
+    y: number,
+    spawnIndex: number,
+  ): Promise<void> {
+    const def = this.level.airplanes[type];
+    if (!def) return Promise.resolve();
+    const isBoss = spawnIndex === this.round.endmaster;
+    const generation = this.airplaneSpawnGeneration;
+    this.pendingAirplaneSpawns += 1;
+    return this.entities
+      .spawnAirplane(def, x, y, spawnIndex, isBoss, (p) => this.tex(p), this.entityLayer)
+      .then((entity) => {
+        if (generation !== this.airplaneSpawnGeneration) return;
+        if (isBoss) {
+          if (!this.bossHpBar) {
+            this.bossHpBar = new BossHpBar();
+            this.uiLayer.addChild(this.bossHpBar);
+          }
+          const name = type.replace(/^ENDMASTER_/i, '').replace(/_/g, ' ');
+          this.bossHpBar.track(entity, name);
+        }
+      })
+      .finally(() => {
+        if (generation === this.airplaneSpawnGeneration) {
+          this.pendingAirplaneSpawns = Math.max(0, this.pendingAirplaneSpawns - 1);
+        }
+      });
+  }
+
+  private async tex(path: string) {
+    return loadTexture(path);
+  }
+
+  private humanFrame(col = 0, row = 1): Texture {
+    const frame = new Rectangle(
+      col * HUMAN_FRAME_W,
+      row * HUMAN_FRAME_H,
+      HUMAN_FRAME_W,
+      HUMAN_FRAME_H,
+    );
+    return new Texture({
+      source: this.humanBaseTex.source,
+      frame,
+      orig: frame,
+    });
+  }
+
+  private placeHuman(sprite: Sprite, x: number, dir: 1 | -1, frameCol = 0): void {
+    const col = ((frameCol % HUMAN_FRAME_COLS) + HUMAN_FRAME_COLS) % HUMAN_FRAME_COLS;
+    const row = dir > 0 ? HUMAN_ROW_WALK_RIGHT : HUMAN_ROW_WALK_LEFT;
+    sprite.texture = this.humanFrame(col, row);
+    sprite.anchor.set(0.5, 1);
+    sprite.scale.set(HUMAN_SCALE, HUMAN_SCALE);
+    sprite.position.set(x, GROUND_FEET_Y);
+  }
+
+  private async buildBackground(): Promise<void> {
+    this.bgLayer.removeChildren();
+    const assets = this.level.config.assets;
+    const bgTex = await loadTexture(assets.background ?? 'assets/gfx/backgrounds/mangoo.jpg');
+    const bg = new Sprite(bgTex);
+    bg.width = DESIGN.width;
+    bg.height = DESIGN.height;
+    this.bgLayer.addChild(bg);
+
+    const groundTex = await loadTexture(assets.ground ?? 'assets/gfx/backgrounds/ground.png');
+    const ground = new Sprite(groundTex);
+    ground.width = DESIGN.width;
+    ground.height = DESIGN.groundHeight;
+    ground.y = DESIGN.groundY;
+    this.bgLayer.addChild(ground);
+  }
+
+  private async setupPlayers(pack: LevelPack): Promise<void> {
+    const crosshairTex = await this.tex(pack.config.assets.crosshair ?? 'assets/gfx/crosshair1.png');
+    const towerTex = await this.tex(pack.config.assets.tower!);
+    const cannonTex = await this.tex(pack.config.assets.cannon!);
+    const pivot = V1_SPRITES.cannonPivot;
+    const footY = GROUND_FEET_Y;
+
+    for (const slot of this.players.slots) {
+      slot.crosshair.texture = crosshairTex;
+      slot.crosshair.anchor.set(0.5);
+      slot.crosshair.tint = slot.color();
+      if (!slot.crosshair.parent) this.uiLayer.addChild(slot.crosshair);
+
+      slot.leftBase.texture = towerTex;
+      slot.rightBase.texture = towerTex;
+      slot.leftCannon.texture = cannonTex;
+      slot.rightCannon.texture = cannonTex;
+
+      for (const s of [slot.leftBase, slot.rightBase]) {
+        s.anchor.set(0.5, 1);
+        if (!s.parent) this.entityLayer.addChild(s);
+      }
+      slot.leftBase.scale.set(1, 1);
+      slot.rightBase.scale.set(-1, 1);
+
+      for (const s of [slot.leftCannon, slot.rightCannon]) {
+        s.anchor.set(pivot.x, pivot.y);
+        if (!s.parent) this.entityLayer.addChild(s);
+      }
+      slot.leftCannon.scale.set(1, 1);
+      slot.rightCannon.scale.set(-1, 1);
+
+      const pos = towerXForSlot(slot.index);
+      slot.leftBase.position.set(pos.left, footY);
+      slot.rightBase.position.set(pos.right, footY);
+      const towerCenterY = footY - slot.leftBase.height / 2;
+      slot.leftCannon.position.set(pos.left, towerCenterY);
+      slot.rightCannon.position.set(pos.right, towerCenterY);
+
+      slot.crosshair.visible = slot.active;
+      slot.setTurretsVisible(slot.active);
+      slot.syncCrosshairPosition();
+    }
+
+    if (SHOW_JOIN_PANEL) {
+      if (!this.joinPanel) {
+        this.joinPanel = new JoinPanel(this.players, (i) => this.togglePlayerSlot(i));
+        this.uiLayer.addChild(this.joinPanel);
+      }
+      this.joinPanel.refresh(this.players);
+    }
+  }
+
+  private togglePlayerSlot(slotIndex: number): void {
+    if (slotIndex === 0) return;
+    const slot = this.players.slot(slotIndex);
+    if (!slot) return;
+    if (slot.active) {
+      this.players.leave(slotIndex);
+    } else {
+      slot.active = true;
+      slot.aimSource = 'gamepad';
+      slot.gamepadIndex = -1;
+      slot.crosshair.visible = true;
+      slot.setTurretsVisible(true);
+      slot.syncCrosshairPosition();
+    }
+    this.players.redistributeCaps(this.session.maxTeamRockets);
+    this.joinPanel?.refresh(this.players);
+  }
+
+  private async spawnCivilians(count: number): Promise<void> {
+    for (let i = 0; i < count; i++) {
+      const x =
+        count === 1
+          ? DESIGN.width / 2
+          : CIVILIAN_MIN_X + ((CIVILIAN_MAX_X - CIVILIAN_MIN_X) * (i + 0.5)) / count;
+      await this.spawnOneCivilian(x);
+    }
+  }
+
+  private async spawnOneCivilian(x: number): Promise<void> {
+    const dir: 1 | -1 = Math.random() < 0.5 ? -1 : 1;
+    const sprite = new Sprite(Texture.EMPTY);
+    this.placeHuman(sprite, x, dir);
+    this.entityLayer.addChild(sprite);
+
+    this.civilians.push({
+      sprite,
+      x,
+      hp: this.session.humanHp,
+      maxHp: this.session.humanHp,
+      dir,
+      alive: true,
+      walkDist: 0,
+    });
+  }
+
+  private refreshCivilianHp(): void {
+    if (this.level.config.humanHpRefresh >= 1) {
+      for (const c of this.civilians) {
+        if (!c.alive) continue;
+        c.maxHp = this.session.humanHp;
+        c.hp = this.session.humanHp;
+      }
+    }
+  }
+
+  private async spawnAirplanes(): Promise<void> {
+    const pending: AirplaneSpawn[] = [];
+    for (const spawn of this.round.spawns) {
+      if (spawn.kind !== 'airplane') continue;
+      pending.push({ type: spawn.type, x: spawn.x, y: spawn.y });
+    }
+
+    const max = this.round.maxAirplanes;
+    if (max <= 0) {
+      this.airplaneSpawnQueue = [];
+      await Promise.all(pending.map((s, i) => this.spawnAirplaneAt(s.type, s.x, s.y, i)));
+      return;
+    }
+
+    this.airplaneSpawnQueue = pending.slice(max);
+    await Promise.all(pending.slice(0, max).map((s, i) => this.spawnAirplaneAt(s.type, s.x, s.y, i)));
+  }
+
+  private trySpawnQueuedAirplane(): void {
+    const max = this.round.maxAirplanes;
+    if (max <= 0 || this.airplaneSpawnQueue.length === 0) return;
+    if (this.entities.roundWinTargetsAlive() >= max) return;
+
+    const next = this.airplaneSpawnQueue.shift()!;
+    const spawnIndex = this.round.spawns.findIndex(
+      (s) => s.kind === 'airplane' && s.type === next.type && s.x === next.x && s.y === next.y,
+    );
+    void this.spawnAirplaneAt(next.type, next.x, next.y, spawnIndex >= 0 ? spawnIndex : max);
+  }
+
+  private buildHud(): void {
+    if (this.statusText?.parent) return;
+
+    this.statusText = kewlText({ text: '', size: 28, anchorX: 0.5 });
+    this.statusText.position.set(DESIGN.width / 2, 40);
+    this.uiLayer.addChild(this.statusText);
+    this.updateHud();
+  }
+
+  private async showIntro(): Promise<void> {
+    const intro = this.round.intro;
+    const text = intro?.text;
+    const hasContent = Boolean(text || intro?.image || intro?.sound);
+    if (!hasContent) return;
+
+    const backgroundHint = this.level.id === 1;
+    if (!backgroundHint) this.phase = 'intro';
+    if (intro?.sound) playSound(sfxPath(intro.sound));
+
+    const overlay = new Container();
+    overlay.eventMode = 'none';
+
+    if (backgroundHint) {
+      if (text) {
+        const label = kewlText({ text: kewlString(text), size: 24, align: 'center', anchorX: 0.5, anchorY: 0.5 });
+        label.position.set(DESIGN.width / 2, DESIGN.height / 3);
+        overlay.addChild(label);
+      }
+
+      this.bgLayer.addChild(overlay);
+    } else {
+      const dim = new Graphics();
+      dim.rect(0, 0, DESIGN.width, DESIGN.height).fill({ color: 0x000000, alpha: 0.35 });
+      overlay.addChild(dim);
+
+      if (intro?.image) {
+        const tex = await loadTexture(intro.image);
+        const img = new Sprite(tex);
+        img.anchor.set(0.5);
+        img.position.set(DESIGN.width / 2, DESIGN.height / 2 - 80);
+        const maxW = 420;
+        if (img.width > maxW) img.scale.set(maxW / img.width);
+        overlay.addChild(img);
+      }
+
+      if (text) {
+        const label = kewlText({ text: kewlString(text), size: 16, align: 'center', anchorX: 0.5, anchorY: 0.5 });
+        label.position.set(DESIGN.width / 2, DESIGN.height / 2 + 60);
+        overlay.addChild(label);
+      }
+
+      this.uiLayer.addChild(overlay);
+    }
+
+    this.introOverlay = overlay;
+    if (backgroundHint) return;
+
+    const ms = ((intro?.time ?? 120) / 60) * 1000;
+    setTimeout(() => {
+      overlay.destroy({ children: true });
+      if (this.introOverlay === overlay) this.introOverlay = null;
+      if (this.phase === 'intro') this.phase = 'playing';
+    }, ms);
+  }
+
+  handlePointerMove(input: InputSystem, clientX: number, clientY: number): void {
+    if (this.phase !== 'playing') return;
+    input.applyPointerMove(this.players, clientX, clientY);
+  }
+
+  handleTouchPointerDown(input: InputSystem, designX: number, designY: number): void {
+    if (this.phase !== 'playing') return;
+    if (this.touchControls?.isOnButton(designX, designY)) return;
+    this.touchFireActive = true;
+    input.applyPointerMove(this.players, designX, designY);
+    this.syncTouchFire(input, designX);
+  }
+
+  handleTouchPointerMove(input: InputSystem, designX: number, designY: number): void {
+    if (this.phase !== 'playing') return;
+    input.applyPointerMove(this.players, designX, designY);
+    if (!this.touchFireActive) return;
+    this.syncTouchFire(input, designX);
+  }
+
+  handleTouchPointerUp(input: InputSystem): void {
+    this.touchFireActive = false;
+    this.setPointerFire(input, false, false);
+  }
+
+  enableTouchControls(input: InputSystem): void {
+    if (this.touchControls) return;
+    this.touchTowerLeftEnabled = true;
+    this.touchTowerRightEnabled = true;
+    this.touchFireActive = false;
+    this.touchControls = new TouchControls(
+      (side) => this.toggleTouchTower(input, side),
+      () => this.openTouchSettings(input),
+    );
+    this.touchControls.setTowerEnabled(true, true);
+    this.uiLayer.addChild(this.touchControls);
+  }
+
+  releaseTouchFire(input: InputSystem): void {
+    this.touchFireActive = false;
+    this.setPointerFire(input, false, false);
+  }
+
+  private toggleTouchTower(input: InputSystem, side: 'left' | 'right'): void {
+    if (side === 'left') {
+      if (this.touchTowerLeftEnabled) {
+        if (!this.touchTowerRightEnabled) {
+          this.touchTowerLeftEnabled = false;
+          this.touchTowerRightEnabled = true;
+        } else {
+          this.touchTowerLeftEnabled = false;
+        }
+      } else {
+        this.touchTowerLeftEnabled = true;
+      }
+    } else if (this.touchTowerRightEnabled) {
+      if (!this.touchTowerLeftEnabled) {
+        this.touchTowerRightEnabled = false;
+        this.touchTowerLeftEnabled = true;
+      } else {
+        this.touchTowerRightEnabled = false;
+      }
+    } else {
+      this.touchTowerRightEnabled = true;
+    }
+    this.touchControls?.setTowerEnabled(this.touchTowerLeftEnabled, this.touchTowerRightEnabled);
+    if (this.touchFireActive) this.syncTouchFire(input, input.cursor().x);
+  }
+
+  private resolveTouchFireTower(designX: number): { left: boolean; right: boolean } {
+    if (this.touchTowerLeftEnabled && this.touchTowerRightEnabled) {
+      if (designX < DESIGN.width / 2) return { left: true, right: false };
+      return { left: false, right: true };
+    }
+    if (this.touchTowerLeftEnabled) return { left: true, right: false };
+    return { left: false, right: true };
+  }
+
+  private syncTouchFire(input: InputSystem, designX: number): void {
+    const fire = this.resolveTouchFireTower(designX);
+    this.setPointerFire(input, fire.left, fire.right);
+  }
+
+  setPointerFire(input: InputSystem, left: boolean, right: boolean): void {
+    input.setPointerFire(this.players, left, right);
+  }
+
+  getMenuActions(): UiAction[] {
+    if (this.settingsOverlay) return this.settingsOverlay.getMenuActions();
+    if (this.pauseOverlay) return this.pauseOverlay.menuActions;
+    if (this.shopOverlay) return this.shopOverlay.menuActions;
+    return [];
+  }
+
+  private syncMenuActions(menu: UiMenuController): void {
+    const source = this.settingsOverlay ?? this.pauseOverlay ?? this.shopOverlay;
+    const actions = this.getMenuActions();
+    const key = actions.map((a) => a.id).join('|');
+    if (source !== this.menuSource || key !== this.menuActionsKey) {
+      this.menuSource = source;
+      this.menuActionsKey = key;
+      menu.setActions(actions);
+    }
+  }
+
+  onMenuCancel(): void {
+    if (this.settingsOverlay) {
+      this.closeSettings();
+      return;
+    }
+    if (this.phase === 'paused') {
+      this.closePause();
+      return;
+    }
+  }
+
+  togglePause(): void {
+    if (this.phase === 'gameOver' || this.phase === 'levelComplete') return;
+    if (this.phase === 'paused') {
+      this.closePause();
+      return;
+    }
+    if (this.phase !== 'playing' && this.phase !== 'shop') return;
+
+    this.pauseBeforePhase = this.phase;
+    this.phase = 'paused';
+    if (this.inputRef) this.releaseTouchFire(this.inputRef);
+    if (this.pauseOverlay) return;
+
+    this.pauseOverlay = new PauseOverlay(
+      () => this.closePause(),
+      () => this.openSettings(),
+      () => {
+        this.closePause();
+        this.onReturnToMenu?.();
+      },
+    );
+    this.uiLayer.addChild(this.pauseOverlay);
+  }
+
+  private openSettings(): void {
+    if (this.settingsOverlay) return;
+    this.settingsOverlay = new SettingsOverlay(() => this.closeSettings());
+    this.uiLayer.addChild(this.settingsOverlay);
+    this.menuSource = null;
+    this.menuActionsKey = '';
+  }
+
+  private openTouchSettings(input: InputSystem): void {
+    if (this.settingsOverlay) return;
+    if (this.phase === 'playing' || this.phase === 'shop') {
+      this.pauseBeforePhase = this.phase;
+      this.phase = 'paused';
+    }
+    this.releaseTouchFire(input);
+    this.openSettings();
+  }
+
+  private closeSettings(): void {
+    if (this.settingsOverlay) {
+      this.settingsOverlay.destroy({ children: true });
+      this.settingsOverlay = null;
+      this.menuSource = null;
+      this.menuActionsKey = '';
+      if (this.phase === 'paused' && !this.pauseOverlay) {
+        this.phase = this.pauseBeforePhase;
+      }
+    }
+  }
+
+  private closePause(): void {
+    this.closeSettings();
+    if (this.pauseOverlay) {
+      this.pauseOverlay.destroy({ children: true });
+      this.pauseOverlay = null;
+      this.menuSource = null;
+      this.menuActionsKey = '';
+    }
+    if (this.phase === 'paused') this.phase = this.pauseBeforePhase;
+  }
+
+  update(dt: number, input: InputSystem, menu: UiMenuController): void {
+    this.inputRef = input;
+
+    if (this.endScreenFx) {
+      this.tickEndScreenFx(dt);
+      return;
+    }
+
+    const menuPhase =
+      this.phase === 'shop' ||
+      this.phase === 'paused' ||
+      this.phase === 'gameOver' ||
+      this.phase === 'levelComplete';
+    input.setMode(menuPhase ? 'menu' : 'combat');
+
+    if ((this.phase === 'playing' || this.phase === 'paused') && input.pollPauseToggle()) {
+      this.togglePause();
+    }
+
+    if (menuPhase) {
+      if (input.cancelPressed()) this.onMenuCancel();
+      this.syncMenuActions(menu);
+      menu.update(input);
+      this.releaseTouchFire(input);
+      this.explosionManager.update(dt);
+      this.particleFx.update(dt, this.particleBuckets());
+      return;
+    }
+
+    this.menuSource = null;
+    this.menuActionsKey = '';
+
+    if (this.phase === 'gameOver' || this.phase === 'levelComplete') return;
+    if (this.phase === 'intro') {
+      this.releaseTouchFire(input);
+      this.explosionManager.update(dt);
+      this.particleFx.update(dt, this.particleBuckets());
+      return;
+    }
+
+    this.explosionManager.update(dt);
+    this.particleFx.update(dt, this.particleBuckets());
+    this.killStreaks.tick(dt);
+    this.killStreakBanner?.update(dt);
+    this.bossHpBar?.refresh();
+    this.entityHpBars.update(dt, this.entities.living(), input.aimPoints(this.players));
+
+    this.updateRumble(dt);
+    if (this.cheatMessageTimer > 0) {
+      this.cheatMessageTimer -= dt;
+      if (this.cheatMessageTimer <= 0 && this.phase === 'playing') this.statusText.text = '';
+    }
+    this.weatherLayer.update(dt);
+    this.nightVisionLayer.update(
+      this.round.weather[4] ?? 0,
+      input.aimPoints(this.players).map(({ x, y }) => ({ x, y })),
+    );
+    input.updateCombat(this.players, {
+      onJoin: () => {
+        this.players.redistributeCaps(this.session.maxTeamRockets);
+        this.joinPanel?.refresh(this.players);
+      },
+      onLeave: () => {
+        this.players.redistributeCaps(this.session.maxTeamRockets);
+        this.joinPanel?.refresh(this.players);
+      },
+    });
+
+    this.joinPanel?.handleInput(input);
+    input.setJoinPanelFocused(this.joinPanel?.hasFocus() ?? false);
+
+    for (const player of this.players.active()) {
+      player.fireCooldown = Math.max(0, player.fireCooldown - dt);
+      this.updateAimLock(player, dt);
+      this.updateTurretAim(player);
+      this.tryFire(player, player.leftCannon, player.fireLeft);
+      this.tryFire(player, player.rightCannon, player.fireRight);
+    }
+
+    this.updateCivilians(dt);
+    this.entities.update(dt, this.level, { loadTex: (p) => this.tex(p), layer: this.entityLayer }, this.entityCallbacks());
+    this.checkWinLoss();
+    this.updateHud();
+  }
+
+  private updateCivilians(dt: number): void {
+    for (const c of this.civilians) {
+      if (!c.alive) continue;
+      c.x += c.dir * CIVILIAN_WALK_SPEED * dt;
+      if (c.x < CIVILIAN_MIN_X) {
+        c.x = CIVILIAN_MIN_X;
+        c.dir = 1;
+      } else if (c.x > CIVILIAN_MAX_X) {
+        c.x = CIVILIAN_MAX_X;
+        c.dir = -1;
+      }
+      c.walkDist += CIVILIAN_WALK_SPEED * dt;
+      const frameCol = Math.floor(c.walkDist / HUMAN_WALK_PX_PER_FRAME) % HUMAN_FRAME_COLS;
+      this.placeHuman(c.sprite, c.x, c.dir, frameCol);
+    }
+  }
+
+  private updateRumble(dt: number): void {
+    if (this.rumbleTimer > 0) {
+      this.rumbleTimer -= dt;
+      this.position.set(
+        (Math.random() - 0.5) * this.rumbleAmp,
+        (Math.random() - 0.5) * this.rumbleAmp,
+      );
+      return;
+    }
+    if (this.position.x !== 0 || this.position.y !== 0) this.position.set(0, 0);
+  }
+
+  private triggerRumble(planeOnly = false): void {
+    const mode = this.round.rumble ?? 0;
+    if (mode === 0) return;
+    if (planeOnly && mode < 1) return;
+    this.rumbleAmp = 5 + Math.random() * 4;
+    this.rumbleTimer = 0.2;
+  }
+
+  private aimEnabled(): boolean {
+    return !this.level.config.buttonsDisabled?.aim;
+  }
+
+  private updateAimLock(player: PlayerSlot, dt: number): void {
+    if (!this.aimEnabled()) {
+      player.lockProgressMs = 0;
+      player.lockTarget = null;
+      player.setCrosshairLockVisual(false, false, this.session.aimTimeMs);
+      return;
+    }
+
+    const target = this.entities.findLockTargetAt(player.crosshairX, player.crosshairY);
+    if (!target) {
+      player.lockProgressMs = 0;
+      player.lockTarget = null;
+      player.setCrosshairLockVisual(false, false, this.session.aimTimeMs);
+      return;
+    }
+
+    player.lockProgressMs += dt * 1000;
+    const locked = player.lockProgressMs >= this.session.aimTimeMs;
+    player.lockTarget = locked ? target : null;
+    player.setCrosshairLockVisual(!locked, locked, this.session.aimTimeMs);
+  }
+
+  private isAimLocked(player: PlayerSlot): boolean {
+    return this.aimEnabled() && player.lockTarget?.alive === true;
+  }
+
+  private guidedRocketDamage(): number {
+    const aimPower = Math.min(this.level.config.aimPower, 10);
+    const ratio = this.session.baseAimTimeMs / Math.max(1, this.session.aimTimeMs);
+    return Math.round(
+      this.session.rocketPower * aimPower * ratio * LOCK_ON_ROCKET_DAMAGE_FACTOR,
+    );
+  }
+
+  private updateTurretAim(player: PlayerSlot): void {
+    this.aimCannon(player.leftCannon, player.crosshairX, player.crosshairY);
+    this.aimCannon(player.rightCannon, player.crosshairX, player.crosshairY);
+  }
+
+  private aimCannon(cannon: Sprite, tx: number, ty: number): void {
+    let angle = Math.atan2(ty - cannon.y, tx - cannon.x);
+    if (cannon.scale.x < 0) angle += Math.PI;
+    cannon.rotation = angle;
+  }
+
+  private tryFire(player: PlayerSlot, cannon: Sprite, firing: boolean): void {
+    if (!firing || player.fireCooldown > 0) return;
+    if (player.rocketsInFlight >= player.rocketCap) return;
+
+    this.spawnRocket(player, cannon);
+    player.fireCooldown = PLAYER_FIRE_COOLDOWN_S;
+  }
+
+  private spawnRocket(player: PlayerSlot, cannon: Sprite): void {
+    const def = this.level.bombs.BOMB_PLAYER!;
+    const sprite = new Sprite(this.playerRocketTex);
+    sprite.anchor.set(0.5);
+    sprite.scale.set(def.scale[0] * PLAYER_ROCKET_DISPLAY_SCALE, def.scale[1] * PLAYER_ROCKET_DISPLAY_SCALE);
+    const angle = Math.atan2(player.crosshairY - cannon.y, player.crosshairX - cannon.x);
+    const muzzle = V1_SPRITES.cannonMuzzle;
+    const sx = cannon.x + Math.cos(angle) * muzzle;
+    const sy = cannon.y + Math.sin(angle) * muzzle;
+    sprite.position.set(sx, sy);
+
+    const locked = this.isAimLocked(player);
+    if (locked) sprite.tint = 0xff4444;
+
+    const speed = this.session.rocketSpeed * TICK_SCALE;
+    this.entities.spawnPlayerProjectile(
+      sprite,
+      def,
+      {
+        x: sx,
+        y: sy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        damage: locked ? this.guidedRocketDamage() : this.session.rocketPower,
+        ownerSlot: player.index,
+        homingTarget: locked ? player.lockTarget : null,
+        guidedShot: locked,
+      },
+      this.entityLayer,
+    );
+    this.particleFx.spawnMuzzleFlash(sx, sy, angle, locked);
+    this.levelAudio.playShoot();
+    player.stats.rocketsFired += 1;
+    player.rocketsInFlight += 1;
+  }
+
+  private particleBuckets() {
+    return {
+      projectiles: this.entities.projectiles(),
+      crashingPlanes: this.entities.crashingPlanes(),
+      fallingBombs: this.entities.fallingBombs(),
+    };
+  }
+
+  private damageCiviliansAt(x: number, y: number, radius: number, damage: number): void {
+    const r2 = radius * radius;
+    for (const c of this.civilians) {
+      if (!c.alive) continue;
+      const dx = c.x - x;
+      const dy = (GROUND_FEET_Y - 20) - y;
+      if (dx * dx + dy * dy > r2) continue;
+      const wasAlive = c.hp > 0;
+      c.hp -= damage;
+      if (c.hp <= 0) {
+        this.killCivilian(c);
+      } else if (wasAlive && damage > 0) {
+        this.levelAudio.playCivilianHit();
+      }
+    }
+  }
+
+  private killCivilian(c: Civilian): void {
+    c.alive = false;
+    c.sprite.visible = false;
+    this.levelAudio.playCivilianDeath();
+    this.session.resetHumanPrice();
+    if (!this.civilians.some((h) => h.alive)) {
+      this.phase = 'gameOver';
+      this.clearTransientGameUi();
+      this.levelAudio.playGameOver();
+      this.startEndScreenFx('Game over', () => this.onReturnToCampaign?.());
+    }
+  }
+
+  private checkWinLoss(): void {
+    if (this.wonRound || this.phase !== 'playing') return;
+    if (this.roundBootstrapping || this.pendingAirplaneSpawns > 0) return;
+    if (this.entities.roundWinTargetsAlive() === 0 && this.airplaneSpawnQueue.length === 0) {
+      this.wonRound = true;
+      const survivors = this.civilians.filter((c) => c.alive).length;
+      const earned = survivors * this.session.humanMoney;
+      this.session.payoutSurvivors(survivors, this.level.config.moneyFactor);
+      this.playRoundWinSound();
+      this.openShop(earned);
+    }
+  }
+
+  private playRoundWinSound(): void {
+    this.levelAudio.playRoundWin(this.round.winSound);
+  }
+
+  private openShop(_moneyEarned: number): void {
+    const hasMoreRounds = this.roundIndex + 1 < this.level.rounds.length;
+    this.phase = 'shop';
+    this.clearTransientGameUi();
+    this.closeShop();
+    this.shopOverlay = new ShopOverlay(
+      this.level,
+      this.session,
+      (key) => this.buyUpgrade(key),
+      () => void this.continueFromShop(hasMoreRounds),
+      (key) => this.canBuyShopUpgrade(key),
+      hasMoreRounds,
+    );
+    this.uiLayer.addChild(this.shopOverlay);
+    this.updateHud();
+  }
+
+  private clearTransientGameUi(): void {
+    if (this.introOverlay) {
+      this.introOverlay.destroy({ children: true });
+      this.introOverlay = null;
+    }
+    if (this.statusText) {
+      this.statusText.text = '';
+      this.statusText.visible = false;
+    }
+    this.killStreakBanner?.destroy();
+    this.killStreakBanner = null;
+  }
+
+  private canBuyShopUpgrade(key: UpgradeKey): boolean {
+    if (!this.level.config.upgrades[key]) return false;
+    if (key === 'human' && this.civilians.filter((c) => c.alive).length >= this.level.config.maxHumans) {
+      return false;
+    }
+    return this.session.money >= this.session.price(key);
+  }
+
+  private closeShop(): void {
+    if (this.shopOverlay) {
+      this.shopOverlay.destroy({ children: true });
+      this.shopOverlay = null;
+      this.menuSource = null;
+      this.menuActionsKey = '';
+    }
+    if (this.statusText) this.statusText.visible = true;
+  }
+
+  private buyUpgrade(key: UpgradeKey): void {
+    if (key === 'human' && this.civilians.filter((c) => c.alive).length >= this.level.config.maxHumans) {
+      this.levelAudio.playNoMoney();
+      return;
+    }
+    if (!this.session.tryBuy(key, this.level)) {
+      this.levelAudio.playNoMoney();
+      return;
+    }
+
+    this.levelAudio.playPay();
+
+    if (key === 'human') {
+      void this.spawnOneCivilian(
+        CIVILIAN_MIN_X + Math.random() * (CIVILIAN_MAX_X - CIVILIAN_MIN_X),
+      );
+    }
+
+    this.syncCombatStats();
+    this.refreshCivilianHp();
+    this.shopOverlay?.refresh(this.session);
+    this.updateHud();
+    this.notifyRoundStarted();
+  }
+
+  private async continueFromShop(hasMoreRounds: boolean): Promise<void> {
+    if (hasMoreRounds) {
+      await this.startRound(this.roundIndex + 1);
+      return;
+    }
+    this.phase = 'levelComplete';
+    this.closeShop();
+    this.clearTransientGameUi();
+    this.levelAudio.playLevelWin();
+    this.startEndScreenFx(
+      this.level.id === 1 ? 'Tutorial complete!' : 'Level complete',
+      () => this.onLevelComplete?.(),
+    );
+  }
+
+  private startEndScreenFx(title: string, onDone: () => void): void {
+    const overlay = new Container();
+    overlay.eventMode = 'none';
+
+    const dim = new Graphics();
+    dim.rect(0, 0, DESIGN.width, DESIGN.height).fill({ color: 0x000000, alpha: 0.45 });
+    overlay.addChild(dim);
+
+    const label = kewlText({
+      text: kewlString(title),
+      size: 40,
+      align: 'center',
+      anchorX: 0.5,
+      anchorY: 0.5,
+    });
+    label.position.set(DESIGN.width / 2, DESIGN.height / 2);
+    label.alpha = 0;
+    label.scale.set(0.88);
+    overlay.addChild(label);
+
+    this.uiLayer.addChild(overlay);
+    this.endScreenFx = { overlay, label, age: 0, onDone };
+  }
+
+  private tickEndScreenFx(dt: number): void {
+    const fx = this.endScreenFx;
+    if (!fx) return;
+
+    fx.age += dt;
+    const fadeIn = 0.25;
+    const fadeOut = 0.4;
+    const holdEnd = END_SCREEN_ANIM_S - fadeOut;
+
+    if (fx.age < fadeIn) {
+      const p = fx.age / fadeIn;
+      fx.label.alpha = p;
+      fx.label.scale.set(0.88 + 0.12 * p);
+    } else if (fx.age >= holdEnd) {
+      const p = Math.min(1, (fx.age - holdEnd) / fadeOut);
+      fx.label.alpha = 1 - p;
+      fx.label.scale.set(1 + p * 0.06);
+    } else {
+      fx.label.alpha = 1;
+      fx.label.scale.set(1);
+    }
+
+    if (fx.age >= END_SCREEN_ANIM_S) {
+      fx.overlay.destroy({ children: true });
+      const done = fx.onDone;
+      this.endScreenFx = null;
+      done();
+    }
+  }
+
+  private updateHud(): void {
+    if (!this.round) return;
+    this.joinPanel?.refresh(this.players);
+  }
+
+  isRoundComplete(): boolean {
+    return this.phase === 'shop' || this.phase === 'levelComplete';
+  }
+
+  isGameOver(): boolean {
+    return this.phase === 'gameOver';
+  }
+
+  isLevelComplete(): boolean {
+    return this.phase === 'levelComplete';
+  }
+
+  cheatKillVisibleEnemies(): void {
+    if (this.phase !== 'playing') return;
+    const count = this.entities.killVisibleEnemies(
+      this.level,
+      { loadTex: (p) => this.tex(p), layer: this.entityLayer },
+      this.entityCallbacks(),
+    );
+    if (count > 0) this.flashCheatMessage(`Killed ${count} target${count === 1 ? '' : 's'}`);
+  }
+
+  private flashCheatMessage(text: string): void {
+    this.statusText.text = kewlString(`[cheat] ${text}`);
+    this.cheatMessageTimer = 2.5;
+  }
+}

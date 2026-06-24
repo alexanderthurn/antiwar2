@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 1,
+  "id": 3,
+  "meta": {
+    "name": "Boss One",
+    "author": "Mangoo",
+    "description": "Harhar, its time to say good bye. God bless America. This Enemy is already dead",
+    "thumbnail": "assets/gfx/thumbs/whitehouse.png"
+  },
+  "config": {
+    "startMoney": 4000,
+    "startHumans": 3,
+    "startRockets": 5,
+    "startHumanHp": 100,
+    "startHumanMoney": 0,
+    "startRocketPower": 50,
+    "startRocketSpeed": 5,
+    "startAimTime": 1000,
+    "aimPower": 2,
+    "maxHumans": 100,
+    "maxRockets": 100,
+    "humanHpRefresh": 1,
+    "moneyFactor": 1,
+    "crashingRockets": 2,
+    "buttonsDisabled": {
+      "human": false,
+      "humanHp": false,
+      "humanMoney": true,
+      "rocket": false,
+      "rocketSpeed": false,
+      "rocketPower": false,
+      "aim": false
+    },
+    "upgrades": {
+      "human": {
+        "price": 25,
+        "priceFactor": 1,
+        "statFactor": null
+      },
+      "humanHp": {
+        "price": 50,
+        "priceFactor": 1,
+        "statFactor": 1.3
+      },
+      "humanMoney": {
+        "price": 100,
+        "priceFactor": 1,
+        "statFactor": 1.15
+      },
+      "rocket": {
+        "price": 200,
+        "priceFactor": 1,
+        "statFactor": null
+      },
+      "rocketSpeed": {
+        "price": 100,
+        "priceFactor": 1,
+        "statFactor": 1.1
+      },
+      "rocketPower": {
+        "price": 100,
+        "priceFactor": 1,
+        "statFactor": 1.1
+      },
+      "aim": {
+        "price": 100,
+        "priceFactor": 1,
+        "statFactor": 0.9
+      }
+    },
+    "assets": {
+      "tower": "assets/gfx/tower.png",
+      "cannon": "assets/gfx/cannon.png",
+      "crosshair": "assets/gfx/crosshair.png",
+      "human": "assets/gfx/human.png",
+      "ground": "assets/gfx/backgrounds/ground2.png",
+      "background": "assets/gfx/backgrounds/whitehouse.jpg"
+    },
+    "sounds": {
+      "music": "boss.ogg"
+    }
+  },
+  "bombs": {
+    "BOMB_PLAYER": {
+      "image": "assets/gfx/BOMBS/player_rocket.png",
+      "scale": [
+        0.5,
+        0.5
+      ],
+      "hp": 10,
+      "damage": 100,
+      "speed": 2,
+      "rotationSpeed": 20,
+      "explosion": {
+        "type": 1,
+        "power": 0,
+        "range": 1,
+        "lifetime": 20
+      },
+      "trail": 1,
+      "checkOutOfScreen": true
+    },
+    "BOMB_OLD": {
+      "image": "assets/gfx/BOMBS/bomb_old.png",
+      "scale": [
+        1,
+        1
+      ],
+      "hp": 10,
+      "damage": 100,
+      "speed": 1.3,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 300,
+        "range": 3,
+        "lifetime": 20
+      },
+      "trail": 1,
+      "checkOutOfScreen": false
+    },
+    "ROCKET_COLA": {
+      "image": "assets/gfx/BOMBS/rocket_cola.png",
+      "scale": [
+        1,
+        1
+      ],
+      "hp": 1,
+      "damage": 20,
+      "speed": 5,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 20,
+        "range": 2,
+        "lifetime": 20
+      },
+      "trail": 1,
+      "checkOutOfScreen": true
+    }
+  },
+  "airplanes": {
+    "ENDMASTER_BARON": {
+      "hp": 20000,
+      "speed": 5,
+      "rotationSpeed": 10,
+      "weapons": [
+        "BOMB_OLD",
+        "ROCKET_COLA"
+      ],
+      "ai": "BARON",
+      "aiParams": [
+        0,
+        422,
+        40
+      ],
+      "drawStyle": 1,
+      "image": "assets/gfx/AIRPLANES/endmaster_baron.png",
+      "scale": [
+        0.4,
+        0.4
+      ]
+    }
+  },
+  "rounds": [
+    {
+      "name": "TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": []
+    },
+    {
+      "name": "TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": 0,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "ENDMASTER_BARON",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        }
+      ],
+      "intro": {
+        "text": "You are dead",
+        "image": "assets/gfx/AIRPLANES/endmaster_baron.png",
+        "time": 300,
+        "sound": "yeahbaby.ogg"
+      },
+      "winSound": "winner.ogg"
+    }
+  ]
+}

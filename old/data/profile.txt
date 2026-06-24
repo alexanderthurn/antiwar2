@@ -1,0 +1,4 @@
+act_level:1
+act_level_hc:1
+hc_enabled:0
+first_start:0

@@ -1,0 +1,44 @@
+[ONE SHOOT]
+WEATHER: 0.0,0.0,0.0,0.0,0.0
+INTRO_TEXT: shoot your enemy
+INTRO_IMAGE: AIRPLANES/bomber.png
+INTRO_TIME: 300
+AIRPLANE_0: BOMBER,-100,100,0
+AIRPLANE_1: BOMBER,1200,100,0
+AIRPLANE_2: BOMBER,-100,400,0
+AIRPLANE_3: BOMBER,1100,300,0
+CHANGE_BACKGROUND:mangoo.jpg
+INTRO_SOUND: tutorial/shootall.ogg
+SND_WIN: sfx/tutorial/buyupgrades.ogg
+
+[Multi SHOOTS]
+WEATHER: 0.0,0.0,0.0,0.0,0.0
+INTRO_TEXT: Use both cannons
+INTRO_SOUND: tutorial/leftright.ogg
+SND_WIN: sfx/weachhuman.ogg
+
+INTRO_TIME: 300
+AIRPLANE_0: BOMBER2,-100,100,0
+AIRPLANE_1: BOMBER2,1200,100,0
+
+[STRONGER ROCKETS]
+WEATHER: 0.0,0.0,0.0,0.0,0.0
+INTRO_TEXT: Keep crosshair on enemy
+INTRO_SOUND: tutorial/crosshair.ogg
+INTRO_IMAGE: buttons/button_rocket_aim.png
+INTRO_TIME: 300
+AIRPLANE_0: BOMBER3,-100,100,0
+
+
+
+-Start des Spiels: "Welcome to antiwar"
+-Coole Sprüche für zwischendurch, sowas wie "yeehaa","yeah baby" oder sowas, können ja noch überlegen
+-Sprüche/Schreie/Stöhnen für die Endmeister, sind leider fast alles Männer aber vielleicht kriegst du was hin :-) ( können wir ja noch verzerren )
+-Schreie der Männleins
+-Die Kill Sounds: "doublekill, tripplekill, multikill, megakill, monsterKill, ludicrious, holy shit, headshot" sind alle im Sound ordner und bisher geklaut :-)
+-Tutorial: "Shoot all airplanes to win a round. Each surviving human gives you money"
+	   "Use left and right mouse button for left and right tower"
+           "Keep your crosshair on airplanes until it becomes red"   +  "Aim at me" ( das 2te am besten schnell gesprochen)
+	   "Here you can buy upgrades to improve your rockets and humans"
+
+           

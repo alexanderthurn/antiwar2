@@ -1,0 +1,305 @@
+{
+  "schemaVersion": 1,
+  "id": 7,
+  "meta": {
+    "name": "Fish",
+    "author": "Mangoo",
+    "description": "Deadly fishes reached your coast. You have only one shot to shoot one fish. So be careful.",
+    "thumbnail": "assets/gfx/thumbs/fish.png"
+  },
+  "config": {
+    "startMoney": 500,
+    "startHumans": 3,
+    "startRockets": 3,
+    "startHumanHp": 10000,
+    "startHumanMoney": 300,
+    "startRocketPower": 50,
+    "startRocketSpeed": 4,
+    "startAimTime": 100000,
+    "aimPower": 0,
+    "maxHumans": 10,
+    "maxRockets": 10,
+    "humanHpRefresh": 1,
+    "moneyFactor": 1,
+    "crashingRockets": 0,
+    "buttonsDisabled": {
+      "human": true,
+      "humanHp": true,
+      "humanMoney": true,
+      "rocket": true,
+      "rocketSpeed": true,
+      "rocketPower": true,
+      "aim": true
+    },
+    "upgrades": {
+      "human": {
+        "price": 100,
+        "priceFactor": 1,
+        "statFactor": null
+      },
+      "humanHp": {
+        "price": 100,
+        "priceFactor": 1.05,
+        "statFactor": 1.1
+      },
+      "humanMoney": {
+        "price": 100,
+        "priceFactor": 1.1,
+        "statFactor": 1.1
+      },
+      "rocket": {
+        "price": 100,
+        "priceFactor": 3,
+        "statFactor": null
+      },
+      "rocketSpeed": {
+        "price": 100,
+        "priceFactor": 1.5,
+        "statFactor": 1.1
+      },
+      "rocketPower": {
+        "price": 100,
+        "priceFactor": 1.1,
+        "statFactor": 1.1
+      },
+      "aim": {
+        "price": 100,
+        "priceFactor": 1,
+        "statFactor": 0.5
+      }
+    },
+    "assets": {
+      "tower": "assets/gfx/tower.png",
+      "cannon": "assets/gfx/cannon.png",
+      "crosshair": "assets/gfx/crosshair1.png",
+      "human": "assets/gfx/human.png",
+      "ground": "assets/gfx/backgrounds/ground.png",
+      "background": "assets/gfx/backgrounds/water.jpg"
+    }
+  },
+  "bombs": {
+    "BOMB_EI": {
+      "image": "assets/gfx/BOMBS/ei.png",
+      "scale": [
+        0.5,
+        0.5
+      ],
+      "hp": 10,
+      "damage": 100,
+      "speed": 0.7,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 100,
+        "range": 2,
+        "lifetime": 20
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_PLAYER": {
+      "image": "assets/gfx/BOMBS/harpune.png",
+      "scale": [
+        1,
+        1
+      ],
+      "hp": 10,
+      "damage": 100,
+      "speed": 1,
+      "rotationSpeed": 40,
+      "explosion": {
+        "type": 0,
+        "power": 0,
+        "range": 0,
+        "lifetime": 0
+      },
+      "trail": 0,
+      "checkOutOfScreen": true
+    }
+  },
+  "airplanes": {
+    "SAEGEFISCH": {
+      "hp": 1,
+      "speed": 2,
+      "rotationSpeed": 360,
+      "weapons": [],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        211,
+        422,
+        300000
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/saegefisch.png",
+      "scale": [
+        0.5,
+        0.5
+      ],
+      "lastScream": "headshot.ogg"
+    },
+    "FISCHLI": {
+      "hp": 1,
+      "speed": 4,
+      "rotationSpeed": 360,
+      "weapons": [],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        211,
+        422,
+        300000
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/fischli_grins.png",
+      "scale": [
+        1,
+        1
+      ],
+      "lastScream": "holyshit.ogg"
+    },
+    "HAI": {
+      "hp": 1,
+      "speed": 6,
+      "rotationSpeed": 360,
+      "weapons": [],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        211,
+        422,
+        300000
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/hai.png",
+      "scale": [
+        0.5,
+        0.5
+      ],
+      "lastScream": "crash_shot.ogg"
+    }
+  },
+  "rounds": [
+    {
+      "name": "LEVEL1_TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "SAEGEFISCH",
+          "x": 94,
+          "y": -141,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "LEVEL1_TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "SAEGEFISCH",
+          "x": 188,
+          "y": -141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "SAEGEFISCH",
+          "x": 1688,
+          "y": -141,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "LEVEL1_TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "FISCHLI",
+          "x": 188,
+          "y": -141,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "LEVEL1_TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "FISCHLI",
+          "x": 188,
+          "y": -141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FISCHLI",
+          "x": 1688,
+          "y": -141,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "LEVEL1_TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "HAI",
+          "x": 188,
+          "y": -141,
+          "angle": 0
+        }
+      ]
+    }
+  ]
+}

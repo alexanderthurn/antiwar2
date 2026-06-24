@@ -1,0 +1,447 @@
+				______________________________________________________
+				      /|                       |     |                
+				     / |  |\    |  -------  *  |  |  |      /|  |---  
+				    /  |  | \   |     |     |  |  |  |     / |  |   | 
+				   /---|  |  \  |     |     |  |  |  |    /--|  |---  
+				  /    |  |   \ |     |     |  |  |  |   /   |  | \   
+				 /     |  |    \|     |     |  \__^__/  /    |  |  \  
+				______________________________________________________
+
+INHALT DER SDK-README
+---------------------
+0. Allgemeine Infos
+1. Einstellungen festlegen
+2. Levels festlegen
+3. Bomben/Raketen festlegen
+4. Flugzeuge/Helfer festlegen
+5. KIs        Vorhandene
+
+
+
+______________________________________________
+0. Allgemeine Infos
+______________________________________________
+
+Bei Antiwar kann man Kampagnen,Levels, Einheiten und Waffen selber erstellen und diese 
+anschliessend auf awar.de.vu veröffentlichen.
+Wie das geht, steht hier!
+
+
+Wie erstelle ich eine eigene Kampagne???
+
+Jede Kampagne stellt einen Ordner im data/ Verzeichnis dar. Wenn also ein Ordner "mangoo" im Ordner data vorhanden ist, gibt
+es auch eine Kampagne namens mangoo!
+
+In diesem Ordner müssen 4 Dateien vorhanden sein:
+
+config.txt            ' Allgemeine Einstellungen wie Startgeld etc.
+levels.txt            ' die Levels, die durchgespielt werden
+bombs.txt             ' Welche Bomben gibt es im Spiel? (wie man eigene Bomben erstellt steht unter Punkt Bombe erstellen.)
+airplanes.txt  	      ' Welche Flugzeuge gibt es im Spiel? (wie man eigene Flugzeuge erstellt steht unter Punkt Flugzeuge
+							    erstellen)
+
+Eventuell ist noch eine Datei namens
+highscore.txt         ' Lokal abgespeicherte Highscore Liste für den Arcade Mode
+vorhanden. Diese wird allerdings nicht zum Funktionieren des Levels benötigt.
+
+
+Um nun eine funktionstüchtige Kampagne zu erstellen, müssen die 4 erstgenannten Dateien auf jeden Fall vorhanden sein.
+In diesen Dateien stehen alle Informationen, die das Spiel benötigt.
+Jetzt müssen diese 4 Dateien noch mit Inhalt gefüllt werden, wie das geht, steht in 1.-4.
+
+
+Wie ist eine Kampagne aufgebaut?
+
+						LEVELS.TXT    -hier werden alle Level und was darin vorkommt definiert
+						^	 ^
+enthält globale Leveleigenschaften-    CONFIG.TXT	 AIRPLANES.TXT    -hier werden alle Flugzeuge definiert
+							       ^
+							 BOMBS.TXT    -alle Bomben, die Flugzeuge haben und Raketen des Sp.
+
+
+
+______________________________________________
+1. Einstellungen festlegen
+______________________________________________
+
+Die Einstellungen für das Spiel legt man in der config.txt fest.
+z.B. das Startgeld oder die maximale Anzahl an Menschen.
+Das ganze ist schon recht kompliziert, hier eine Beispieldatei
+
+
+AUTHOR: Mangoo // Name des Authors
+
+// STORY --- Der folgende Abschnitt ist nur wichtig für Story Levels.
+// Die Eigenschaften können auch während des laufenden Spiels in levels.txt gesetzt werden !!!
+STORY_DESCRIPTION: Welcome to first Level <br> I hope you will have some fun // Beschreibung, nur für Story benötigt
+STORY_DIFFICULTY: easy 	   // Eigene Einschätzung der Schwierigkeit
+STORY_MAX_TIME: -1         // totale Zeitbegrenzung für die ganze Kampagne (in Sekunden)
+STORY_MAX_ROUNDTIME: -1    // Zeitbegrenzung für jede Runde
+STORY_MAX_ROCKETS: -1 	   // Wieviele Raketen darf der Spieler insgesamt abfeuern
+STORY_MAX_ROUNDROCKETS: -1 // Raketen pro Runde
+STORY_MAX_HUMAN: -1        // wieviel Menschen dürfen maximal sterben, dann können keine mehr gekauft werden
+STORY_MIN_MONEY: -1        // Wieviel Kohle muss man verdienen         
+ARCADE: 0                  // Möchte man, dass die Kampagne nicht im ARCADE Mode aufgeführt wird, dann hier eine Zahl > 0
+			   // setzen.
+IMAGE: gfx/thumbs/desert.jpg   // Das Bild im Auswahlmenü
+
+// STARTSETTINGS --- Mit diesen Einstellungen startet man ins erste Level
+START_LEVEL: 0 		   // In welchem Level soll begonnen werden, nur für Testzwecke auf werte > 0 setzen.
+START_MONEY: 500
+START_HUMANS: 3
+START_ROCKETS: 5
+START_HUMAN_HP: 100
+START_HUMAN_MONEY: 200
+START_ROCKET_POWER: 500
+START_ROCKET_SPEED: 10.0
+START_AIMTIME: 400
+AIM_POWER: 3.0      	   // Wieviel stärker sind Raketen, wenn sie Lenkraketen sind.
+
+// Buttons, Extras disabled ---
+// Möchte man einige Knöpfe im BuyMenu gar nicht erst erlauben, so kann man dies hier einstellen. Standard ist alles erlaubt.
+// Buttons können auch in levels.txt noch (de)aktiviert werden. So kann man z.B. schnellere Raketen erst ab Level 2 zulassen.
+BUTTON_HUMAN_DISABLED: 1
+BUTTON_HUMAN_HP_DISABLED: 0
+BUTTON_HUMAN_MONEY_DISABLED: 0
+BUTTON_ROCKET_DISABLED: 0
+BUTTON_ROCKET_SPEED_DISABLED: 0
+BUTTON_ROCKET_POWER_DISABLED: 0
+
+// LIMITS --- Upgrade kann diesen Wert nicht überschreiten
+MAX_HUMANS: 50 	// Maximale Zahl an humans, die gleichzeitig im Spiel sein dürfen
+MAX_ROCKETS: 10 // Maximale Zahl der Raketen, die gleichzeitig in der Luft sein dürfen
+
+// START PRICES --- soviel kostet das erste Upgrade
+PRICE_HUMAN: 150  	// human kaufen
+PRICE_ROCKET: 100  	// mehr Raketen können gleichzeitig in der Luft sein
+PRICE_HUMAN_HP: 50   	// mehr Lebenspunkte für humans
+PRICE_HUMAN_MONEY: 100  // humans bringen mehr Geld
+PRICE_ROCKET_POWER: 90  // mehr Raketenschaden
+PRICE_ROCKET_SPEED: 150 // schnellere Raketen
+PRICE_AIM: 100   	// verbessertes und schnelleres Zielen
+
+// IMPROVEMENT FACTOR --- um so viel wird die Eigenschaft pro Upgrade verbessert
+// Hier stellt man ein, wie stark sich ein Kauf prozentual auf die jeweilige Eigenschaft auswirkt 1.1 = 110%
+FACTOR_HUMAN_HP: 1.1
+FACTOR_HUMAN_MONEY: 3.15
+FACTOR_ROCKET_POWER: 1.1
+FACTOR_ROCKET_SPEED: 1.1
+FACTOR_AIM: 0.9		// Zielzeit soll ja kürzer werden
+
+// Hier stellt man ein, wie stark sich ein Kauf prozentual auf den Preis auswirkt 1.1 = 110%
+// PRICE FACTOR --- um so viel wird ein Upgrade jedesmal teurer
+//		    verliert man humans, wird der Preis entsprechend zurückgesetzt
+FACTOR_PRICE_HUMAN: 2.00
+FACTOR_PRICE_ROCKET: 3.00
+FACTOR_PRICE_HUMAN_HP: 1.10
+FACTOR_PRICE_HUMAN_MONEY: 1.3
+FACTOR_PRICE_ROCKET_POWER: 1.10
+FACTOR_PRICE_ROCKET_SPEED: 1.50
+FACTOR_PRICE_AIM: 2.0
+
+// SPECIAL
+HUMAN_HPREFRESH: 1.0    // wenn 1.0, haben humans nach jeder Runde wieder volle HP, bei 0 werden HP beibehalten
+MONEY_FACTOR: 1.0      	// Bonusgeld für double-, tripple-,... kill:  HUMAN_MONEY*MONEY_FACTOR*2,3,4,5...
+CRASHING_ROCKETS: 2 	// Flugzeuge können abstürzen. Wert gibt an, wieviele Raketen das Flugzeug maximal noch treffen
+			// müssen. Vorher stürzt es nicht ab. Bei 0 kann es gar nicht abstürzen.
+
+// IMAGES --- Hier kann man die Bilddateien ändern
+IMG_TOWER: gfx/tower.png	 // fester Teil der Kanone
+IMG_CANNON: gfx/cannon.png	 // beweglicher Teil der Kanone
+IMG_CROSSHAIR: gfx/crosshair.png // Fadenkreuz
+IMG_HUMAN: gfx/human.png	 // korrekte Bilddatei für animierte Humans (angucken!)
+IMG_EXPLOSION: gfx/explosion.png // "	     "	       "   "	     Explosionen
+IMG_EXPLOSION_NUKE: gfx/explosion_nuke.png
+FOLDER_BUTTONS: gfx/buttons/	 // Set von Knöpfen für Upgrades
+IMG_BULLET:  gfx/bullet.png
+
+// COLOR
+// HPBAR with full hp --- RGB-Werte für Farbe des HP-Balkens
+COLOR_HPBAR_RED: 0
+COLOR_HPBAR_GREEN: 0
+COLOR_HPBAR_BLUE: 0
+
+// SOUNDS
+SND_EXPLOSION_0: sfx/explosion2.ogg  // es müssen 4 Explosionssounds angegeben werden (können gleich sein)
+SND_EXPLOSION_1: sfx/explosion2.ogg  // bei jeder Explosion wird zufällig einer ausgewählt
+SND_EXPLOSION_2: sfx/explosion3.ogg
+SND_EXPLOSION_3: sfx/explosion3.ogg
+SND_SCREAM_0: sfx/bloodscream.ogg    // es müssen 4 Schreie für Menschen angegeben werden (können gleich sein)
+SND_SCREAM_1: sfx/bloodscream.ogg    // bei jedem Treffer eines human wird zufällig einer ausgewählt
+SND_SCREAM_2: sfx/bloodscream.ogg
+SND_SCREAM_3: sfx/bloodscream.ogg
+SND_DIESCREAM: sfx/bloodscream.ogg   // wird abgespielt, wenn ein Mensch stirbt
+SND_WINNER: sfx/winner.ogg	     // kommt nach jeder Ebene
+SND_WIN: sfx/win.ogg                 // kommt nach jedem Level
+SND_SHOOT: sfx/shoot.ogg	     // Schusssound der Kanonen
+SND_ANTHRAX: sfx/anthrax.ogg	     // so klingen Anthrax Explosionen
+SND_NEWROUND: sfx/gong.ogg	     // kommt immer kurz bevor es losgeht
+
+//Musik
+MUSIC: sfx/game.ogg
+
+______________________________________________
+2. Levels selber erstellen
+______________________________________________
+
+levels.txt ist folgendermaßen aufgebaut:
+
+Jeder Abschnitt, der durch einen Levelnamen in eckigen Klammern dargestellt ist, ist ein Level
+Z.B.:
+
+[TUTORIAL]
+INTRO_TEXT: Hallo hier kommt der erste coole Level
+INTRO_IMAGE: AIRPLANES/bomber.png
+INTRO_TIME: 200
+WEATHER: 0.0,0.0,0.0,0.0,0.0
+CHANGE_BACKGROUND: desert.jpg
+HELPER_0: SINDBAD,0,0,0
+AIRPLANE_0: BOMBER,100,100,0
+AIRPLANE_1: BOMBER_ANTHRAX,200,300,0
+MAX_AIRPLANES: 0
+
+WEATHER:
+Beim Wetter setzt man die Werte für Regen, Wolken, Schnee, Wind und Dunkelheit, und zwar in genau dieser Reihenfolge.
+0.0 beudetet dabei gar keins vom jeweiligen Element, 1.0 ist der Maximalwert (grössere Werte sind auch möglich,
+	aber nur bei Wolken zu empfehlen)
+Achtung: 1.0 bei Dunkelheit bedeutet, dass völlige Dunkelheit herrscht.
+	 Bei Werten > 0.4 wird automatisch die Nachtsichthilfe verwendet.
+Bei Wind bedeutet -1.0 Wind nach links und 1.0 Wind nach rechts usw.
+
+Jetzt mal ein kleines Beispiel:
+Sagen wir mal wir möchten einen veregneten Abend ohne Wind und ohne Wolken. 
+WEATHER: 0.7,0.0,0.0,0.0,0.8
+Oder einen Schneesturm am hellichten Tag mit starkem Wind nach rechts:
+Weather: 0.0,0.0,1.0,1.5,0.0
+
+INTRO_TEXT: Einfach einen Text dahinter tippen und schon erscheint dieser, wenn der Level geladen wird.
+INTRO_IMAGE: Name einer Bilddatei im gfx Ordner, Unterordner mit / trennen z.b. AIRPLANES/bomber.png
+INTRO_IMAGE: Wie lange soll das Intro angezeigt werden, 200 ist ein guter Wert
+CHANGE_BACKGROUND: Soll der Hintergrund gewechselt werden? Wenn ja, diesen Parameter einfügen,
+	als Wert einen Bildnamen aus gfx/backgrounds, NONE gibt einen Farbwechsel ohne Bild
+CHANGE_GROUND: Hiermit kann der Untergrund gewechselt werden, die Standardhöhe ist 50. Man kann jedoch ein 
+	höheres Bild nehmen und z.b. Gras über die normale Bodenhöhe einzeichnen.
+
+Jetzt kommt der wichtigste Teil, Flugzeuge und Helfer. 
+Man kann theoretisch abzählbar unendlich viele Flugzeuge und Helfer erstellen, und zwar so:
+
+Jedes Flugzeug bekommt eine Nummer zugewiesen, und zwar bei 0 anfangend. AIRPLANE_nummer:
+Als Werte sind dann Flugzeugname, StartpositionX, StartPositionY, StartWinkel anzugeben
+Das sieht dann z.B. so aus:
+
+Wir möchten z.B. 2 Flugzeuge starten lassen, einen Bomber auf 100,100 und einen BOMBER_ANTHRAX 500,100. 
+Beide Flugzeuge sollen als Startwinkel 0 haben:
+AIRPLANE_0: BOMBER,100,100,0
+AIRPLANE_1: BOMBER_ANTHRAX,500,100,0
+
+Möchte man mehr Flugzeuge einbauen, einfach munter weiter durchnummerieren, nur hinterher auf die korrekte
+Durchnummerierung von 0,1,2,.....,n achten.
+
+Für Helfer gilt das gleiche System wie für Flugzeuge, nur das statt dem Keyword AIRPLANE HELPER benutzt wird, also z.B.
+HELPER_0: ALADIN,100,100,0
+
+MAX_AIRPLANES    
+Gibt die Anzahl der maximalen Flugzeuge an, die gleichzeitig auf dem Bildschirm fliegen. 0 bedeutet, dass alle 
+Flugzeuge auf einmal gestartet werden. Wird eine Zahl > 0 angegeben, wird bei AIRPLANE_0 angefangen und jeweils nur 
+MAX_AIRPLANES viele Flugzeuge gestartet. Wird ein Flugzeug abgeschossen, erscheint dann das nächste usw.
+
+Man kann jederzeit Buttons deaktivieren oder aktivieren. Genauso wie man Story Werte ändern kann
+BUTTON_HUMAN_DISABLED: 1
+BUTTON_HUMAN_HP_DISABLED: 0
+BUTTON_HUMAN_MONEY_DISABLED: 0
+BUTTON_ROCKET_DISABLED: 0
+BUTTON_ROCKET_SPEED_DISABLED: 0
+BUTTON_ROCKET_POWER_DISABLED: 0
+STORY_MAX_TIME: -1         // totale Zeitbegrenzung für die ganze Kampagne (in Sekunden)
+STORY_MAX_ROUNDTIME: -1    // Zeitbegrenzung für jede Runde
+STORY_MAX_ROCKETS: -1 	   // Wieviel Raketen darf der Spieler insgesamt abfeuern
+STORY_MAX_ROUNDROCKETS: -1 // Raketen pro Runde
+STORY_MAX_HUMAN: -1        // wieviel Menschen dürfen maximal sterben, dann können keine mehr gekauft werden
+STORY_MIN_MONEY: -1        // Wieviel Kohle muss man verdienen   
+
+ENDMASTER: 0     // Ist dieser Wert > -1, wird ein HP Balken angezeigt für die Flugzeugnummer mit diesem Wert angezeigt.
+                 // So zeigt z.b. ENDMASTER: 1   die HP von AIRPLANE_1 an
+______________________________________________
+3. BOMBE/RAKETE selber erstellen
+______________________________________________
+
+Wie erstelle ich eine eigene Bombe/Rakete???
+
+Als erstes öffnet man die Datei "bombs.txt".
+Jede Bombe hat einen Namen, ein Bild und gewisse Eigenschaften.
+Nun muss der Name der Bombe angegeben werden, und zwar in []. 
+Das sieht dann so aus [BOMBEN_NAME]. In den nächsten Zeilen werden dann die verschiedenen Parameter angegeben.
+Diese Bombe kann dann unter ihrem Namen später verwendet werden.
+Hier ein kleines Beispiel:
+
+[BOMB_0]
+IMAGE: bomb.png
+SCALE_X: 0.8
+SCALE_Y: 0.6
+HP: 10
+TP: 100
+SPEED: 0.7
+ROTATION_SPEED: 5
+EXPLOSION_TYP: 1
+EXPLOSION_POWER: 100
+EXPLOSION_RANGE: 2.0
+EXPLOSION_LIFETIME: 20
+EXPLOSION_BOMB: BOMB_0
+EXPLOSION_BOMBCOUNT: 1
+DRAW_SCHWEIF: 0.0
+CHECK_FOR_OUTOFSCREEN:0
+
+Hierbei sind folgende Parameter verfügbar:
+
+IMAGE: bomb.png           // Der Name des Bildes (Muss im Ordner gfx/BOMBS vorhanden sein)
+SCALE_X: 1.2              // Der Faktor um wieviel dieses Bild auf der X-Achse vergrößert/verkleinert wird
+SCALE_Y: 0.7              // Der Faktor um wieviel dieses Bild auf der Y-Achse vergrößert/verkleinert wird
+HP:  10    		  // Die Lebenspunkte des Objekts
+TP: 100                   // Wieviel Trefferpunkte vom Gegner abgezogen werden beim direkten Aufschlagen
+SPEED: 0.7                // Wie schnell die Bombe fliegt, annehmbare Werte sind von 0.3 - 10
+ROTATION_SPEED: 5         // Wie schnell die Bombe sich drehen kann
+EXPLOSION_TYP: 1          // ExplosionsTypen, 0 - keine Explosion, 1 - Standard Explosion, 2 - Anthrax Explosion,
+			  // 3 - AtomExplosion, 4 - Napalm
+EXPLOSION_POWER: 100      // Wieviel die Explosion/Wolke beim Gegner abzieht
+EXPLOSION_RANGE: 2.0      // Wie groß die Eplosions/Wolkenreichweite ist
+EXPLOSION_LIFETIME: 20    // Wie lange die Exlosion/Wolke existiert
+DRAW_SCHWEIF: 0.0         // Werte > 0 um einen Raketenschweif beliebiger Länge zu zeichnen
+EXPLOSION_BOMB: BOMB_0    // Eine Bombe kann beim Tod weitere Bomben erzeugen, welche steht hier       
+EXPLOSION_BOMBCOUNT: 0    // ... und wieviele, hier. Standard ist natürlich 0
+CHECK_FOR_OUTOFSCREEN:0	  // 0 bei fallender Bombe; 1, wenn als Rakete oder Patrone auch seitlich abgefeuert
+
+
+WICHTIG: Die Raketen des Spielers werden durch einen Eintrag namens [BOMB_PLAYER] definiert.
+
+
+
+______________________________________________
+4. Flugzeug/Helfer selber erstellen
+______________________________________________
+
+Wie erstelle ich ein eigenes Flugzeug???
+
+Als erstes öffnet man die Datei "airplanes.txt".
+Das Flugzeug hat einen Namen, ein Bild und gewisse Eigenschaften.
+Nun muss der Name des Flugzeuges angegeben werden, und zwar in []. 
+Das sieht dann so aus [FLUGZEUG_NAME]. In die nächsten Zeilen werden dann die verschiedenen Parameter angegeben.
+Das Flugzeug kann dann unter diesem Namen später verwendet werden.
+Es gibt keinen Unterschied zwischen Helfern und Gegnern, man kann also jedes Flugzeug als Feind oder Helfer benutzen.
+Hier ein kleines Beispiel:
+
+[BOMBER]
+HP: 500 
+SPEED: 4
+ROTATION_SPEED: 360
+BOMB_TYPS: 1
+BOMB_TYP_0: BOMB_0
+KI: BOMBERSIMPLE
+KI_PARAM_A:0     ' Start_y
+KI_PARAM_B:300   ' End_y
+KI_PARAM_C:300   ' Randfactor
+DRAWSTYLE: 0
+IMAGE: bomber.png
+SCALE_X: 0.5
+SCALE_Y: 0.5
+IS_STEALTHED: 0
+EXPLOSION_POWER: 100
+EXPLOSION_RANGE: 2.0
+EXPLOSION_LIFETIME: 20
+IS_BLOODY: 0
+CARRIER: 0
+
+Folgende Parameter sind verfügbar
+
+[BOMBER]
+HP: 500                      Lebenspunkte
+SPEED: 4                     Geschwindigkeit, mehr als 10 ist Hirngeschiss
+ROTATION_SPEED: 360          wie schnell sich das Flugzeug drehen kann
+BOMB_TYPS: 1                 Anzugeben ist die Anzahl der Waffen, die das Flugzeug besitzt.
+BOMB_TYP_0: BOMB_0           Für jede Waffe muss von 0 aufsteigend der Name der Bombe/Rakete angegeben werden.
+BOMB_TYP_1: BOMB_ANTHRAX     ...
+KI: BOMBERSIMPLE             Name der KI, Auflistung aller KIs weiter unten, wie soll das Flugzeug fliegen
+KI_PARAM_A:0                 Erster Parameter der KI 
+KI_PARAM_B:300               Zweiter Parameter der KI
+KI_PARAM_C:300               Dritter Parameter der KI
+DRAWSTYLE: 0                 0 - Bomber Style, Flugzeug zeigt nur nach rechts oder links,
+			     1 - Fighter Style, richtige Rotation, 2 - Heli, Nase geneigt
+IMAGE: bomber.png            Bildname, muss sich im Ordner gfx/ befinden
+SCALE_X: 0.5                 Der Faktor um wieviel dieses Bild auf der X-Achse vergrößert/verkleinert wird
+SCALE_Y: 0.5                 Der Faktor um wieviel dieses Bild auf der Y-Achse vergrößert/verkleinert wird
+IS_STEALTHED: 50             Gibt an ob es sich um einen Tarnflugzeug handelt ( > 0), das für eine Zeit 
+			     (hier 50) unsichtbar wird
+EXPLOSION_TYP: 1             ExplosionsTypen, 0 - keine Explosion, 1 - Standard Explosion,
+			     2 - Anthrax Explosion, 3 - AtomExplosion, 4 - Napalm
+EXPLOSION_POWER: 100         Wieviel die Explosion/Wolke beim Gegner abzieht
+EXPLOSION_RANGE: 2.0         Wie gross die Eplosions/Wolkenreichweite ist
+EXPLOSION_LIFETIME: 20       Wie lange die Exlosion/Wolke existiert
+IS_BLOODY: 0                 Blutet der Flieger (=1) oder ist er aus Metal (=0)
+CARRIER: 0                   Schiesst der Flieger Bomben (=0) oder Flugzeuge (=1)
+SCREAM: snd/test.ogg         Bei jedem Treffer kann ein Sound abgespielt werden
+LAST_SCREAM: snd/test.ogg    Bei Tod wird dieser Sound abgespielt
+
+
+
+______________________________________________
+5. KIs        Vorhandene
+______________________________________________
+
+Flugzeuge fliegen nach einem bestimmten Muster. Dieses Muster wird durch die KI bestimmt. Hier einige einfache KIs. 
+In der jetzigen Version lassen sich noch keine eigenen KIs erstellen. Das kommt vielleicht später...
+Die Flugzeuge fliegen dabei immer Wegpunkte ab.
+
+
+Erstmal einige Standardparameter: 
+	START_Y,ENDE_Y gibt den Pixel Bereich an, in dem Wegpunkte erzeugt werden, z.B. 400,500
+	RANDFACTOR gibt einen Zufallswert an, nach dem geschossen wird. Bei 400 wird z.B. in 1 von 400 Fällen geschossen,
+	bei 200 in 1 von 200 Fällen.
+
+
+FIGHTERSIMPLE: 
+	Einfache Ki für Kampfflugzeuge, fliegen wirr auf dem Bildschirm rum und schiessen ab und zu die Primärwaffe auf den
+	Boden.
+	Parameter: A Start_y, B Ende_y, C Randfactor
+	Waffenanzahl: 1
+BOMBERSIMPLE:
+	Einfache Ki für Kampfbomber, fliegt von links nach rechts und wieder zurück und wechselt nur die Höhe ausserhalb
+	des Schirms.
+	Parameter: A Start_y, B Ende_y, C Randfactor
+	Waffenanzahl: 1
+BOMBERRANDOM:
+	Ki für Kampfbomber, fliegt von links nach rechts und wieder zurück und wechselt dabei 3x die Höhe zwischen
+	Start und Ende.
+	Parameter: A Start_y, B Ende_y, C Randfactor
+	Waffenanzahl: 1
+KIBOMBERHARD
+	Ki für Teppichbomber, schmeisst 5 Bomben verteilt
+	Parameter: A Start_y, B Ende_y, C Randfactor
+	Waffenanzahl: 1
+KIHELISIMPLE
+	Ki für einfache Helikopter, fliegt von links nach rechts und zurück, wird wohl noch geändert.
+	Parameter: A Start_y, B Ende_y, C Randfactor
+	Waffenanzahl: 1
+KIHELIAPACHE
+	Ki für Sturmangriff der Helikopter, startet am Bildschirmrad relativ weit oben, sinkt hinab zum Angriff und
+	steigt wieder auf zur anderen Seite.
+	Parameter: A Start_y, B Ende_y, C Randfactor
+	Waffenanzahl: 1
+KIFIGHTERLIZZARD
+	Ki für Sturmangriff eines Fighters, startet weit oben, stürzt sich herab und feuert dabei mit MG,
+	kurz vor der Wende werden 3Raketen abgeschossen.
+	Parameter: A Start_y, B Ende_y, C Randfactor
+	Waffenanzahl: 2	
+KICARRIER
+	Ki für Carrier
+	Parameter: A Start_y, B Ende_y, C Randfactor
+	Waffenanzahl: 1
+KIPARACHUTE
+	Ki für Parachute Bombs
+	Parameter: A Start_x, B Ende_x, C nicht belegt
+	Waffenanzahl: 0
+
+Zusätzlich gibt es noch die KIs für die Bosse:
+	BARON,	VOGEL,	RICE,	BUSH
+Die kann man sich beim Spiel und deren Definition in den ensprechenden airplanes.txt ansehen.
+
+
+													VIEL SPAß UND ERFOLG!!!

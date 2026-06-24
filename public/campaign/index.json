@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "campaignName": "Antiwar",
+  "mapImage": "assets/gfx/map.png",
+  "levels": [
+    {
+      "file": "1.json",
+      "name": "Training",
+      "mapX": 188,
+      "mapY": 225,
+      "pathType": 0
+    },
+    {
+      "file": "2.json",
+      "name": "Sector One",
+      "mapX": 600,
+      "mapY": 225,
+      "pathType": 1
+    },
+    {
+      "file": "3.json",
+      "name": "Boss One",
+      "mapX": 990,
+      "mapY": 225,
+      "pathType": 2
+    },
+    {
+      "file": "4.json",
+      "name": "Overlord",
+      "mapX": 1388,
+      "mapY": 225,
+      "pathType": 3
+    },
+    {
+      "file": "5.json",
+      "name": "Sector Two",
+      "mapX": 1706,
+      "mapY": 361,
+      "pathType": 1
+    },
+    {
+      "file": "6.json",
+      "name": "Boss Two",
+      "mapX": 1706,
+      "mapY": 577,
+      "pathType": 2
+    },
+    {
+      "file": "7.json",
+      "name": "Fish",
+      "mapX": 1706,
+      "mapY": 785,
+      "pathType": 3
+    },
+    {
+      "file": "8.json",
+      "name": "XR",
+      "mapX": 1388,
+      "mapY": 942,
+      "pathType": 1
+    },
+    {
+      "file": "9.json",
+      "name": "Boss Three",
+      "mapX": 990,
+      "mapY": 942,
+      "pathType": 2
+    },
+    {
+      "file": "10.json",
+      "name": "Viech Chronicles",
+      "mapX": 600,
+      "mapY": 942,
+      "pathType": 3
+    },
+    {
+      "file": "11.json",
+      "name": "Nuke",
+      "mapX": 178,
+      "mapY": 844,
+      "pathType": 1
+    },
+    {
+      "file": "12.json",
+      "name": "Boss Four",
+      "mapX": 990,
+      "mapY": 582,
+      "pathType": 2
+    }
+  ]
+}

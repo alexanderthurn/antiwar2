@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 1,
+  "id": 6,
+  "meta": {
+    "name": "Boss Two",
+    "author": "Mangoo",
+    "description": "Strange biologic mutation tries to stop us. Do you recognize it?",
+    "thumbnail": "assets/gfx/thumbs/whitehouse.png"
+  },
+  "config": {
+    "startMoney": 3500,
+    "startHumans": 3,
+    "startRockets": 5,
+    "startHumanHp": 100,
+    "startHumanMoney": 0,
+    "startRocketPower": 50,
+    "startRocketSpeed": 5,
+    "startAimTime": 1000,
+    "aimPower": 2,
+    "maxHumans": 100,
+    "maxRockets": 100,
+    "humanHpRefresh": 1,
+    "moneyFactor": 1,
+    "crashingRockets": 2,
+    "buttonsDisabled": {
+      "human": false,
+      "humanHp": false,
+      "humanMoney": true,
+      "rocket": false,
+      "rocketSpeed": false,
+      "rocketPower": false,
+      "aim": false
+    },
+    "upgrades": {
+      "human": {
+        "price": 25,
+        "priceFactor": 1,
+        "statFactor": null
+      },
+      "humanHp": {
+        "price": 50,
+        "priceFactor": 1,
+        "statFactor": 1.3
+      },
+      "humanMoney": {
+        "price": 100,
+        "priceFactor": 1,
+        "statFactor": 1.15
+      },
+      "rocket": {
+        "price": 200,
+        "priceFactor": 1,
+        "statFactor": null
+      },
+      "rocketSpeed": {
+        "price": 100,
+        "priceFactor": 1,
+        "statFactor": 1.1
+      },
+      "rocketPower": {
+        "price": 100,
+        "priceFactor": 1,
+        "statFactor": 1.1
+      },
+      "aim": {
+        "price": 100,
+        "priceFactor": 1,
+        "statFactor": 0.9
+      }
+    },
+    "assets": {
+      "tower": "assets/gfx/tower.png",
+      "cannon": "assets/gfx/cannon.png",
+      "crosshair": "assets/gfx/crosshair1.png",
+      "human": "assets/gfx/human.png",
+      "ground": "assets/gfx/backgrounds/ground2.png",
+      "background": "assets/gfx/backgrounds/whitehouse.jpg"
+    },
+    "sounds": {
+      "music": "boss.ogg"
+    }
+  },
+  "bombs": {
+    "BOMB_PLAYER": {
+      "image": "assets/gfx/BOMBS/player_rocket.png",
+      "scale": [
+        0.5,
+        0.5
+      ],
+      "hp": 10,
+      "damage": 100,
+      "speed": 2,
+      "rotationSpeed": 20,
+      "explosion": {
+        "type": 1,
+        "power": 0,
+        "range": 1,
+        "lifetime": 20
+      },
+      "trail": 1,
+      "checkOutOfScreen": true
+    },
+    "BOMB_EI": {
+      "image": "assets/gfx/BOMBS/ei.png",
+      "scale": [
+        0.6,
+        0.6
+      ],
+      "hp": 1,
+      "damage": 90,
+      "speed": 2,
+      "rotationSpeed": 360,
+      "explosion": {
+        "type": 1,
+        "power": 200,
+        "range": 4,
+        "lifetime": 20
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_EI_ANTHRAX": {
+      "image": "assets/gfx/BOMBS/ei_anthrax.png",
+      "scale": [
+        0.5,
+        0.5
+      ],
+      "hp": 1,
+      "damage": 0,
+      "speed": 4,
+      "rotationSpeed": 360,
+      "explosion": {
+        "type": 2,
+        "power": 2,
+        "range": 4,
+        "lifetime": 40
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    }
+  },
+  "airplanes": {
+    "ENDMASTER_VOGEL": {
+      "hp": 30000,
+      "speed": 4,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_EI",
+        "BOMB_EI_ANTHRAX"
+      ],
+      "ai": "VOGEL",
+      "aiParams": [
+        0,
+        422,
+        50
+      ],
+      "drawStyle": 1,
+      "image": "assets/gfx/AIRPLANES/endmaster_vogel.png",
+      "scale": [
+        1,
+        1
+      ],
+      "scream": "scream1.ogg"
+    }
+  },
+  "rounds": [
+    {
+      "name": "TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": []
+    },
+    {
+      "name": "TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": 0,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "ENDMASTER_VOGEL",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        }
+      ],
+      "intro": {
+        "text": "You are dead",
+        "image": "assets/gfx/AIRPLANES/endmaster_vogel.png",
+        "time": 300,
+        "sound": "yeahbaby.ogg"
+      },
+      "winSound": "winner.ogg"
+    }
+  ]
+}

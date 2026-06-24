@@ -1,0 +1,12 @@
+NICK: player
+FULLSCREEN: ON
+Music: ON
+Sound: ON
+Voice: STANDARD
+HPDisplay: NORMAL
+Autofire: NORMAL
+Particles: NORMAL
+Crosshair: 1
+Host: www.feuerware.com
+Script: /antiwar/highscore.php
+HCMode: OFF

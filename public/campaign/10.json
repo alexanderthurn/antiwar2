@@ -1,0 +1,2440 @@
+{
+  "schemaVersion": 1,
+  "id": 10,
+  "meta": {
+    "name": "Viech Chronicles",
+    "author": "Feuerware",
+    "description": "These are the Chronicles of the Viech. The greatest warrior of our time!",
+    "thumbnail": "assets/gfx/thumbs/viech.png"
+  },
+  "config": {
+    "startMoney": 10000,
+    "startHumans": 5,
+    "startRockets": 8,
+    "startHumanHp": 100,
+    "startHumanMoney": 1000,
+    "startRocketPower": 100,
+    "startRocketSpeed": 5,
+    "startAimTime": 1000,
+    "aimPower": 3,
+    "maxHumans": 10,
+    "maxRockets": 15,
+    "humanHpRefresh": 0.2,
+    "moneyFactor": 1,
+    "crashingRockets": 2,
+    "buttonsDisabled": {
+      "human": false,
+      "humanHp": false,
+      "humanMoney": false,
+      "rocket": false,
+      "rocketSpeed": false,
+      "rocketPower": false,
+      "aim": false
+    },
+    "upgrades": {
+      "human": {
+        "price": 1200,
+        "priceFactor": 1,
+        "statFactor": null
+      },
+      "humanHp": {
+        "price": 1000,
+        "priceFactor": 1.4,
+        "statFactor": 1.1
+      },
+      "humanMoney": {
+        "price": 1000,
+        "priceFactor": 1.2,
+        "statFactor": 1.2
+      },
+      "rocket": {
+        "price": 1500,
+        "priceFactor": 2,
+        "statFactor": null
+      },
+      "rocketSpeed": {
+        "price": 2000,
+        "priceFactor": 1.9,
+        "statFactor": 1.15
+      },
+      "rocketPower": {
+        "price": 2000,
+        "priceFactor": 1.65,
+        "statFactor": 1.05
+      },
+      "aim": {
+        "price": 3000,
+        "priceFactor": 1.65,
+        "statFactor": 0.9
+      }
+    },
+    "assets": {
+      "tower": "assets/gfx/tower.png",
+      "cannon": "assets/gfx/cannon.png",
+      "crosshair": "assets/gfx/crosshair1.png",
+      "human": "assets/gfx/human.png",
+      "ground": "assets/gfx/backgrounds/ground.png",
+      "background": "assets/gfx/backgrounds/viech.png"
+    }
+  },
+  "bombs": {
+    "BOMB_0": {
+      "image": "assets/gfx/BOMBS/bomb.png",
+      "scale": [
+        0.8,
+        0.6
+      ],
+      "hp": 10,
+      "damage": 100,
+      "speed": 0.7,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 100,
+        "range": 2,
+        "lifetime": 20
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "ROCKET_0": {
+      "image": "assets/gfx/BOMBS/bomb.png",
+      "scale": [
+        0.5,
+        0.1
+      ],
+      "hp": 1,
+      "damage": 30,
+      "speed": 5,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 20,
+        "range": 3,
+        "lifetime": 20
+      },
+      "trail": 1,
+      "checkOutOfScreen": false
+    },
+    "ROCKET_1": {
+      "image": "assets/gfx/BOMBS/bomb.png",
+      "scale": [
+        0.5,
+        0.1
+      ],
+      "hp": 1,
+      "damage": 20,
+      "speed": 5,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 2,
+        "range": 2,
+        "lifetime": 20
+      },
+      "trail": 1,
+      "checkOutOfScreen": false
+    },
+    "BOMB_BIG": {
+      "image": "assets/gfx/BOMBS/bomb_big.png",
+      "scale": [
+        0.7,
+        0.7
+      ],
+      "hp": 1000,
+      "damage": 200,
+      "speed": 0.5,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 200,
+        "range": 5,
+        "lifetime": 40
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_ANTHRAX": {
+      "image": "assets/gfx/BOMBS/bomb_anthrax.png",
+      "scale": [
+        0.5,
+        1.5
+      ],
+      "hp": 1,
+      "damage": 2,
+      "speed": 0.8,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 2,
+        "power": 2,
+        "range": 4,
+        "lifetime": 250
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_MG": {
+      "image": "assets/gfx/BOMBS/bomb_mg.png",
+      "scale": [
+        1,
+        1.5
+      ],
+      "hp": 1,
+      "damage": 10,
+      "speed": 12,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 0,
+        "power": 0,
+        "range": 0,
+        "lifetime": 0
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_MG2": {
+      "image": "assets/gfx/BOMBS/bomb_mg.png",
+      "scale": [
+        1,
+        1.5
+      ],
+      "hp": 1,
+      "damage": 5,
+      "speed": 12,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 0,
+        "power": 0,
+        "range": 0,
+        "lifetime": 0
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_NAPALM": {
+      "image": "assets/gfx/BOMBS/bomb_napalm.png",
+      "scale": [
+        0.5,
+        1.5
+      ],
+      "hp": 1,
+      "damage": 0,
+      "speed": 0.8,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 4,
+        "power": 5,
+        "range": 1,
+        "lifetime": 50
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_NUKE": {
+      "image": "assets/gfx/BOMBS/bomb_nuke.png",
+      "scale": [
+        0.5,
+        1.5
+      ],
+      "hp": 10,
+      "damage": 200,
+      "speed": 0.8,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 3,
+        "power": 200,
+        "range": 2.5,
+        "lifetime": 100
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_PLAYER": {
+      "image": "assets/gfx/BOMBS/player_rocket.png",
+      "scale": [
+        0.5,
+        0.2
+      ],
+      "hp": 10,
+      "damage": 100,
+      "speed": 2,
+      "rotationSpeed": 40,
+      "explosion": {
+        "type": 1,
+        "power": 2,
+        "range": 1,
+        "lifetime": 20
+      },
+      "trail": 1,
+      "checkOutOfScreen": true
+    }
+  },
+  "airplanes": {
+    "VIECH": {
+      "hp": 500,
+      "speed": 4,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_0"
+      ],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        0,
+        422,
+        300
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/vc_1.png",
+      "scale": [
+        0.6,
+        0.6
+      ],
+      "scream": "oerks.ogg"
+    },
+    "FRED": {
+      "hp": 500,
+      "speed": 4,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_0"
+      ],
+      "ai": "HELISIMPLE",
+      "aiParams": [
+        281,
+        563,
+        300
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/fred_1.png",
+      "scale": [
+        0.5,
+        0.5
+      ],
+      "scream": "oe.ogg"
+    },
+    "NUKE_VIECH": {
+      "hp": 1000,
+      "speed": 4,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_NUKE"
+      ],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        0,
+        422,
+        300
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/vc_nuke.png",
+      "scale": [
+        0.6,
+        0.6
+      ],
+      "scream": "oerks.ogg"
+    },
+    "STEALTH_VIECH": {
+      "hp": 2000,
+      "speed": 4,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_0"
+      ],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        0,
+        422,
+        150
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/vc_camo.png",
+      "scale": [
+        0.6,
+        0.6
+      ],
+      "stealthTicks": 4,
+      "scream": "oerks.ogg"
+    },
+    "JET_VIECH": {
+      "hp": 300,
+      "speed": 6,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_MG2"
+      ],
+      "ai": "FIGHTERSIMPLE",
+      "aiParams": [
+        0,
+        422,
+        5
+      ],
+      "drawStyle": 1,
+      "image": "assets/gfx/AIRPLANES/vc_jet.png",
+      "scale": [
+        0.3,
+        0.3
+      ],
+      "scream": "oerks.ogg"
+    },
+    "H_VIECH": {
+      "hp": 75000,
+      "speed": 2,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_BIG"
+      ],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        422,
+        422,
+        200
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/vc_zep.png",
+      "scale": [
+        1.2,
+        1.2
+      ],
+      "scream": "oerks.ogg"
+    }
+  },
+  "rounds": [
+    {
+      "name": "LEVEL1",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 6,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": -187,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": -375,
+          "y": 633,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": -225,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": -750,
+          "y": 844,
+          "angle": 0
+        }
+      ],
+      "intro": {
+        "text": "Viech Attacks!",
+        "image": "assets/gfx/viech/viech_lvl1.png",
+        "time": 300,
+        "sound": "oerks.ogg"
+      }
+    },
+    {
+      "name": "LEVEL2",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 14,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": -187,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": -375,
+          "y": 773,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": -937,
+          "y": 872,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": -187,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": -750,
+          "y": 633,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2531,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2813,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 3000,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2063,
+          "y": 914,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2625,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2438,
+          "y": 773,
+          "angle": 0
+        }
+      ],
+      "intro": {
+        "text": "Here comes Fred",
+        "image": "assets/gfx/viech/viech_lvl2.png",
+        "time": 300,
+        "sound": "oe.ogg"
+      }
+    },
+    {
+      "name": "LEVEL3",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 14,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": -300,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": -244,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": 2063,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": 2250,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": 2625,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": 2344,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2063,
+          "y": 914,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2625,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2438,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": -375,
+          "y": 914,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": -937,
+          "y": 773,
+          "angle": 0
+        }
+      ],
+      "intro": {
+        "text": "Nuclear Winter",
+        "image": "assets/gfx/viech/viech_lvl3.png",
+        "time": 300,
+        "sound": "oerks.ogg"
+      }
+    },
+    {
+      "name": "LEVEL4",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 20,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -750,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -750,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2063,
+          "y": 773,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2250,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2625,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2344,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2344,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -750,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2063,
+          "y": 773,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2250,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2625,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2531,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2344,
+          "y": 914,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -750,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -750,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2063,
+          "y": 773,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2250,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2625,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2344,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2344,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -750,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2063,
+          "y": 773,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2250,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2625,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2531,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2344,
+          "y": 914,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        }
+      ],
+      "intro": {
+        "text": "No Blood for Oe",
+        "image": "assets/gfx/viech/viech_lvl4.png",
+        "time": 300,
+        "sound": "pay.ogg"
+      }
+    },
+    {
+      "name": "LEVEL5",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 40,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -187,
+          "y": 914,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -375,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -187,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 2063,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 2250,
+          "y": 633,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 3750,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 2438,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 2813,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -2250,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -2625,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -4687,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -6187,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -3937,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 5625,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 6563,
+          "y": 914,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 6000,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 7500,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 10313,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -6000,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -8250,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -8437,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -9937,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -9562,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 7500,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 10313,
+          "y": 914,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 9750,
+          "y": 773,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 11250,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 12188,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -9750,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -10125,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -10312,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -11812,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": -13312,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 9375,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 12188,
+          "y": 914,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 11625,
+          "y": 773,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 13125,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "STEALTH_VIECH",
+          "x": 14063,
+          "y": 703,
+          "angle": 0
+        }
+      ],
+      "intro": {
+        "text": "Hidden and dangerous",
+        "image": "assets/gfx/viech/viech_lvl5.png",
+        "time": 300,
+        "sound": "gong.ogg"
+      }
+    },
+    {
+      "name": "LEVEL6",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 24,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "H_VIECH",
+          "x": -469,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": -187,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": -750,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -750,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2063,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2250,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2625,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2344,
+          "y": 773,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2531,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -750,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2813,
+          "y": 1055,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 3000,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2063,
+          "y": 914,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2625,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2438,
+          "y": 773,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": -244,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": 2063,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": 2250,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": 2625,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 3000,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2063,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2625,
+          "y": 914,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2438,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": -469,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": -937,
+          "y": 633,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": -750,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": -562,
+          "y": 773,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2250,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2625,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2344,
+          "y": 942,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2531,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2531,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 4125,
+          "y": 773,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 4500,
+          "y": 914,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": -2812,
+          "y": 619,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": -2625,
+          "y": 900,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": -2437,
+          "y": 816,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": -3000,
+          "y": 731,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2813,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 3000,
+          "y": 914,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2063,
+          "y": 949,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2625,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2438,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2063,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2250,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2625,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2344,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2344,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -750,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": -244,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": 2063,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": 2250,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": 2625,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2063,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2250,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2625,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2344,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2344,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -750,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": -244,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": 2063,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": 2250,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "NUKE_VIECH",
+          "x": 2625,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2063,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2250,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2625,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2344,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "VIECH",
+          "x": 2344,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -375,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -937,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -562,
+          "y": 703,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -187,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "JET_VIECH",
+          "x": -750,
+          "y": 984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": -3000,
+          "y": 731,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2813,
+          "y": 844,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 3000,
+          "y": 914,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2063,
+          "y": 949,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FRED",
+          "x": 2625,
+          "y": 984,
+          "angle": 0
+        }
+      ],
+      "intro": {
+        "text": "Survive this!",
+        "image": "assets/gfx/viech/viech_lvl6.png",
+        "time": 300,
+        "sound": "oerks.ogg"
+      }
+    }
+  ]
+}

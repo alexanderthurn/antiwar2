@@ -1,0 +1,12 @@
+level_0:tutorial,100,160,0
+level_1:mangoo_easy,320,160,1
+level_2:boss1,528,160,2
+level_3:overlord,740,160,3
+level_4:mangoo2,910,257,1
+level_5:boss2,910,410,2
+level_6:fish,910,558,3
+level_7:xr,740,670,1
+level_8:boss3,528,670,2
+level_9:Viech Chronicles,320,670,3
+level_10:Nuke,95,600,1
+level_11:boss4,528,414,2

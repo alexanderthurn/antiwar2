@@ -1,0 +1,2039 @@
+{
+  "schemaVersion": 1,
+  "id": 2,
+  "meta": {
+    "name": "Sector One",
+    "author": "Mangoo",
+    "description": "Welcome to first Level  I hope you will have some fun  If you lock an enemy, you fire guided and stronger missiles, try it.",
+    "thumbnail": "assets/gfx/thumbs/mangoo.png"
+  },
+  "config": {
+    "startMoney": 1000,
+    "startHumans": 10,
+    "startRockets": 5,
+    "startHumanHp": 300,
+    "startHumanMoney": 200,
+    "startRocketPower": 70,
+    "startRocketSpeed": 7,
+    "startAimTime": 500,
+    "aimPower": 3,
+    "maxHumans": 10,
+    "maxRockets": 10,
+    "humanHpRefresh": 1,
+    "moneyFactor": 1,
+    "crashingRockets": 2,
+    "buttonsDisabled": {
+      "human": false,
+      "humanHp": false,
+      "humanMoney": false,
+      "rocket": false,
+      "rocketSpeed": false,
+      "rocketPower": false,
+      "aim": false
+    },
+    "upgrades": {
+      "human": {
+        "price": 150,
+        "priceFactor": 1,
+        "statFactor": null
+      },
+      "humanHp": {
+        "price": 50,
+        "priceFactor": 1.5,
+        "statFactor": 1.1
+      },
+      "humanMoney": {
+        "price": 100,
+        "priceFactor": 1.3,
+        "statFactor": 1.15
+      },
+      "rocket": {
+        "price": 100,
+        "priceFactor": 3,
+        "statFactor": null
+      },
+      "rocketSpeed": {
+        "price": 150,
+        "priceFactor": 1.5,
+        "statFactor": 1.1
+      },
+      "rocketPower": {
+        "price": 90,
+        "priceFactor": 1.5,
+        "statFactor": 1.2
+      },
+      "aim": {
+        "price": 50,
+        "priceFactor": 1.5,
+        "statFactor": 0.9
+      }
+    },
+    "assets": {
+      "tower": "assets/gfx/tower.png",
+      "cannon": "assets/gfx/cannon.png",
+      "crosshair": "assets/gfx/crosshair1.png",
+      "human": "assets/gfx/human.png",
+      "ground": "assets/gfx/backgrounds/ground.png",
+      "background": "assets/gfx/backgrounds/ai_mangoo.jpg"
+    }
+  },
+  "bombs": {
+    "BOMB_0": {
+      "image": "assets/gfx/BOMBS/bomb.png",
+      "scale": [
+        0.8,
+        0.6
+      ],
+      "hp": 10,
+      "damage": 100,
+      "speed": 0.7,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 100,
+        "range": 2,
+        "lifetime": 20
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_1": {
+      "image": "assets/gfx/BOMBS/bomb.png",
+      "scale": [
+        0.8,
+        1.6
+      ],
+      "hp": 100,
+      "damage": 500,
+      "speed": 1.3,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 100,
+        "range": 3,
+        "lifetime": 20
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_SPLITTER": {
+      "image": "assets/gfx/BOMBS/bomb.png",
+      "scale": [
+        0.8,
+        0.6
+      ],
+      "hp": 1,
+      "damage": 0,
+      "speed": 0.7,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 0,
+        "range": 0,
+        "lifetime": 0
+      },
+      "trail": 0,
+      "checkOutOfScreen": false,
+      "onDeath": {
+        "bomb": "ROCKET_0",
+        "count": 30
+      }
+    },
+    "BOMB_SPECIAL": {
+      "image": "assets/gfx/BOMBS/bomb_special.png",
+      "scale": [
+        1,
+        1
+      ],
+      "hp": 10,
+      "damage": 10,
+      "speed": 8,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 5,
+        "range": 3,
+        "lifetime": 30
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "ROCKET_0": {
+      "image": "assets/gfx/BOMBS/bomb.png",
+      "scale": [
+        0.5,
+        0.1
+      ],
+      "hp": 1,
+      "damage": 30,
+      "speed": 5,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 20,
+        "range": 3,
+        "lifetime": 20
+      },
+      "trail": 1,
+      "checkOutOfScreen": true
+    },
+    "ROCKET_1": {
+      "image": "assets/gfx/BOMBS/bomb.png",
+      "scale": [
+        0.5,
+        0.1
+      ],
+      "hp": 1,
+      "damage": 20,
+      "speed": 5,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 2,
+        "range": 2,
+        "lifetime": 20
+      },
+      "trail": 1,
+      "checkOutOfScreen": true
+    },
+    "BOMB_BIG": {
+      "image": "assets/gfx/BOMBS/bomb_big.png",
+      "scale": [
+        0.7,
+        0.7
+      ],
+      "hp": 200,
+      "damage": 200,
+      "speed": 0.5,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 200,
+        "range": 5,
+        "lifetime": 40
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_BIG2": {
+      "image": "assets/gfx/BOMBS/bomb_big.png",
+      "scale": [
+        0.7,
+        0.7
+      ],
+      "hp": 200,
+      "damage": 1000,
+      "speed": 1.5,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 200,
+        "range": 5,
+        "lifetime": 40
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_ANTHRAX": {
+      "image": "assets/gfx/BOMBS/bomb_anthrax.png",
+      "scale": [
+        0.5,
+        1.5
+      ],
+      "hp": 1,
+      "damage": 2,
+      "speed": 0.8,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 2,
+        "power": 50,
+        "range": 4,
+        "lifetime": 250
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_BIGANTHRAX": {
+      "image": "assets/gfx/BOMBS/bomb_anthrax.png",
+      "scale": [
+        2.5,
+        1.5
+      ],
+      "hp": 200,
+      "damage": 2,
+      "speed": 2,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 2,
+        "power": 2,
+        "range": 5,
+        "lifetime": 250
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_MG": {
+      "image": "assets/gfx/BOMBS/bomb_mg.png",
+      "scale": [
+        1,
+        1.5
+      ],
+      "hp": 1,
+      "damage": 10,
+      "speed": 12,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 0,
+        "power": 0,
+        "range": 0,
+        "lifetime": 0
+      },
+      "trail": 0,
+      "checkOutOfScreen": true
+    },
+    "BOMB_NAPALM": {
+      "image": "assets/gfx/BOMBS/bomb_napalm.png",
+      "scale": [
+        0.5,
+        1.5
+      ],
+      "hp": 1,
+      "damage": 100,
+      "speed": 0.8,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 4,
+        "power": 100,
+        "range": 1,
+        "lifetime": 50
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_NUKE": {
+      "image": "assets/gfx/BOMBS/bomb_nuke.png",
+      "scale": [
+        0.5,
+        1.5
+      ],
+      "hp": 1,
+      "damage": 3000,
+      "speed": 0.8,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 3,
+        "power": 30,
+        "range": 4,
+        "lifetime": 100
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_PLAYER": {
+      "image": "assets/gfx/BOMBS/player_rocket.png",
+      "scale": [
+        0.5,
+        0.5
+      ],
+      "hp": 10,
+      "damage": 100,
+      "speed": 2,
+      "rotationSpeed": 20,
+      "explosion": {
+        "type": 1,
+        "power": 0,
+        "range": 1,
+        "lifetime": 20
+      },
+      "trail": 1,
+      "checkOutOfScreen": true
+    },
+    "BOMB_EI": {
+      "image": "assets/gfx/BOMBS/ei.png",
+      "scale": [
+        0.6,
+        0.6
+      ],
+      "hp": 10,
+      "damage": 100,
+      "speed": 2,
+      "rotationSpeed": 360,
+      "explosion": {
+        "type": 1,
+        "power": 200,
+        "range": 4,
+        "lifetime": 20
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_EI_ANTHRAX": {
+      "image": "assets/gfx/BOMBS/ei_anthrax.png",
+      "scale": [
+        0.5,
+        0.5
+      ],
+      "hp": 10,
+      "damage": 100,
+      "speed": 4,
+      "rotationSpeed": 360,
+      "explosion": {
+        "type": 2,
+        "power": 20,
+        "range": 5,
+        "lifetime": 40
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_OLD": {
+      "image": "assets/gfx/BOMBS/bomb_old.png",
+      "scale": [
+        1,
+        1
+      ],
+      "hp": 10,
+      "damage": 100,
+      "speed": 0.7,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 300,
+        "range": 3,
+        "lifetime": 20
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "ROCKET_COLA": {
+      "image": "assets/gfx/BOMBS/rocket_cola.png",
+      "scale": [
+        1,
+        1
+      ],
+      "hp": 1,
+      "damage": 20,
+      "speed": 5,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 100,
+        "range": 2,
+        "lifetime": 20
+      },
+      "trail": 1,
+      "checkOutOfScreen": true
+    },
+    "QUANTUM_TORPEDO": {
+      "image": "assets/gfx/BOMBS/quantum.png",
+      "scale": [
+        0.5,
+        0.5
+      ],
+      "hp": 1,
+      "damage": 20,
+      "speed": 5,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 0,
+        "range": 2,
+        "lifetime": 20
+      },
+      "trail": 0,
+      "checkOutOfScreen": true
+    },
+    "PHASER": {
+      "image": "assets/gfx/BOMBS/phaser.png",
+      "scale": [
+        0.4,
+        0.4
+      ],
+      "hp": 1,
+      "damage": 10,
+      "speed": 6,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 0,
+        "power": 0,
+        "range": 0,
+        "lifetime": 0
+      },
+      "trail": 0,
+      "checkOutOfScreen": true
+    },
+    "MG_BUSH": {
+      "image": "assets/gfx/BOMBS/bomb_mg.png",
+      "scale": [
+        2,
+        4
+      ],
+      "hp": 1,
+      "damage": 10,
+      "speed": 3,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 10,
+        "range": 3,
+        "lifetime": 30
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    }
+  },
+  "airplanes": {
+    "BOMBER": {
+      "hp": 150,
+      "speed": 4,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_0"
+      ],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        0,
+        422,
+        300
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/bomber.png",
+      "scale": [
+        0.5,
+        0.5
+      ]
+    },
+    "BOMBER_BETTER": {
+      "hp": 2000,
+      "speed": 2,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_0"
+      ],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        0,
+        422,
+        200
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/bomber.png",
+      "scale": [
+        0.9,
+        0.9
+      ]
+    },
+    "BOMBER_ANTHRAX": {
+      "hp": 1500,
+      "speed": 3,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_ANTHRAX"
+      ],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        70,
+        141,
+        150
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/bomber_anthrax.png",
+      "scale": [
+        1,
+        1
+      ]
+    },
+    "BOMBER_HARD": {
+      "hp": 5000,
+      "speed": 2,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_0"
+      ],
+      "ai": "BOMBERHARD",
+      "aiParams": [
+        422,
+        422,
+        400
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/bomber_hard.png",
+      "scale": [
+        1,
+        1
+      ]
+    },
+    "BOMBER_BIG": {
+      "hp": 4000,
+      "speed": 1,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_BIG"
+      ],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        0,
+        422,
+        200
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/bomber_big.png",
+      "scale": [
+        1,
+        1
+      ]
+    },
+    "BOMBER_BIG2": {
+      "hp": 10000,
+      "speed": 5,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_BIG2"
+      ],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        0,
+        422,
+        80
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/bomber_big.png",
+      "scale": [
+        0.5,
+        0.5
+      ]
+    },
+    "BOMBER_STEALTH": {
+      "hp": 7000,
+      "speed": 3,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_0"
+      ],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        0,
+        422,
+        200
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/bomber_stealth.png",
+      "scale": [
+        0.3,
+        0.3
+      ],
+      "stealthTicks": 4
+    },
+    "BOMBER_STEALTH2": {
+      "hp": 100000,
+      "speed": 6,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_1"
+      ],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        0,
+        422,
+        50
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/bomber_stealth.png",
+      "scale": [
+        0.5,
+        0.5
+      ],
+      "stealthTicks": 4
+    },
+    "FIGHTER_JET": {
+      "hp": 1000,
+      "speed": 5,
+      "rotationSpeed": 10,
+      "weapons": [
+        "ROCKET_0"
+      ],
+      "ai": "FIGHTERSIMPLE",
+      "aiParams": [
+        0,
+        422,
+        50
+      ],
+      "drawStyle": 1,
+      "image": "assets/gfx/AIRPLANES/fighter.PNG",
+      "scale": [
+        0.2,
+        0.2
+      ]
+    },
+    "FIGHTER_MG": {
+      "hp": 200,
+      "speed": 5,
+      "rotationSpeed": 5,
+      "weapons": [
+        "BOMB_MG"
+      ],
+      "ai": "FIGHTERSIMPLE",
+      "aiParams": [
+        0,
+        422,
+        5
+      ],
+      "drawStyle": 1,
+      "image": "assets/gfx/AIRPLANES/fighter_mg.png",
+      "scale": [
+        0.2,
+        0.2
+      ]
+    },
+    "BOMBER_SPECIAL": {
+      "hp": 70000,
+      "speed": 5,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_SPECIAL"
+      ],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        0,
+        422,
+        30
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/bomber_special.png",
+      "scale": [
+        1,
+        1
+      ]
+    },
+    "HELI_BILLIG": {
+      "hp": 4000,
+      "speed": 2,
+      "rotationSpeed": 20,
+      "weapons": [
+        "BOMB_0"
+      ],
+      "ai": "HELISIMPLE",
+      "aiParams": [
+        141,
+        563,
+        150
+      ],
+      "drawStyle": 2,
+      "image": "assets/gfx/AIRPLANES/helikopter.png",
+      "scale": [
+        0.3,
+        0.3
+      ]
+    },
+    "HELI_APACHE": {
+      "hp": 20000,
+      "speed": 2,
+      "rotationSpeed": 20,
+      "weapons": [
+        "ROCKET_0"
+      ],
+      "ai": "HELIAPACHE",
+      "aiParams": [
+        281,
+        844,
+        50
+      ],
+      "drawStyle": 2,
+      "image": "assets/gfx/AIRPLANES/helikopter_apache.png",
+      "scale": [
+        0.3,
+        0.3
+      ]
+    }
+  },
+  "rounds": [
+    {
+      "name": "TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        }
+      ],
+      "intro": {
+        "text": "Welcome to Mangoos Game",
+        "time": 300,
+        "sound": "welcome.ogg"
+      }
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        0,
+        0.2,
+        0,
+        0.7,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        0,
+        1,
+        0,
+        0.7,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 188,
+          "y": -70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 563,
+          "y": -70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 938,
+          "y": -70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 1313,
+          "y": -70,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        0.2,
+        0.5,
+        0,
+        0.7,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "BOMBER_ANTHRAX",
+          "x": 938,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER_ANTHRAX",
+          "x": 1875,
+          "y": 703,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        0,
+        7,
+        0,
+        0.5,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        0,
+        0,
+        0,
+        0.5,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "BOMBER_HARD",
+          "x": 188,
+          "y": -141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER_HARD",
+          "x": 750,
+          "y": -141,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 4,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_MG",
+          "x": 0,
+          "y": -141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_MG",
+          "x": 375,
+          "y": -141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_MG",
+          "x": 750,
+          "y": -141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_MG",
+          "x": 1125,
+          "y": -141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_MG",
+          "x": 1500,
+          "y": -141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_MG",
+          "x": 1875,
+          "y": -141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_MG",
+          "x": -187,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_MG",
+          "x": 2250,
+          "y": 281,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        0,
+        0.7,
+        0,
+        -0.2,
+        0.2
+      ],
+      "maxAirplanes": 5,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "HELI_BILLIG",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_BILLIG",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_BILLIG",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_BILLIG",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_BILLIG",
+          "x": -187,
+          "y": 422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_BILLIG",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_BILLIG",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_BILLIG",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_BILLIG",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_BILLIG",
+          "x": 2250,
+          "y": 492,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        0,
+        0.4,
+        0,
+        0.6,
+        0
+      ],
+      "maxAirplanes": 4,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "BOMBER_BIG",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER_BIG",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_BILLIG",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER_BIG",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER_BIG",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_BILLIG",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        0.2,
+        0.2,
+        0,
+        0.1,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "BOMBER_STEALTH",
+          "x": -562,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER_STEALTH",
+          "x": 2250,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER_STEALTH",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER_STEALTH",
+          "x": 3000,
+          "y": 492,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        0,
+        0,
+        0,
+        2,
+        0
+      ],
+      "maxAirplanes": 4,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_JET",
+          "x": 563,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_JET",
+          "x": 0,
+          "y": -492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_JET",
+          "x": 188,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_JET",
+          "x": 0,
+          "y": -492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_JET",
+          "x": 563,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_JET",
+          "x": 0,
+          "y": -492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_JET",
+          "x": 188,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_JET",
+          "x": 0,
+          "y": -492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_JET",
+          "x": 563,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_JET",
+          "x": 0,
+          "y": -492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "FIGHTER_JET",
+          "x": 188,
+          "y": -281,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        0,
+        0.7,
+        0,
+        0.4,
+        0
+      ],
+      "maxAirplanes": 2,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "HELI_APACHE",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_APACHE",
+          "x": 2438,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_APACHE",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_APACHE",
+          "x": 2438,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_APACHE",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_APACHE",
+          "x": 2438,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_APACHE",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_APACHE",
+          "x": 2438,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_APACHE",
+          "x": -187,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "HELI_APACHE",
+          "x": 2438,
+          "y": 141,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "STRANGE",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "BOMBER_SPECIAL",
+          "x": -562,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER_SPECIAL",
+          "x": 2250,
+          "y": 492,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        1,
+        0,
+        0,
+        0,
+        0.8
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "BOMBER_STEALTH2",
+          "x": -562,
+          "y": 281,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "BOMBER_BIG2",
+          "x": -562,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER_BIG2",
+          "x": 2250,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER_BIG2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER_BIG2",
+          "x": 3000,
+          "y": 492,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 20,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -187,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -187,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -187,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -187,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -187,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2250,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2250,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2250,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2250,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2250,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2250,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -562,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -562,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -562,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -562,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -562,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2813,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2813,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2813,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2813,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2813,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2813,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -187,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -1312,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -1312,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -1312,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -1312,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 3563,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 3563,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 3563,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 3563,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 3563,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 3563,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 3563,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 3563,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -2437,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -2437,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -2437,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -2437,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -2437,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 4688,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        }
+      ]
+    }
+  ]
+}

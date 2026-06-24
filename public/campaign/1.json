@@ -1,0 +1,289 @@
+{
+  "schemaVersion": 1,
+  "id": 1,
+  "meta": {
+    "name": "Training",
+    "author": "Feuerware",
+    "description": "How to play Antiwar",
+    "thumbnail": "assets/gfx/thumbs/desert.png"
+  },
+  "config": {
+    "startMoney": 1000,
+    "startHumans": 1,
+    "startRockets": 3,
+    "startHumanHp": 100,
+    "startHumanMoney": 300,
+    "startRocketPower": 50,
+    "startRocketSpeed": 6,
+    "startAimTime": 1000,
+    "aimPower": 3,
+    "maxHumans": 10,
+    "maxRockets": 10,
+    "humanHpRefresh": 1,
+    "moneyFactor": 1,
+    "crashingRockets": 2,
+    "buttonsDisabled": {},
+    "upgrades": {
+      "human": {
+        "price": 100,
+        "priceFactor": 1.5,
+        "statFactor": null
+      },
+      "humanHp": {
+        "price": 100,
+        "priceFactor": 1.5,
+        "statFactor": 1.1
+      },
+      "humanMoney": {
+        "price": 100,
+        "priceFactor": 1.5,
+        "statFactor": 1.15
+      },
+      "rocket": {
+        "price": 100,
+        "priceFactor": 1.5,
+        "statFactor": null
+      },
+      "rocketSpeed": {
+        "price": 100,
+        "priceFactor": 1.5,
+        "statFactor": 1.5
+      },
+      "rocketPower": {
+        "price": 100,
+        "priceFactor": 1.5,
+        "statFactor": 1.5
+      },
+      "aim": {
+        "price": 100,
+        "priceFactor": 1.5,
+        "statFactor": 0.5
+      }
+    },
+    "assets": {
+      "tower": "assets/gfx/tower.png",
+      "cannon": "assets/gfx/cannon.png",
+      "crosshair": "assets/gfx/crosshair1.png",
+      "human": "assets/gfx/human.png",
+      "ground": "assets/gfx/backgrounds/ground.png",
+      "background": "assets/gfx/backgrounds/mangoo.jpg"
+    }
+  },
+  "bombs": {
+    "BOMB_0": {
+      "image": "assets/gfx/BOMBS/bomb.png",
+      "scale": [
+        0.8,
+        0.6
+      ],
+      "hp": 10,
+      "damage": 100,
+      "speed": 0.7,
+      "rotationSpeed": 5,
+      "explosion": {
+        "type": 1,
+        "power": 100,
+        "range": 2,
+        "lifetime": 20
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    },
+    "BOMB_PLAYER": {
+      "image": "assets/gfx/BOMBS/player_rocket.png",
+      "scale": [
+        0.5,
+        0.2
+      ],
+      "hp": 10,
+      "damage": 50,
+      "speed": 2,
+      "rotationSpeed": 20,
+      "explosion": {
+        "type": 1,
+        "power": 0,
+        "range": 1,
+        "lifetime": 20
+      },
+      "trail": 1,
+      "checkOutOfScreen": true
+    }
+  },
+  "airplanes": {
+    "BOMBER": {
+      "hp": 50,
+      "speed": 2,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_0"
+      ],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        0,
+        422,
+        600
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/bomber.png",
+      "scale": [
+        0.5,
+        0.5
+      ]
+    },
+    "BOMBER2": {
+      "hp": 200,
+      "speed": 3,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_0"
+      ],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        281,
+        563,
+        600
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/bomber.png",
+      "scale": [
+        0.8,
+        0.8
+      ]
+    },
+    "BOMBER3": {
+      "hp": 100000,
+      "speed": 3,
+      "rotationSpeed": 360,
+      "weapons": [
+        "BOMB_0"
+      ],
+      "ai": "BOMBERSIMPLE",
+      "aiParams": [
+        281,
+        563,
+        600
+      ],
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/bomber_big.png",
+      "scale": [
+        1.4,
+        1.4
+      ]
+    }
+  },
+  "rounds": [
+    {
+      "name": "ONE SHOOT",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "intro": {
+        "text": "Shoot down hostile aircraft. Left click = left tower, right click = right tower.",
+        "image": "assets/gfx/AIRPLANES/bomber.png",
+        "sound": "tutorial/shootall.ogg",
+        "time": 180
+      },
+      "winSound": "tutorial/buyupgrades.ogg",
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -188,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2250,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": -188,
+          "y": 563,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER",
+          "x": 2063,
+          "y": 422,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "Multi SHOOTS",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "intro": {
+        "text": "Use both cannons.",
+        "sound": "tutorial/leftright.ogg",
+        "time": 120
+      },
+      "winSound": "tutorial/eachhuman.ogg",
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "BOMBER2",
+          "x": -188,
+          "y": 141,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "BOMBER2",
+          "x": 2250,
+          "y": 141,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "STRONGER ROCKETS",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "intro": {
+        "text": "Hold crosshair on target until it locks.",
+        "sound": "tutorial/leftright.ogg",
+        "time": 120
+      },
+      "winSound": "pay.ogg",
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "BOMBER3",
+          "x": -188,
+          "y": 141,
+          "angle": 0
+        }
+      ]
+    }
+  ]
+}
