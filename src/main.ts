@@ -13,7 +13,6 @@ async function main(): Promise<void> {
   const pixi = new Application();
   await pixi.init({
     background: '#000000',
-    resizeTo: host,
     antialias: true,
   });
 

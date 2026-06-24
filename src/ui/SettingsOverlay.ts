@@ -8,7 +8,7 @@ import {
 import { createFocusableButton } from '../input/FocusableButton';
 import type { MenuActionsHost } from '../input/MenuActionsHost';
 import type { UiAction } from '../input/UiMenuController';
-import { kewlBlockGap, kewlLineHeight, kewlText } from './KewlFont';
+import { kewlBlockGap, kewlLineHeight, kewlString, kewlText } from './KewlFont';
 import { createMenuBackground } from './MenuBackground';
 
 const PARTICLE_LABELS: Record<ParticleQuality, string> = {
@@ -25,7 +25,7 @@ const BACK_FONT = 20;
 
 export class SettingsOverlay extends Container implements MenuActionsHost {
   private menuActions: UiAction[] = [];
-  private valueLabels = new Map<string, BitmapText>();
+  private rowLabels = new Map<string, { prefix: string; text: BitmapText }>();
   private onBack: () => void;
   private unsub: (() => void) | null = null;
 
@@ -94,13 +94,14 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
       rowY += ROW_H + ROW_GAP;
     }
 
+    const backW = 200;
     const back = createFocusableButton({
       id: 'settings-back',
       label: '< Back',
-      x: centerX,
+      x: centerX - backW / 2,
       y: rowY + kewlBlockGap(ROW_FONT),
       center: true,
-      w: 200,
+      w: backW,
       fontSize: BACK_FONT,
       onPress: () => this.onBack(),
     });
@@ -135,33 +136,32 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
     const rowW = PANEL_W - 80;
     const { view, action } = createFocusableButton({
       id,
-      label,
+      label: `${label}: ...`,
       x: centerX - rowW / 2,
       y,
       w: rowW,
+      center: true,
       fontSize: ROW_FONT,
       onPress,
     });
     this.addChild(view);
 
-    const value = kewlText({ text: '', size: 20, anchorX: 1, anchorY: 0 });
-    value.position.set(centerX + rowW / 2 - 8, y);
-    this.addChild(value);
-    this.valueLabels.set(id, value);
+    const text = view.children[0] as BitmapText;
+    this.rowLabels.set(id, { prefix: label, text });
 
     this.menuActions.push(action);
   }
 
   private refresh(): void {
     const s = settingsStore.get();
-    this.setValue('settings-sound', s.soundEnabled ? 'On' : 'Off');
-    this.setValue('settings-music', s.musicEnabled ? 'On' : 'Off');
-    this.setValue('settings-particles', PARTICLE_LABELS[s.particleQuality]);
+    this.setRow('settings-sound', s.soundEnabled ? 'ON' : 'OFF');
+    this.setRow('settings-music', s.musicEnabled ? 'ON' : 'OFF');
+    this.setRow('settings-particles', PARTICLE_LABELS[s.particleQuality]);
   }
 
-  private setValue(id: string, text: string): void {
-    const label = this.valueLabels.get(id);
-    if (label) label.text = text;
+  private setRow(id: string, value: string): void {
+    const row = this.rowLabels.get(id);
+    if (row) row.text.text = kewlString(`${row.prefix}: ${value}`);
   }
 }
 

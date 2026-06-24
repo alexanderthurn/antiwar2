@@ -8,13 +8,16 @@ import type { UiAction } from '../input/UiMenuController';
 import { createMenuBackground } from '../ui/MenuBackground';
 import { MenuLogo } from '../ui/MenuLogo';
 import { SettingsOverlay } from '../ui/SettingsOverlay';
-import { kewlBlockGap, kewlLineHeight, kewlMeasuredSize, kewlText, kewlTextLeftInset, UI_TITLE_MAIN_MENU_Y } from '../ui/KewlFont';
+import { kewlBlockGap, kewlLineHeight, kewlMeasuredSize, kewlTextLeftInset, UI_TITLE_MAIN_MENU_Y } from '../ui/KewlFont';
 
 const LOGO_PATH = 'assets/gfx/logo.png';
 const LOGO_HEIGHT = 200;
 const FOOTER_MARGIN = 0;
 const FOOTER_FONT_SIZE = 21;
 const GAME_VERSION = '1.0.0';
+const WELCOME_PLAYED_KEY = 'antiwar2_welcome_played';
+const VERSION_URL = 'https://feuerware.com';
+const CREDIT_URL = 'https://github.com/alexanderthurn/antiwar2';
 
 export class MainMenuScene extends Container implements MenuActionsHost {
   private menuActions: UiAction[] = [];
@@ -62,7 +65,10 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     onSettings: () => void,
   ): Promise<void> {
     this.addChild(await createMenuBackground());
-    playSound(sfxPath('welcome.ogg'), 0.55);
+    if (!localStorage.getItem(WELCOME_PLAYED_KEY)) {
+      playSound(sfxPath('welcome.ogg'), 0.55);
+      localStorage.setItem(WELCOME_PLAYED_KEY, '1');
+    }
 
     const centerX = DESIGN.width / 2;
     const logoTex = await loadTexture(LOGO_PATH);
@@ -87,17 +93,27 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     const footerY = DESIGN.height - FOOTER_MARGIN - footerLineH;
 
     const versionText = `Version: ${GAME_VERSION}`;
-    const version = kewlText({ text: versionText, size: FOOTER_FONT_SIZE });
-    version.position.set(FOOTER_MARGIN - kewlTextLeftInset(FOOTER_FONT_SIZE), footerY);
-    this.addChild(version);
+    this.addChild(
+      this.makeFooterLink(
+        'menu-version',
+        versionText,
+        FOOTER_MARGIN - kewlTextLeftInset(FOOTER_FONT_SIZE),
+        footerY,
+        VERSION_URL,
+      ),
+    );
 
     const creditText = 'by Alexander Thurn';
-    const credit = kewlText({ text: creditText, size: FOOTER_FONT_SIZE });
-    credit.position.set(
-      DESIGN.width - FOOTER_MARGIN - kewlMeasuredSize(creditText, FOOTER_FONT_SIZE).width,
-      footerY,
+    const creditW = kewlMeasuredSize(creditText, FOOTER_FONT_SIZE).width;
+    this.addChild(
+      this.makeFooterLink(
+        'menu-credit',
+        creditText,
+        DESIGN.width - FOOTER_MARGIN - creditW,
+        footerY,
+        CREDIT_URL,
+      ),
     );
-    this.addChild(credit);
 
     this.mainActions = [...this.menuActions];
   }
@@ -119,6 +135,25 @@ export class MainMenuScene extends Container implements MenuActionsHost {
       center: true,
       fontSize: 28,
       onPress: onClick,
+    });
+    this.menuActions.push(action);
+    return view;
+  }
+
+  private makeFooterLink(
+    id: string,
+    label: string,
+    x: number,
+    y: number,
+    url: string,
+  ): Container {
+    const { view, action } = createFocusableButton({
+      id,
+      label,
+      x,
+      y,
+      fontSize: FOOTER_FONT_SIZE,
+      onPress: () => window.open(url, '_blank', 'noopener,noreferrer'),
     });
     this.menuActions.push(action);
     return view;

@@ -8,6 +8,7 @@ import {
   type DevGameState,
 } from './core/DevDeepLink';
 import { computeLayout, clientToStage, type ViewportLayout } from './core/Viewport';
+import { watchViewportResize } from './core/ViewportResize';
 import { preloadRound } from './data/AssetLoader';
 import { loadCampaignIndex, loadLevelPack } from './data/types';
 import { stopMusic } from './audio/SoundManager';
@@ -48,9 +49,12 @@ export class App {
 
   constructor(
     private readonly pixi: Application,
-    host: HTMLElement,
+    private readonly host: HTMLElement,
   ) {
     host.appendChild(pixi.canvas);
+    pixi.canvas.style.display = 'block';
+    pixi.canvas.style.width = '100%';
+    pixi.canvas.style.height = '100%';
     pixi.canvas.style.cursor = 'none';
     pixi.canvas.style.touchAction = 'none';
     pixi.stage.addChild(this.gameRoot);
@@ -66,7 +70,7 @@ export class App {
 
   init(): void {
     this.applyLayout();
-    window.addEventListener('resize', () => this.applyLayout());
+    watchViewportResize(this.host, () => this.applyLayout());
 
     const dev = parseDevUrl();
     if (dev) {
@@ -104,7 +108,14 @@ export class App {
   }
 
   private applyLayout(): void {
-    const { width, height } = this.pixi.screen;
+    const width = this.host.clientWidth;
+    const height = this.host.clientHeight;
+    if (width <= 0 || height <= 0) return;
+
+    if (this.pixi.screen.width !== width || this.pixi.screen.height !== height) {
+      this.pixi.renderer.resize(width, height);
+    }
+
     this.layout = computeLayout(width, height);
     this.gameRoot.scale.set(this.layout.scale);
     this.gameRoot.position.set(this.layout.offsetX, this.layout.offsetY);

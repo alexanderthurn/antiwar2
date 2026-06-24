@@ -182,7 +182,7 @@
         0
       ],
       "intro": {
-        "text": "Shoot down hostile aircraft. Left click = left tower, right click = right tower.",
+        "text": "Shoot hostile aircraft.",
         "image": "assets/gfx/AIRPLANES/bomber.png",
         "sound": "tutorial/shootall.ogg",
         "time": 180
@@ -267,7 +267,7 @@
         0
       ],
       "intro": {
-        "text": "Hold crosshair on target until it locks.",
+        "text": "Hold to lock on.",
         "sound": "tutorial/leftright.ogg",
         "time": 120
       },
