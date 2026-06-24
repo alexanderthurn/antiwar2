@@ -8,7 +8,7 @@ import { loadTexture } from '../data/AssetLoader';
 import { loadCampaignIndex, type CampaignIndex } from '../data/types';
 import { MENU_POINTER_CURSOR } from '../ui/MenuPointer';
 import { createMenuBackground } from '../ui/MenuBackground';
-import { kewlText, kewlTextAtCenter } from '../ui/KewlFont';
+import { kewlTextAtCenter } from '../ui/KewlFont';
 
 const MAP_BUTTON_BY_PATH: Record<number, string> = {
   0: 'assets/gfx/buttons_map/button_training.png',
@@ -28,11 +28,10 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
     progress: CampaignProgress,
     onBack: () => void,
     onStartLevel: (file: string, levelIndex: number) => void,
-    cheatMessage?: string,
   ) {
     super();
     this.onBack = onBack;
-    void this.build(progress, onStartLevel, cheatMessage);
+    void this.build(progress, onStartLevel);
   }
 
   getMenuActions(): UiAction[] {
@@ -46,7 +45,6 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
   private async build(
     progress: CampaignProgress,
     onStartLevel: (file: string, levelIndex: number) => void,
-    cheatMessage?: string,
   ): Promise<void> {
     const index = await loadCampaignIndex();
     this.addChild(await createMenuBackground());
@@ -80,17 +78,6 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
     for (let i = 0; i < index.levels.length; i++) {
       this.addChild(this.makeNode(index, i, progress, onStartLevel, buttonTex));
     }
-
-    if (cheatMessage) this.flashCheatMessage(cheatMessage);
-  }
-
-  private flashCheatMessage(text: string): void {
-    const banner = kewlText({ text: `[cheat] ${text}`, size: 22, anchorX: 0.5 });
-    banner.position.set(DESIGN.width / 2, DESIGN.height - 48);
-    this.addChild(banner);
-    setTimeout(() => {
-      if (!banner.destroyed) banner.destroy();
-    }, 2500);
   }
 
   private makeNode(

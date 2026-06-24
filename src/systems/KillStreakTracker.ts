@@ -3,20 +3,19 @@ const STREAK_WINDOW_SEC = 2.5;
 export interface KillStreakEvent {
   slotIndex: number;
   streak: number;
-  label: string;
   sound: string;
 }
 
-const STREAK_TABLE: Array<{ min: number; label: string; sound: string }> = [
-  { min: 10, label: 'HOLY SHIT', sound: 'holyshit.ogg' },
-  { min: 9, label: 'WICKED SICK', sound: 'wickedsick.ogg' },
-  { min: 8, label: 'UNSTOPPABLE', sound: 'unstoppable.ogg' },
-  { min: 7, label: 'MONSTER KILL', sound: 'monsterkill.ogg' },
-  { min: 6, label: 'ULTRA KILL', sound: 'ultrakill.ogg' },
-  { min: 5, label: 'MEGA KILL', sound: 'multikill.ogg' },
-  { min: 4, label: 'MULTI KILL', sound: 'multikill.ogg' },
-  { min: 3, label: 'TRIPLE KILL', sound: 'tripplekill.ogg' },
-  { min: 2, label: 'DOUBLE KILL', sound: 'doublekill.ogg' },
+const STREAK_TABLE: Array<{ min: number; sound: string }> = [
+  { min: 10, sound: 'holyshit.ogg' },
+  { min: 9, sound: 'wickedsick.ogg' },
+  { min: 8, sound: 'unstoppable.ogg' },
+  { min: 7, sound: 'monsterkill.ogg' },
+  { min: 6, sound: 'ultrakill.ogg' },
+  { min: 5, sound: 'multikill.ogg' },
+  { min: 4, sound: 'multikill.ogg' },
+  { min: 3, sound: 'tripplekill.ogg' },
+  { min: 2, sound: 'doublekill.ogg' },
 ];
 
 export class KillStreakTracker {
@@ -38,7 +37,6 @@ export class KillStreakTracker {
     return {
       slotIndex: 0,
       streak: this.streak,
-      label: entry.label,
       sound: entry.sound,
     };
   }

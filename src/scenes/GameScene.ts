@@ -20,7 +20,6 @@ import { KillStreakManager } from '../systems/KillStreakTracker';
 import { BossHpBar } from '../ui/BossHpBar';
 import { EntityHpBarOverlay } from '../ui/EntityHpBarOverlay';
 import { JoinPanel } from '../ui/JoinPanel';
-import { KillStreakBanner } from '../ui/KillStreakBanner';
 import { PauseOverlay } from '../ui/PauseOverlay';
 import { TouchControls } from '../ui/TouchControls';
 import { ShopOverlay } from '../ui/ShopOverlay';
@@ -99,7 +98,6 @@ export class GameScene extends Container implements MenuActionsHost {
   private particleFx = new ParticleFxManager();
   private entityHpBars = new EntityHpBarOverlay();
   private killStreaks = new KillStreakManager();
-  private killStreakBanner: KillStreakBanner | null = null;
   private players = new PlayerManager();
 
   private inputRef: InputSystem | null = null;
@@ -123,15 +121,12 @@ export class GameScene extends Container implements MenuActionsHost {
   private pauseBeforePhase: Phase = 'playing';
   private settingsUnsub: (() => void) | null = null;
 
-  private statusText!: BitmapText;
-
   private airplaneSpawnQueue: AirplaneSpawn[] = [];
   private pendingAirplaneSpawns = 0;
   private airplaneSpawnGeneration = 0;
   private roundBootstrapping = false;
   private rumbleTimer = 0;
   private rumbleAmp = 0;
-  private cheatMessageTimer = 0;
   private endScreenFx: {
     overlay: Container;
     label: BitmapText;
@@ -212,7 +207,7 @@ export class GameScene extends Container implements MenuActionsHost {
     }
 
     await this.setupPlayers(pack);
-    this.buildHud();
+    this.updateHud();
     this.levelAudio = createLevelAudio(pack.config.sounds);
     this.levelAudio.playMusic();
     const startRoundIndex = devBootstrap?.roundIndex ?? roundIndex;
@@ -238,7 +233,6 @@ export class GameScene extends Container implements MenuActionsHost {
       this.refreshCivilianHp();
       for (const s of this.players.active()) s.stats.reset();
       this.killStreaks.resetAll();
-      this.killStreakBanner?.clear();
       await preloadRound(this.level, roundIndex);
       await this.buildBackground();
       this.applyRoundWeather();
@@ -342,15 +336,7 @@ export class GameScene extends Container implements MenuActionsHost {
           ps.stats.kills += 1;
           if (guided) ps.stats.lockOnKills += 1;
           const streak = this.killStreaks.registerKill(ownerSlot);
-          if (streak) {
-            const slot = this.players.slot(ownerSlot);
-            if (!this.killStreakBanner) {
-              this.killStreakBanner = new KillStreakBanner();
-              this.uiLayer.addChild(this.killStreakBanner);
-            }
-            this.killStreakBanner.show(streak, slot?.color() ?? 0xffffff);
-            playSound(sfxPath(streak.sound));
-          }
+          if (streak) playSound(sfxPath(streak.sound));
         } else if (target.motion.kind === 'fall') {
           ps.stats.bombsDestroyed += 1;
         }
@@ -425,8 +411,7 @@ export class GameScene extends Container implements MenuActionsHost {
             this.bossHpBar = new BossHpBar();
             this.uiLayer.addChild(this.bossHpBar);
           }
-          const name = type.replace(/^ENDMASTER_/i, '').replace(/_/g, ' ');
-          this.bossHpBar.track(entity, name);
+          this.bossHpBar.track(entity);
         }
       })
       .finally(() => {
@@ -618,14 +603,6 @@ export class GameScene extends Container implements MenuActionsHost {
     void this.spawnAirplaneAt(next.type, next.x, next.y, spawnIndex >= 0 ? spawnIndex : max);
   }
 
-  private buildHud(): void {
-    if (this.statusText?.parent) return;
-
-    this.statusText = kewlText({ text: '', size: 28, anchorX: 0.5 });
-    this.statusText.position.set(DESIGN.width / 2, 40);
-    this.uiLayer.addChild(this.statusText);
-    this.updateHud();
-  }
 
   private async showIntro(): Promise<void> {
     const intro = this.round.intro;
@@ -907,15 +884,10 @@ export class GameScene extends Container implements MenuActionsHost {
     this.explosionManager.update(dt);
     this.particleFx.update(dt, this.particleBuckets());
     this.killStreaks.tick(dt);
-    this.killStreakBanner?.update(dt);
     this.bossHpBar?.refresh();
     this.entityHpBars.update(dt, this.entities.living(), input.aimPoints(this.players));
 
     this.updateRumble(dt);
-    if (this.cheatMessageTimer > 0) {
-      this.cheatMessageTimer -= dt;
-      if (this.cheatMessageTimer <= 0 && this.phase === 'playing') this.statusText.text = '';
-    }
     this.weatherLayer.update(dt);
     this.nightVisionLayer.update(
       this.round.weather[4] ?? 0,
@@ -1156,12 +1128,6 @@ export class GameScene extends Container implements MenuActionsHost {
       this.introOverlay.destroy({ children: true });
       this.introOverlay = null;
     }
-    if (this.statusText) {
-      this.statusText.text = '';
-      this.statusText.visible = false;
-    }
-    this.killStreakBanner?.destroy();
-    this.killStreakBanner = null;
   }
 
   private canBuyShopUpgrade(key: UpgradeKey): boolean {
@@ -1179,7 +1145,6 @@ export class GameScene extends Container implements MenuActionsHost {
       this.menuSource = null;
       this.menuActionsKey = '';
     }
-    if (this.statusText) this.statusText.visible = true;
   }
 
   private buyUpgrade(key: UpgradeKey): void {
@@ -1295,16 +1260,10 @@ export class GameScene extends Container implements MenuActionsHost {
 
   cheatKillVisibleEnemies(): void {
     if (this.phase !== 'playing') return;
-    const count = this.entities.killVisibleEnemies(
+    this.entities.killVisibleEnemies(
       this.level,
       { loadTex: (p) => this.tex(p), layer: this.entityLayer },
       this.entityCallbacks(),
     );
-    if (count > 0) this.flashCheatMessage(`Killed ${count} target${count === 1 ? '' : 's'}`);
-  }
-
-  private flashCheatMessage(text: string): void {
-    this.statusText.text = kewlString(`[cheat] ${text}`);
-    this.cheatMessageTimer = 2.5;
   }
 }

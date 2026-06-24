@@ -6,22 +6,20 @@ import { kewlText } from './KewlFont';
 export class BossHpBar extends Container {
   private barBg = new Graphics();
   private barFill = new Graphics();
-  private nameText: BitmapText;
+  private hpText: BitmapText;
   private boss: CombatEntity | null = null;
-  private bossName = 'Boss';
 
   constructor() {
     super();
-    this.nameText = kewlText({ text: '', size: 18 });
+    this.hpText = kewlText({ text: '', size: 18, anchorX: 0.5 });
     this.position.set(DESIGN.width / 2 - 280, 88);
-    this.addChild(this.barBg, this.barFill, this.nameText);
-    this.nameText.position.set(0, -26);
+    this.addChild(this.barBg, this.barFill, this.hpText);
+    this.hpText.position.set(280, -26);
     this.visible = false;
   }
 
-  track(entity: CombatEntity, name: string): void {
+  track(entity: CombatEntity): void {
     this.boss = entity;
-    this.bossName = name;
     this.visible = true;
     this.refresh();
   }
@@ -52,6 +50,6 @@ export class BossHpBar extends Container {
       });
     }
 
-    this.nameText.text = `${this.bossName}  ${Math.ceil(this.boss.hp).toLocaleString()} / ${this.boss.maxHp.toLocaleString()}`;
+    this.hpText.text = `${Math.ceil(this.boss.hp).toLocaleString()} / ${this.boss.maxHp.toLocaleString()}`;
   }
 }

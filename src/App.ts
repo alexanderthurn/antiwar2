@@ -175,7 +175,7 @@ export class App {
     this.setScene(new CreditsScene(() => this.showMainMenu(false)));
   }
 
-  private showCampaignView(newRun = false, cheatMessage?: string): void {
+  private showCampaignView(newRun = false): void {
     if (newRun) this.campaignProgress.reset();
     clearDevUrl();
     this.mode = 'campaign';
@@ -185,7 +185,6 @@ export class App {
         this.campaignProgress,
         () => this.showMainMenu(false),
         (file, levelIndex) => void this.startLevel(file, levelIndex),
-        cheatMessage,
       ),
     );
     playMenuMusic();
@@ -194,15 +193,12 @@ export class App {
   private async applyCampaignUnlockCheat(): Promise<void> {
     const index = await loadCampaignIndex();
     const max = index.levels.length - 1;
-    const message = this.campaignProgress.isAllUnlocked(max)
-      ? 'Locked all levels'
-      : 'Unlocked all levels';
     if (this.campaignProgress.isAllUnlocked(max)) {
       this.campaignProgress.reset();
     } else {
       this.campaignProgress.unlockAll(max);
     }
-    this.showCampaignView(false, message);
+    this.showCampaignView(false);
   }
 
   private async startLevel(file: string, levelIndex: number, devBootstrap?: DevBootstrap): Promise<void> {
