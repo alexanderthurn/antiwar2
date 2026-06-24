@@ -2,6 +2,8 @@
 
 Browser remake of Antiwar v1.5 — Vite, TypeScript, Pixi.js.
 
+**Play:** [alexanderthurn.github.io/antiwar2](https://alexanderthurn.github.io/antiwar2/)
+
 ## Run
 
 ```bash
