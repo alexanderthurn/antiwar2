@@ -15,10 +15,10 @@ const LOGO_HEIGHT = 200;
 const FOOTER_MARGIN = 0;
 const FOOTER_FONT_SIZE = 21;
 const GAME_VERSION = '1.0.0';
-const VERSION_URL = 'https://feuerware.com';
+const CREDIT_URL = 'https://feuerware.com';
 
 let welcomePlayed = false;
-const CREDIT_URL = 'https://github.com/alexanderthurn/antiwar2';
+const VERSION_URL = 'https://github.com/alexanderthurn/antiwar2';
 
 export class MainMenuScene extends Container implements MenuActionsHost {
   private menuActions: UiAction[] = [];
@@ -104,7 +104,7 @@ export class MainMenuScene extends Container implements MenuActionsHost {
       ),
     );
 
-    const creditText = 'by Alexander Thurn';
+    const creditText = 'Feuerware 2026';
     const creditW = kewlMeasuredSize(creditText, FOOTER_FONT_SIZE).width;
     this.addChild(
       this.makeFooterLink(

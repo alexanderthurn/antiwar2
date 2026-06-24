@@ -35,7 +35,8 @@ export class CreditsScene extends Container implements MenuActionsHost {
     const body = kewlText({
       text:
         'Antiwar 2\n\n' +
-        'Game design & development\nFeuerware\n\n' +
+        'Feuerware\n' +
+        'Alexander Thurn\nSebastian Kreuzer\nand many more people who helped out\n\n' +
         'Built with Pixi.js',
       size: 24,
       align: 'center',
