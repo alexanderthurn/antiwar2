@@ -60,7 +60,7 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
 
     const back = createFocusableButton({
       id: 'campaign-back',
-      label: '< Menu',
+      label: 'Menu',
       x: 16,
       y: 16,
       w: 140,

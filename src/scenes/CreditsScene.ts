@@ -45,7 +45,7 @@ export class CreditsScene extends Container implements MenuActionsHost {
     this.addChild(body);
 
     this.addChild(
-      this.makeButton('credits-back', '< Back', centerX - 100, DESIGN.height - 100, 200, this.onBack),
+      this.makeButton('credits-back', 'Back', centerX - 100, DESIGN.height - 100, 200, this.onBack),
     );
   }
 

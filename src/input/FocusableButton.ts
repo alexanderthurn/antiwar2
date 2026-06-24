@@ -56,6 +56,8 @@ export interface FocusableButtonOptions {
   enabled?: () => boolean;
   /** When true, anchor label at horizontal center of w (default: left-aligned). */
   center?: boolean;
+  /** Horizontal alignment within w (or measured text width). */
+  align?: 'left' | 'center' | 'right';
   /** When false, the caller plays menu click after changing state (e.g. settings toggles). */
   playClick?: boolean;
 }
@@ -70,10 +72,15 @@ export function createFocusableButton(opts: FocusableButtonOptions): { view: Con
   const fontSize = opts.fontSize ?? 24;
   const text = kewlText({ text: opts.label, size: fontSize });
   const lineH = kewlLineHeight(fontSize);
+  const align = opts.align ?? (opts.center ? 'center' : 'left');
+  const layoutW = opts.w ?? text.width;
 
-  if (opts.center && opts.w) {
+  if (align === 'center') {
     text.anchor.set(0.5, 0);
-    text.position.set(opts.w / 2, 0);
+    text.position.set(layoutW / 2, 0);
+  } else if (align === 'right') {
+    text.anchor.set(1, 0);
+    text.position.set(layoutW, 0);
   } else {
     text.anchor.set(0, 0);
     text.position.set(0, 0);
@@ -85,11 +92,7 @@ export function createFocusableButton(opts: FocusableButtonOptions): { view: Con
 
   const setFocused = (focused: boolean) => {
     if (text.destroyed) return;
-    const s = focused ? FOCUS_SCALE : 1;
-    text.scale.set(s);
-    if (opts.center && opts.w) {
-      text.position.set(opts.w / 2, 0);
-    }
+    text.scale.set(focused ? FOCUS_SCALE : 1);
   };
 
   const activate = () => {

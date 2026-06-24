@@ -109,9 +109,11 @@ export class MainMenuScene extends Container implements MenuActionsHost {
       this.makeFooterLink(
         'menu-credit',
         creditText,
-        DESIGN.width - FOOTER_MARGIN - creditW,
+        DESIGN.width - FOOTER_MARGIN - creditW - 20,
         footerY,
         CREDIT_URL,
+        'right',
+        creditW,
       ),
     );
 
@@ -146,12 +148,16 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     x: number,
     y: number,
     url: string,
+    align: 'left' | 'right' = 'left',
+    w?: number,
   ): Container {
     const { view, action } = createFocusableButton({
       id,
       label,
       x,
       y,
+      w,
+      align,
       fontSize: FOOTER_FONT_SIZE,
       onPress: () => window.open(url, '_blank', 'noopener,noreferrer'),
     });

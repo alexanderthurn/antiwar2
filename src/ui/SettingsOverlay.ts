@@ -100,7 +100,7 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
     const backW = 200;
     const back = createFocusableButton({
       id: 'settings-back',
-      label: '< Back',
+      label: 'Back',
       x: centerX - backW / 2,
       y: rowY + kewlBlockGap(ROW_FONT),
       center: true,
