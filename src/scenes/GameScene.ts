@@ -52,7 +52,7 @@ const PLAYER_FIRE_COOLDOWN_S = 0.5;
 /** Damage multiplier for rockets fired with an active lock-on target. */
 const LOCK_ON_ROCKET_DAMAGE_FACTOR = 2.0;
 
-type Phase = 'intro' | 'playing' | 'shop' | 'levelComplete' | 'gameOver' | 'paused';
+type Phase = 'playing' | 'shop' | 'levelComplete' | 'gameOver' | 'paused';
 
 interface AirplaneSpawn {
   type: string;
@@ -611,7 +611,6 @@ export class GameScene extends Container implements MenuActionsHost {
     if (!hasContent) return;
 
     const backgroundHint = this.level.id === 1;
-    if (!backgroundHint) this.phase = 'intro';
     if (intro?.sound) playSound(sfxPath(intro.sound));
 
     const overlay = new Container();
@@ -626,15 +625,11 @@ export class GameScene extends Container implements MenuActionsHost {
 
       this.bgLayer.addChild(overlay);
     } else {
-      const dim = new Graphics();
-      dim.rect(0, 0, DESIGN.width, DESIGN.height).fill({ color: 0x000000, alpha: 0.35 });
-      overlay.addChild(dim);
-
       if (intro?.image) {
         const tex = await loadTexture(intro.image);
         const img = new Sprite(tex);
         img.anchor.set(0.5);
-        img.position.set(DESIGN.width / 2, DESIGN.height / 2 - 80);
+        img.position.set(DESIGN.width / 2, 120);
         const maxW = 420;
         if (img.width > maxW) img.scale.set(maxW / img.width);
         overlay.addChild(img);
@@ -642,7 +637,7 @@ export class GameScene extends Container implements MenuActionsHost {
 
       if (text) {
         const label = kewlText({ text: kewlString(text), size: 16, align: 'center', anchorX: 0.5, anchorY: 0.5 });
-        label.position.set(DESIGN.width / 2, DESIGN.height / 2 + 60);
+        label.position.set(DESIGN.width / 2, intro?.image ? 220 : 48);
         overlay.addChild(label);
       }
 
@@ -656,7 +651,6 @@ export class GameScene extends Container implements MenuActionsHost {
     setTimeout(() => {
       overlay.destroy({ children: true });
       if (this.introOverlay === overlay) this.introOverlay = null;
-      if (this.phase === 'intro') this.phase = 'playing';
     }, ms);
   }
 
@@ -874,12 +868,6 @@ export class GameScene extends Container implements MenuActionsHost {
     this.menuActionsKey = '';
 
     if (this.phase === 'gameOver' || this.phase === 'levelComplete') return;
-    if (this.phase === 'intro') {
-      this.releaseTouchFire(input);
-      this.explosionManager.update(dt);
-      this.particleFx.update(dt, this.particleBuckets());
-      return;
-    }
 
     this.explosionManager.update(dt);
     this.particleFx.update(dt, this.particleBuckets());
