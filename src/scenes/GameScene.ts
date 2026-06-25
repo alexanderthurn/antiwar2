@@ -62,8 +62,6 @@ const PLAYER_ROCKET_DAMAGE_SCALE_MAX = 2;
 /** Seconds between autofire shots while fire is held (clicks are not limited). */
 const PLAYER_AUTO_FIRE_COOLDOWN_S = 0.5;
 const PLAYER_TOUCH_AUTO_FIRE_COOLDOWN_S = PLAYER_AUTO_FIRE_COOLDOWN_S * 0.5;
-/** Hold this long before autofire replaces click-fire (keeps rapid clicks instant). */
-const PLAYER_AUTO_FIRE_HOLD_MS = 150;
 /** Damage multiplier for rockets fired with an active lock-on target. */
 const LOCK_ON_ROCKET_DAMAGE_FACTOR = 2.0;
 
@@ -1059,29 +1057,17 @@ export class GameScene extends Container implements MenuActionsHost {
     for (const player of this.players.active()) {
       player.autoFireCooldownLeft = Math.max(0, player.autoFireCooldownLeft - dt);
       player.autoFireCooldownRight = Math.max(0, player.autoFireCooldownRight - dt);
-      if (player.fireLeft) player.holdFireLeftMs += dt * 1000;
-      else player.holdFireLeftMs = 0;
-      if (player.fireRight) player.holdFireRightMs += dt * 1000;
-      else player.holdFireRightMs = 0;
       this.updateAimLock(player, dt);
       this.updateTurretAim(player);
       const isPointer = player.aimSource === 'pointer';
       const clickLeft = isPointer && this.pointerFireEdgeLeft;
       const clickRight = isPointer && this.pointerFireEdgeRight;
-      if (clickLeft) this.tryFireClick(player, player.leftCannon);
-      if (clickRight) this.tryFireClick(player, player.rightCannon);
-      if (
-        player.fireLeft &&
-        !clickLeft &&
-        player.holdFireLeftMs >= PLAYER_AUTO_FIRE_HOLD_MS
-      ) {
+      if (clickLeft) this.tryFireClick(player, player.leftCannon, 'left');
+      if (clickRight) this.tryFireClick(player, player.rightCannon, 'right');
+      if (player.fireLeft && !clickLeft) {
         this.tryFireAuto(player, player.leftCannon, 'left');
       }
-      if (
-        player.fireRight &&
-        !clickRight &&
-        player.holdFireRightMs >= PLAYER_AUTO_FIRE_HOLD_MS
-      ) {
+      if (player.fireRight && !clickRight) {
         this.tryFireAuto(player, player.rightCannon, 'right');
       }
     }
@@ -1188,9 +1174,17 @@ export class GameScene extends Container implements MenuActionsHost {
     cannon.rotation = angle;
   }
 
-  private tryFireClick(player: PlayerSlot, cannon: Sprite): void {
+  private tryFireClick(player: PlayerSlot, cannon: Sprite, side: 'left' | 'right'): void {
     if (player.rocketsInFlight >= player.rocketCap) return;
     this.spawnRocket(player, cannon);
+    // Holding after the initial click should wait for the autofire interval, not fire again immediately.
+    const stillHeld = side === 'left' ? player.fireLeft : player.fireRight;
+    if (!stillHeld) return;
+    const delay = this.touchControls
+      ? PLAYER_TOUCH_AUTO_FIRE_COOLDOWN_S
+      : PLAYER_AUTO_FIRE_COOLDOWN_S;
+    if (side === 'left') player.autoFireCooldownLeft = delay;
+    else player.autoFireCooldownRight = delay;
   }
 
   private tryFireAuto(player: PlayerSlot, cannon: Sprite, side: 'left' | 'right'): void {
