@@ -16,6 +16,10 @@ const CLOUD_FRAME_COUNT = 8;
 /** Second row of particle.png — dark metal shrapnel. */
 const DEBRIS_FRAME_START = 4;
 const DEBRIS_FRAME_COUNT = 4;
+/** Third row of particle.png — animated damage smoke. */
+const PLANE_SMOKE_FRAME_START = 8;
+const PLANE_SMOKE_FRAME_COUNT = 4;
+const PLANE_SMOKE_ANIM_FRAME_S = 0.07;
 const BLOOD_PARTICLE_SCALE = 2;
 const BLOOD_SCALE_MIN = 0.07 * BLOOD_PARTICLE_SCALE;
 const BLOOD_SCALE_MAX = 0.22 * BLOOD_PARTICLE_SCALE;
@@ -74,12 +78,15 @@ interface LiveParticle {
   baseScale: number;
   peakAlpha: number;
   gravity: number;
+  animFrames?: Texture[];
+  animFrameTime?: number;
+  animTimer?: number;
 }
 
 interface TrailEmitter {
   entityId: number;
   cooldown: number;
-  kind: 'rocket' | 'crash' | 'bomb';
+  kind: 'rocket' | 'crash' | 'bomb' | 'damagedPlane';
   guided: boolean;
   bombType: number;
 }
@@ -97,6 +104,7 @@ interface QualityProfile {
   rocketInterval: number;
   crashInterval: number;
   bombInterval: number;
+  planeSmokeInterval: number;
 }
 
 const QUALITY: Record<EffectQuality, QualityProfile | null> = {
@@ -106,18 +114,21 @@ const QUALITY: Record<EffectQuality, QualityProfile | null> = {
     rocketInterval: 0.042,
     crashInterval: 0.034,
     bombInterval: 0.09,
+    planeSmokeInterval: 0.065,
   },
   high: {
     budget: 240,
     rocketInterval: 0.028,
     crashInterval: 0.022,
     bombInterval: 0.06,
+    planeSmokeInterval: 0.048,
   },
   ultra: {
     budget: 320,
     rocketInterval: 0.02,
     crashInterval: 0.016,
     bombInterval: 0.045,
+    planeSmokeInterval: 0.036,
   },
 };
 
@@ -132,6 +143,7 @@ interface EntityBuckets {
   projectiles: CombatEntity[];
   crashingPlanes: CombatEntity[];
   fallingBombs: CombatEntity[];
+  damagedAirplanes: CombatEntity[];
 }
 
 /**
@@ -149,6 +161,7 @@ export class ParticleFxManager {
 
   private cloudFrames: Texture[] = [];
   private debrisFrames: Texture[] = [];
+  private planeSmokeFrames: Texture[] = [];
   private fireFrames: Texture[] = [];
   private bloodFrames: Texture[] = [];
   private readonly trailEmitters = new Map<number, TrailEmitter>();
@@ -211,6 +224,13 @@ export class ParticleFxManager {
       SHEET_ROWS,
       DEBRIS_FRAME_START,
       DEBRIS_FRAME_COUNT,
+    );
+    this.planeSmokeFrames = sliceParticleSheet(
+      sheet,
+      SHEET_COLS,
+      SHEET_ROWS,
+      PLANE_SMOKE_FRAME_START,
+      PLANE_SMOKE_FRAME_COUNT,
     );
     this.loaded = true;
   }
@@ -650,6 +670,17 @@ export class ParticleFxManager {
       });
     }
 
+    for (const plane of buckets.damagedAirplanes) {
+      activeIds.add(plane.id);
+      this.trailEmitters.set(plane.id, {
+        entityId: plane.id,
+        cooldown: this.trailEmitters.get(plane.id)?.cooldown ?? 0,
+        kind: 'damagedPlane',
+        guided: false,
+        bombType: 1,
+      });
+    }
+
     for (const id of this.trailEmitters.keys()) {
       if (!activeIds.has(id)) this.trailEmitters.delete(id);
     }
@@ -666,6 +697,7 @@ export class ParticleFxManager {
       ...buckets.projectiles.map((e) => ({ e, kind: 'rocket' as const })),
       ...buckets.crashingPlanes.map((e) => ({ e, kind: 'crash' as const })),
       ...buckets.fallingBombs.map((e) => ({ e, kind: 'bomb' as const })),
+      ...buckets.damagedAirplanes.map((e) => ({ e, kind: 'damagedPlane' as const })),
     ];
 
     for (const { e, kind } of all) {
@@ -677,12 +709,15 @@ export class ParticleFxManager {
           ? profile.rocketInterval
           : kind === 'crash'
             ? profile.crashInterval
-            : profile.bombInterval;
+            : kind === 'damagedPlane'
+              ? profile.planeSmokeInterval
+              : profile.bombInterval;
 
       emitter.cooldown -= dt;
       while (emitter.cooldown <= 0 && this.hasBudget()) {
         if (kind === 'rocket') this.emitRocketTrail(e, emitter.guided);
         else if (kind === 'crash') this.emitCrashTrail(e);
+        else if (kind === 'damagedPlane') this.emitDamagedPlaneSmoke(e);
         else this.emitBombTrail(e, emitter.bombType);
         emitter.cooldown += interval + (Math.random() - 0.5) * interval * 0.4;
       }
@@ -756,6 +791,23 @@ export class ParticleFxManager {
       tint: guided ? 0xffe8e8 : 0xf4f8ff,
       peakAlpha: 0.58,
       gravity: 0,
+    });
+  }
+
+  private emitDamagedPlaneSmoke(plane: CombatEntity): void {
+    const w = Math.abs(plane.sprite.width);
+    const h = Math.abs(plane.sprite.height);
+    this.pushPlaneSmoke({
+      x: plane.x + (Math.random() - 0.5) * w * 0.45,
+      y: plane.y + (Math.random() - 0.5) * h * 0.25,
+      vx: (Math.random() - 0.5) * 16,
+      vy: -38 - Math.random() * 42,
+      life: 0.55 + Math.random() * 0.45,
+      scale: 0.11 + Math.random() * 0.08,
+      grow: 0.12,
+      tint: this.pickPlaneSmokeTint(),
+      peakAlpha: 0.62,
+      gravity: -12,
     });
   }
 
@@ -933,6 +985,49 @@ export class ParticleFxManager {
     this.pushParticle('fxSmoke', frame, opts);
   }
 
+  private pushPlaneSmoke(opts: {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    life: number;
+    scale: number;
+    grow: number;
+    tint: number;
+    peakAlpha: number;
+    gravity: number;
+  }): void {
+    if (this.planeSmokeFrames.length === 0 || !this.hasBudget()) return;
+
+    const particle = this.acquire('trailSmoke', this.planeSmokeFrames[0]!);
+    particle.x = opts.x;
+    particle.y = opts.y;
+    particle.rotation = Math.random() * Math.PI * 2;
+    particle.scaleX = opts.scale;
+    particle.scaleY = opts.scale;
+    particle.alpha = opts.peakAlpha;
+    particle.tint = opts.tint;
+    particle.anchorX = 0.5;
+    particle.anchorY = 0.5;
+
+    this.pools.get('trailSmoke')!.live.push({
+      pool: 'trailSmoke',
+      particle,
+      life: opts.life,
+      maxLife: opts.life,
+      vx: opts.vx,
+      vy: opts.vy,
+      spin: (Math.random() - 0.5) * 0.5,
+      grow: opts.grow,
+      baseScale: opts.scale,
+      peakAlpha: opts.peakAlpha,
+      gravity: opts.gravity,
+      animFrames: this.planeSmokeFrames,
+      animFrameTime: PLANE_SMOKE_ANIM_FRAME_S,
+      animTimer: 0,
+    });
+  }
+
   private pushFire(
     poolId: 'trailSmoke' | 'fxFire',
     opts: {
@@ -1016,6 +1111,15 @@ export class ParticleFxManager {
         entry.particle.y += entry.vy * dt;
         entry.particle.rotation += entry.spin * dt;
 
+        if (entry.animFrames && entry.animFrames.length > 0 && entry.animFrameTime) {
+          entry.animTimer = (entry.animTimer ?? 0) + dt;
+          const frameIdx = Math.min(
+            entry.animFrames.length - 1,
+            Math.floor(entry.animTimer / entry.animFrameTime),
+          );
+          entry.particle.texture = entry.animFrames[frameIdx]!;
+        }
+
         if (this.particleHitGround(entry)) {
           this.recycle(entry);
           pool.live.splice(i, 1);
@@ -1028,6 +1132,7 @@ export class ParticleFxManager {
         entry.particle.alpha = fade * entry.peakAlpha;
         entry.vx *= 1 - dt * 1.8;
         if (entry.gravity === 0) entry.vy *= 1 - dt * 1.8;
+        else if (entry.gravity < 0) entry.vy *= 1 - dt * 0.35;
       }
     }
   }
@@ -1072,6 +1177,11 @@ export class ParticleFxManager {
   private pickDebrisTint(): number {
     const tints = [0xbbbbbb, 0x999999, 0x888888, 0xaaaaaa, 0x777777];
     return tints[Math.floor(Math.random() * tints.length)] ?? 0x999999;
+  }
+
+  private pickPlaneSmokeTint(): number {
+    const tints = [0x666666, 0x777777, 0x555555, 0x888888, 0x444444];
+    return tints[Math.floor(Math.random() * tints.length)] ?? 0x666666;
   }
 
   private acquire(poolId: PoolId, texture: Texture): Particle {

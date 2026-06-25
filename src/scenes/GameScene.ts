@@ -1190,6 +1190,7 @@ export class GameScene extends Container implements MenuActionsHost {
       projectiles: this.entities.projectiles(),
       crashingPlanes: this.entities.crashingPlanes(),
       fallingBombs: this.entities.fallingBombs(),
+      damagedAirplanes: this.entities.damagedAirplanes(),
     };
   }
 

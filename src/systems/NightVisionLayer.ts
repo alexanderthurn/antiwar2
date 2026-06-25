@@ -1,36 +1,73 @@
-import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics, Sprite, type Texture } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
+import { loadTexture } from '../data/AssetLoader';
 
-const NIGHT_VISION_RADIUS = 168;
+const NIGHTSHOT_PATH = 'assets/gfx/nightshot.png';
+/** 2× viewport — cursor in a corner must still reach the opposite corner. */
+const NIGHTSHOT_SIZE_SCALE = 2;
 
-/** Darkness overlay with lit circles at each player crosshair (weather darkness > 0.4). */
+/** v1 night vision — one full-viewport nightshot per crosshair; texture alpha clears the center. */
 export class NightVisionLayer extends Container {
-  private base = new Graphics();
-  private holes = new Graphics();
+  private baseDim = new Graphics();
+  private shots = new Container();
+  private sprites: Sprite[] = [];
+  private texture: Texture | null = null;
+  private ready = false;
 
   constructor() {
     super();
     this.eventMode = 'none';
-    this.holes.blendMode = 'erase';
-    this.addChild(this.base, this.holes);
+    this.addChild(this.baseDim, this.shots);
     this.visible = false;
+    void this.loadNightshot();
+  }
+
+  private async loadNightshot(): Promise<void> {
+    this.texture = await loadTexture(NIGHTSHOT_PATH);
+    if (this.destroyed) return;
+    this.ready = true;
+  }
+
+  private ensureSprite(index: number): Sprite {
+    let sprite = this.sprites[index];
+    if (sprite) return sprite;
+
+    sprite = new Sprite(this.texture!);
+    sprite.anchor.set(0.5);
+    sprite.width = DESIGN.width * NIGHTSHOT_SIZE_SCALE;
+    sprite.height = DESIGN.height * NIGHTSHOT_SIZE_SCALE;
+    this.sprites.push(sprite);
+    this.shots.addChild(sprite);
+    return sprite;
   }
 
   update(darkness: number, aimPoints: { x: number; y: number }[]): void {
-    if (darkness <= 0.4 || aimPoints.length === 0) {
+    if (!this.ready || darkness <= 0) {
       this.visible = false;
+      this.baseDim.clear();
+      for (const sprite of this.sprites) sprite.visible = false;
       return;
     }
 
     this.visible = true;
-    const alpha = Math.min(0.9, 0.45 + (darkness - 0.4) * 0.9);
 
-    this.base.clear();
-    this.base.rect(0, 0, DESIGN.width, DESIGN.height).fill({ color: 0x020208, alpha });
-
-    this.holes.clear();
-    for (const { x, y } of aimPoints) {
-      this.holes.circle(x, y, NIGHT_VISION_RADIUS).fill({ color: 0xffffff, alpha: 1 });
+    if (darkness >= 0.4 && aimPoints.length > 0) {
+      this.baseDim.clear();
+      for (let i = 0; i < aimPoints.length; i++) {
+        const { x, y } = aimPoints[i]!;
+        const sprite = this.ensureSprite(i);
+        sprite.position.set(x, y);
+        sprite.alpha = 1;
+        sprite.visible = true;
+      }
+      for (let i = aimPoints.length; i < this.sprites.length; i++) {
+        this.sprites[i]!.visible = false;
+      }
+      return;
     }
+
+    for (const sprite of this.sprites) sprite.visible = false;
+    this.baseDim.clear();
+    this.baseDim.rect(0, 0, DESIGN.width, DESIGN.height).fill({ color: 0x000000, alpha: 1 });
   }
 }

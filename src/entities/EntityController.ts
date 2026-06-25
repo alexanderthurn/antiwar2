@@ -104,6 +104,18 @@ export class EntityController {
     );
   }
 
+  damagedAirplanes(): CombatEntity[] {
+    return this.entities.filter(
+      (e) =>
+        e.alive &&
+        e.traits.countsForRoundWin &&
+        !e.crashing &&
+        e.motion.kind === 'patrol' &&
+        e.maxHp > 0 &&
+        e.hp < e.maxHp * 0.5,
+    );
+  }
+
   fallingBombs(): CombatEntity[] {
     return this.entities.filter(
       (e) => e.alive && e.motion.kind === 'fall' && !e.traits.isPlayerProjectile && !e.crashing,
