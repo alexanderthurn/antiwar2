@@ -1,4 +1,4 @@
-import { DESIGN, scaleV1Y } from '../core/DesignSpace';
+import { DESIGN } from '../core/DesignSpace';
 import type { AirplaneDef, BombDef, LevelPack } from '../data/types';
 import type { CombatEntity } from './CombatEntity';
 import type { PatrolMotion } from './EntityTraits';
@@ -168,22 +168,20 @@ function pickFighterMgTargetX(currentX: number): number {
   return x;
 }
 
-function scaledAiBand(def: AirplaneDef): { min: number; max: number } {
+function aiYBand(def: AirplaneDef): { min: number; max: number } {
   const [minY, maxY] = def.aiParams;
-  return { min: scaleV1Y(minY), max: scaleV1Y(maxY) };
+  return { min: minY, max: maxY };
 }
 
-function pickHighTargetY(band: { min: number; max: number }): number {
+/** Pick a waypoint Y inside the KI_PARAM_A..B band (already in design-space coords). */
+function pickWaypointY(band: { min: number; max: number }, prefer: 'high' | 'low' | 'any'): number {
   const span = Math.max(1, band.max - band.min);
-  return band.min + Math.random() * span * 0.25;
+  if (prefer === 'high') return band.min + Math.random() * span * 0.35;
+  if (prefer === 'low') return band.min + span * 0.65 + Math.random() * span * 0.35;
+  return band.min + Math.random() * span;
 }
 
-function pickLowTargetY(band: { min: number; max: number }): number {
-  const span = Math.max(1, band.max - band.min);
-  return band.min + span * 0.75 + Math.random() * span * 0.25;
-}
-
-/** Turn toward waypoint, then fly along the nose. rotationSpeed matches rocket homing (deg/tick @ 60hz). */
+/** Turn toward waypoint, fly along the nose. rotationSpeed = deg/frame @ 60hz (same as rocket homing). */
 function steerFighterToward(
   entity: CombatEntity,
   def: AirplaneDef,
@@ -246,26 +244,26 @@ function rollDirectionalWeaponDrop(
 }
 
 function updateFighterMg(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
-  const band = scaledAiBand(def);
+  const band = aiYBand(def);
   const speed = def.speed * TICK_SCALE * 1.15;
 
   if (motion.phase === 0) {
     if (steerFighterToward(entity, def, motion.targetX, motion.targetY, speed, ctx.dt)) {
       motion.phase = 1;
       motion.targetX = pickFighterMgTargetX(entity.x);
-      motion.targetY = pickLowTargetY(band);
+      motion.targetY = pickWaypointY(band, 'low');
     }
   } else if (motion.phase === 1) {
     rollDirectionalWeaponDrop(entity, def, ctx.dt, ctx);
     if (steerFighterToward(entity, def, motion.targetX, motion.targetY, speed * 1.1, ctx.dt)) {
       motion.phase = 2;
       motion.targetX = pickFighterMgTargetX(entity.x);
-      motion.targetY = pickHighTargetY(band);
+      motion.targetY = pickWaypointY(band, 'high');
     }
   } else if (steerFighterToward(entity, def, motion.targetX, motion.targetY, speed, ctx.dt)) {
     motion.phase = 0;
     motion.targetX = pickFighterMgTargetX(entity.x);
-    motion.targetY = pickHighTargetY(band);
+    motion.targetY = pickWaypointY(band, 'high');
   }
 }
 
@@ -458,14 +456,11 @@ export function createPatrolMotion(
 ): PatrolMotion {
   const [minY, maxY] = [def.aiParams[0], def.aiParams[1]];
   const ai = normalizeAI(def.ai);
-  const band = { min: scaleV1Y(minY), max: scaleV1Y(maxY) };
-  const targetX =
-    ai === 'FIGHTERMG'
-      ? pickFighterMgTargetX(x)
-      : x;
+  const band = { min: minY, max: maxY };
+  const targetX = ai === 'FIGHTERMG' ? pickFighterMgTargetX(x) : x;
   const targetY =
     ai === 'FIGHTERMG'
-      ? pickHighTargetY(band)
+      ? pickWaypointY(band, 'high')
       : minY + Math.random() * Math.max(1, maxY - minY);
   return {
     kind: 'patrol',
