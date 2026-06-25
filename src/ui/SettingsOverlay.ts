@@ -9,6 +9,7 @@ import { createFocusableButton } from '../input/FocusableButton';
 import type { MenuActionsHost } from '../input/MenuActionsHost';
 import type { UiAction } from '../input/UiMenuController';
 import { playMenuClick } from '../audio/UiSounds';
+import { createMenuBackground } from './MenuBackground';
 import { kewlBlockGap, kewlLineHeight, kewlString, kewlText, UI_TITLE_Y } from './KewlFont';
 
 const ROW_FONT = 22;
@@ -24,10 +25,12 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
   constructor(onBack: () => void) {
     super();
     this.onBack = onBack;
-    this.build();
+    void this.build();
   }
 
-  private build(): void {
+  private async build(): Promise<void> {
+    this.addChild(await createMenuBackground());
+
     const centerX = DESIGN.width / 2;
     const title = kewlText({ text: 'Options', size: 36, anchorX: 0.5 });
     title.position.set(centerX, UI_TITLE_Y);

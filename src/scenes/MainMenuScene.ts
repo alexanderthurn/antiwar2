@@ -24,6 +24,7 @@ const VERSION_URL = 'https://github.com/alexanderthurn/antiwar2';
 export class MainMenuScene extends Container implements MenuActionsHost {
   private menuActions: UiAction[] = [];
   private mainActions: UiAction[] = [];
+  private menuContent = new Container();
   private settingsOverlay: SettingsOverlay | null = null;
   private howToPlayOverlay: HowToPlayOverlay | null = null;
   private logo: MenuLogo | null = null;
@@ -43,6 +44,7 @@ export class MainMenuScene extends Container implements MenuActionsHost {
 
   showSettings(): void {
     if (this.settingsOverlay) return;
+    this.menuContent.visible = false;
     this.settingsOverlay = new SettingsOverlay(() => this.closeSettings());
     this.addChild(this.settingsOverlay);
   }
@@ -51,11 +53,13 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     if (this.settingsOverlay) {
       this.settingsOverlay.destroy({ children: true });
       this.settingsOverlay = null;
+      this.menuContent.visible = true;
     }
   }
 
   showHowToPlay(): void {
     if (this.howToPlayOverlay) return;
+    this.menuContent.visible = false;
     this.howToPlayOverlay = new HowToPlayOverlay(() => this.closeHowToPlay());
     this.addChild(this.howToPlayOverlay);
   }
@@ -64,6 +68,7 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     if (this.howToPlayOverlay) {
       this.howToPlayOverlay.destroy({ children: true });
       this.howToPlayOverlay = null;
+      this.menuContent.visible = true;
     }
   }
 
@@ -85,7 +90,8 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     onCredits: () => void,
     onSettings: () => void,
   ): Promise<void> {
-    this.addChild(await createMenuBackground());
+    this.addChild(this.menuContent);
+    this.menuContent.addChild(await createMenuBackground());
     if (!welcomePlayed) {
       playSound(sfxPath('welcome.ogg'), 0.55);
       welcomePlayed = true;
@@ -94,9 +100,7 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     const centerX = DESIGN.width / 2;
     const logoTex = await loadTexture(LOGO_PATH);
     this.logo = new MenuLogo(logoTex, centerX, UI_TITLE_MAIN_MENU_Y, LOGO_HEIGHT);
-    this.addChild(this.logo);
-
-  
+    this.menuContent.addChild(this.logo);
 
     const btnW = 420;
     const btnX = centerX - btnW / 2;
@@ -104,19 +108,19 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     const btnStep = kewlLineHeight(btnSize) + 10;
     let btnY = 400;
 
-    this.addChild(this.makeButton('menu-campaign', 'Campaign', btnX, btnY, btnW, onCampaign));
+    this.menuContent.addChild(this.makeButton('menu-campaign', 'Campaign', btnX, btnY, btnW, onCampaign));
     btnY += btnStep;
-    this.addChild(this.makeButton('menu-settings', 'Options', btnX, btnY, btnW, onSettings));
+    this.menuContent.addChild(this.makeButton('menu-settings', 'Options', btnX, btnY, btnW, onSettings));
     btnY += btnStep;
-    this.addChild(this.makeButton('menu-how-to-play', 'How to play', btnX, btnY, btnW, () => this.showHowToPlay()));
+    this.menuContent.addChild(this.makeButton('menu-how-to-play', 'How to play', btnX, btnY, btnW, () => this.showHowToPlay()));
     btnY += btnStep;
-    this.addChild(this.makeButton('menu-credits', 'Credits', btnX, btnY, btnW, onCredits));
+    this.menuContent.addChild(this.makeButton('menu-credits', 'Credits', btnX, btnY, btnW, onCredits));
 
     const footerLineH = kewlLineHeight(FOOTER_FONT_SIZE);
     const footerY = DESIGN.height - FOOTER_MARGIN - footerLineH;
 
     const versionText = `Version: ${packageJson.version}`;
-    this.addChild(
+    this.menuContent.addChild(
       this.makeFooterLink(
         'menu-version',
         versionText,
@@ -128,7 +132,7 @@ export class MainMenuScene extends Container implements MenuActionsHost {
 
     const creditText = 'Feuerware';
     const creditW = kewlMeasuredSize(creditText, FOOTER_FONT_SIZE).width;
-    this.addChild(
+    this.menuContent.addChild(
       this.makeFooterLink(
         'menu-credit',
         creditText,
