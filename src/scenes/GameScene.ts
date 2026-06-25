@@ -7,6 +7,7 @@ import { settingsStore } from '../core/SettingsStore';
 import { LevelSession, UPGRADE_KEYS, type UpgradeKey } from '../core/LevelSession';
 import { DEV_DEEP_LINK_ENABLED, type DevGameState } from '../core/DevDeepLink';
 import { loadTexture, preloadRound } from '../data/AssetLoader';
+import { loadCollisionShapes } from '../data/CollisionShapes';
 import type { BombDef, LevelPack, RoundDef } from '../data/types';
 import { CombatEntity } from '../entities/CombatEntity';
 import { EntityController } from '../entities/EntityController';
@@ -194,7 +195,11 @@ export class GameScene extends Container implements MenuActionsHost {
     this.rumbleFx = new RumbleController(this.worldLayer);
     this.fxLayer.addChild(this.entityHpBars);
     this.entities.attachHomingLines(this.entityLayer);
-    void Promise.all([this.explosionManager.load(), this.particleFx.load()]).then(() => {
+    void Promise.all([
+      this.explosionManager.load(),
+      this.particleFx.load(),
+      loadCollisionShapes(),
+    ]).then(() => {
       this.explosionManager.attach(this.fxLayer);
       this.particleFx.attach(this.trailLayer, this.fxLayer);
       this.applySettingsEffects();

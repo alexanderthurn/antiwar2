@@ -1,7 +1,7 @@
 import { Graphics, Sprite, type Container } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
 import type { AirplaneDef, BombDef, LevelPack } from '../data/types';
-import { pointHitsSprite, rocketHitsSprite, rocketSweepStep, spritesOverlap } from '../systems/collision';
+import { pointHitsSprite, rocketHitsSprite, rocketSweepStep, spritesOverlap, bindSpriteCollisionPath } from '../systems/collision';
 import { createPatrolMotion, updateAirplaneAI, type AIUpdateContext } from './AISystem';
 import { CombatEntity } from './CombatEntity';
 import {
@@ -162,6 +162,7 @@ export class EntityController {
     const sprite = new Sprite(tex);
     sprite.anchor.set(0.5);
     sprite.scale.set(def.scale[0], def.scale[1]);
+    bindSpriteCollisionPath(sprite, def.image);
     if (def.drawStyle === 1) {
       sprite.scale.x = Math.abs(sprite.scale.x);
     } else if (x >= DESIGN.width / 2) {
@@ -205,6 +206,7 @@ export class EntityController {
     layer: { addChild(s: Sprite): void },
   ): CombatEntity {
     layer.addChild(sprite);
+    bindSpriteCollisionPath(sprite, def.image);
     const entity = new CombatEntity(sprite, traitsForPlayerProjectile(def), { kind: 'projectile' }, {
       x: stats.x,
       y: stats.y,
@@ -235,6 +237,7 @@ export class EntityController {
     const sprite = new Sprite(tex);
     sprite.anchor.set(0.5);
     sprite.scale.set(def.scale[0], def.scale[1]);
+    bindSpriteCollisionPath(sprite, def.image);
     layer.addChild(sprite);
 
     const bulletSpeed = def.speed * TICK_SCALE;
