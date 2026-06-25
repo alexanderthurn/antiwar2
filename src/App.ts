@@ -105,9 +105,8 @@ export class App {
       this.showMainMenu(true);
       return;
     }
-    this.campaignProgress.reset();
+    this.campaignProgress.ensureUnlockedAtLeast(dev.levelIndex);
     this.campaignProgress.playingIndex = dev.levelIndex;
-    for (let i = 0; i < dev.levelIndex; i++) this.campaignProgress.completeLevel(i);
 
     const pack = await loadLevelPack(entry.file);
     const roundIndex = Math.min(Math.max(0, dev.roundIndex), pack.rounds.length - 1);
@@ -241,10 +240,8 @@ export class App {
     const game = new GameScene();
     game.onReturnToMenu = () => this.showMainMenu(false);
     game.onReturnToCampaign = () => this.showCampaignView(false);
-    game.onLevelComplete = () => {
-      this.campaignProgress.completeLevel(levelIndex);
-      this.showCampaignView(false);
-    };
+    game.onLevelWon = () => this.campaignProgress.completeLevel(levelIndex);
+    game.onLevelComplete = () => this.showCampaignView(false);
     game.onRoundStarted = (state) => syncDevUrl(state);
 
     const bootstrap: DevBootstrap = devBootstrap ?? { levelIndex, roundIndex: 0 };
@@ -352,7 +349,7 @@ export class App {
           this.game.cheatKillVisibleEnemies();
           return;
         }
-        if (this.mode === 'campaign' || this.mode === 'menu') {
+        if (this.mode === 'campaign') {
           void this.applyCampaignUnlockCheat();
         }
         return;

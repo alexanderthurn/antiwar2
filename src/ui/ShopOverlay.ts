@@ -41,6 +41,7 @@ const SHOP_ICON: Record<UpgradeKey, string> = {
 
 const SHOP_BASE = 'assets/gfx/buttons/button.png';
 const SHOP_GO = 'assets/gfx/buttons/button_go.png';
+const SHOP_AUTO = 'assets/gfx/buttons/button_auto.PNG';
 const SHOP_LOCKED = 'assets/gfx/buttons/button_locked.png';
 
 const SHOP_BTN_SIZE = 96;
@@ -48,9 +49,9 @@ const SHOP_CONTINUE_SIZE = SHOP_BTN_SIZE * 2;
 const SHOP_ITEMS_TOP_OFFSET = 48;
 const LABEL_GAP = 14;
 const LABEL_SIZE = 21;
-const LEFT_COL_X = DESIGN.width * 0.1;
-const RIGHT_COL_X = DESIGN.width * 0.6;
-const MARGIN = 48;
+const SHOP_EDGE = 96;
+const LEFT_COL_X = SHOP_EDGE;
+const RIGHT_COL_X = 1920/2;
 
 interface ShopRow {
   icon: Sprite;
@@ -69,19 +70,24 @@ export class ShopOverlay extends Container {
   private shopRows = new Map<UpgradeKey, ShopRow>();
   private lockedTex!: Texture;
   private onBuy: (key: UpgradeKey) => void;
+  private onAutoBuy: () => void;
   private onContinue: () => void;
   private canBuy: (key: UpgradeKey) => boolean;
+  private autoBuyView: Container | null = null;
+  private autoBuyAction: UiAction | null = null;
 
   constructor(
     pack: LevelPack,
     session: LevelSession,
     onBuy: (key: UpgradeKey) => void,
+    onAutoBuy: () => void,
     onContinue: () => void,
     canBuy: (key: UpgradeKey) => boolean,
     _hasMoreRounds: boolean,
   ) {
     super();
     this.onBuy = onBuy;
+    this.onAutoBuy = onAutoBuy;
     this.onContinue = onContinue;
     this.canBuy = canBuy;
     void this.build(pack, session);
@@ -95,6 +101,23 @@ export class ShopOverlay extends Container {
     for (const [key, row] of this.shopRows) {
       const affordable = this.canBuy(key);
       setPlateIconTexture(row.icon, affordable ? row.normalTex : this.lockedTex, row.iconScale);
+    }
+    this.refreshAutoBuyVisibility();
+  }
+
+  private hasBuyableItem(): boolean {
+    for (const key of this.shopRows.keys()) {
+      if (this.canBuy(key)) return true;
+    }
+    return false;
+  }
+
+  private refreshAutoBuyVisibility(): void {
+    if (!this.autoBuyView) return;
+    const visible = this.hasBuyableItem();
+    this.autoBuyView.visible = visible;
+    if (this.autoBuyAction) {
+      this.autoBuyAction.enabled = () => visible && this.hasBuyableItem();
     }
   }
 
@@ -113,6 +136,7 @@ export class ShopOverlay extends Container {
 
     const baseTex = await loadTexture(SHOP_BASE);
     const goTex = await loadTexture(SHOP_GO);
+    const autoTex = await loadTexture(SHOP_AUTO);
     const iconTex = new Map<UpgradeKey, Texture>();
     for (const key of UPGRADE_ORDER) {
       iconTex.set(key, await loadTexture(SHOP_ICON[key]));
@@ -128,10 +152,30 @@ export class ShopOverlay extends Container {
     this.layoutColumn(leftKeys, LEFT_COL_X, contentTop, rowStep, session, baseTex, iconTex);
     this.layoutColumn(rightKeys, RIGHT_COL_X, contentTop, rowStep, session, baseTex, iconTex);
 
+    const bottomY = DESIGN.height - SHOP_EDGE - SHOP_CONTINUE_SIZE;
+    const goX = DESIGN.width - SHOP_EDGE - SHOP_CONTINUE_SIZE;
+
+    const auto = createImageFocusButton({
+      id: 'shop-auto-buy',
+      x: goX - SHOP_CONTINUE_SIZE*1.1,
+      y: bottomY,
+      w: SHOP_CONTINUE_SIZE,
+      h: SHOP_CONTINUE_SIZE,
+      iconPlateW: SHOP_BTN_SIZE,
+      base: baseTex,
+      icon: autoTex,
+      onPress: () => this.onAutoBuy(),
+      enabled: () => this.hasBuyableItem(),
+    });
+    this.autoBuyView = auto.view;
+    this.autoBuyAction = auto.action;
+    this.addChild(auto.view);
+    this.menuActions.push(auto.action);
+
     const cont = createImageFocusButton({
       id: 'shop-continue',
-      x: DESIGN.width - MARGIN - SHOP_CONTINUE_SIZE,
-      y: DESIGN.height - MARGIN - SHOP_CONTINUE_SIZE,
+      x: goX,
+      y: bottomY,
       w: SHOP_CONTINUE_SIZE,
       h: SHOP_CONTINUE_SIZE,
       iconPlateW: SHOP_BTN_SIZE,
@@ -208,10 +252,27 @@ export class ShopOverlay extends Container {
     };
     row.on('pointertap', activate);
 
-    const setFocused = (focused: boolean) => {
-      btn.action.setFocused?.(focused);
+    let rowHovered = false;
+    let rowFocused = false;
+    const applyRowVisual = () => {
+      const active = rowHovered || rowFocused;
+      btn.setHovered(active);
       if (label.destroyed) return;
-      label.scale.set(focused ? 1.04 : 1);
+      label.scale.set(active ? 1.04 : 1);
+    };
+
+    row.on('pointerover', () => {
+      rowHovered = true;
+      applyRowVisual();
+    });
+    row.on('pointerout', () => {
+      rowHovered = false;
+      applyRowVisual();
+    });
+
+    const setFocused = (focused: boolean) => {
+      rowFocused = focused;
+      applyRowVisual();
     };
 
     this.menuActions.push({

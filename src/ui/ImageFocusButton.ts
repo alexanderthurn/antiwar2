@@ -25,10 +25,10 @@ export function plateIconScale(baseTex: Texture, displayW: number): number {
   return displayW / baseTex.width;
 }
 
-/** Sprite button with optional base plate; scales on menu focus. */
+/** Sprite button with optional base plate; scales on menu focus and pointer hover. */
 export function createImageFocusButton(
   opts: ImageFocusButtonOptions,
-): { view: Container; action: UiAction; icon: Sprite; iconScale: number } {
+): { view: Container; action: UiAction; icon: Sprite; iconScale: number; setHovered: (hovered: boolean) => void } {
   const view = new Container();
   view.position.set(opts.x, opts.y);
   view.eventMode = 'static';
@@ -57,13 +57,27 @@ export function createImageFocusButton(
   icon.scale.set(iconUniformScale);
   gfx.addChild(icon);
 
-  const setFocused = (focused: boolean) => {
+  let menuFocused = false;
+  let pointerHovered = false;
+
+  const applyVisual = () => {
     if (gfx.destroyed) return;
-    gfx.scale.set(focused ? FOCUS_SCALE : 1);
+    const active = menuFocused || pointerHovered;
+    gfx.scale.set(active ? FOCUS_SCALE : 1);
     gfx.position.set(
-      focused ? plateW * (1 - FOCUS_SCALE) * 0.5 : 0,
-      focused ? plateH * (1 - FOCUS_SCALE) * 0.5 : 0,
+      active ? plateW * (1 - FOCUS_SCALE) * 0.5 : 0,
+      active ? plateH * (1 - FOCUS_SCALE) * 0.5 : 0,
     );
+  };
+
+  const setFocused = (focused: boolean) => {
+    menuFocused = focused;
+    applyVisual();
+  };
+
+  const setHovered = (hovered: boolean) => {
+    pointerHovered = hovered;
+    applyVisual();
   };
 
   const activate = () => {
@@ -72,6 +86,8 @@ export function createImageFocusButton(
     opts.onPress();
   };
 
+  view.on('pointerover', () => setHovered(true));
+  view.on('pointerout', () => setHovered(false));
   view.on('pointertap', activate);
 
   const action: UiAction = {
@@ -82,7 +98,7 @@ export function createImageFocusButton(
     enabled: opts.enabled,
   };
 
-  return { view, action, icon, iconScale: iconUniformScale };
+  return { view, action, icon, iconScale: iconUniformScale, setHovered };
 }
 
 /** Keep overlay at native ratio when swapping textures (e.g. locked icon). */

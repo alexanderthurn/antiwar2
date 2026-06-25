@@ -4,7 +4,7 @@ import { createLevelAudio, type LevelAudio } from '../audio/LevelSounds';
 import { DESIGN, V1_SPRITES, towerXForSlot } from '../core/DesignSpace';
 import { effectQualityForGraphics } from '../core/GraphicsQuality';
 import { settingsStore } from '../core/SettingsStore';
-import { LevelSession, type UpgradeKey } from '../core/LevelSession';
+import { LevelSession, UPGRADE_KEYS, type UpgradeKey } from '../core/LevelSession';
 import { DEV_DEEP_LINK_ENABLED, type DevGameState } from '../core/DevDeepLink';
 import { loadTexture, preloadRound } from '../data/AssetLoader';
 import type { BombDef, LevelPack, RoundDef } from '../data/types';
@@ -161,7 +161,9 @@ export class GameScene extends Container implements MenuActionsHost {
   onReturnToMenu?: () => void;
   /** Return to campaign map (pause / level complete). */
   onReturnToCampaign?: () => void;
-  /** Level finished — back to campaign map. */
+  /** Level beaten — persist unlock before the end-screen animation. */
+  onLevelWon?: () => void;
+  /** Level finished — back to campaign map after the end-screen animation. */
   onLevelComplete?: () => void;
   /** Fired when a round/stage begins (for dev URL sync). */
   onRoundStarted?: (state: DevGameState) => void;
@@ -702,15 +704,17 @@ export class GameScene extends Container implements MenuActionsHost {
     const overlay = new Container();
     overlay.eventMode = 'none';
 
+    const centerY = DESIGN.height / 2;
+
     if (text) {
       const label = kewlText({
         text: kewlString(text),
-        size: onBackground ? 24 : 16,
+        size: onBackground ? 36 : 32,
         align: 'center',
         anchorX: 0.5,
         anchorY: 0.5,
       });
-      const textY = onBackground ? DESIGN.height / 3 : 48;
+      const textY = intro?.image ? centerY - 100 : centerY;
       label.position.set(DESIGN.width / 2, textY);
       overlay.addChild(label);
     }
@@ -721,7 +725,7 @@ export class GameScene extends Container implements MenuActionsHost {
       img.anchor.set(0.5);
       const maxW = 420;
       if (img.width > maxW) img.scale.set(maxW / img.width);
-      const imgY = text ? 220 : 120;
+      const imgY = text ? centerY + 100 : centerY;
       img.position.set(DESIGN.width / 2, imgY);
       overlay.addChild(img);
     }
@@ -1243,6 +1247,7 @@ export class GameScene extends Container implements MenuActionsHost {
       this.level,
       this.session,
       (key) => this.buyUpgrade(key),
+      () => this.autoBuyUpgrades(),
       () => void this.continueFromShop(hasMoreRounds),
       (key) => this.canBuyShopUpgrade(key),
       hasMoreRounds,
@@ -1258,12 +1263,38 @@ export class GameScene extends Container implements MenuActionsHost {
     }
   }
 
+  private shopUpgradeKeys(): UpgradeKey[] {
+    return UPGRADE_KEYS.filter((key) => !this.level.config.buttonsDisabled?.[key]);
+  }
+
   private canBuyShopUpgrade(key: UpgradeKey): boolean {
     if (!this.level.config.upgrades[key]) return false;
     if (key === 'human' && this.civilians.filter((c) => c.alive).length >= this.level.config.maxHumans) {
       return false;
     }
     return this.session.money >= this.session.price(key);
+  }
+
+  private findCheapestBuyableUpgrade(): UpgradeKey | null {
+    let cheapest: UpgradeKey | null = null;
+    let cheapestPrice = Infinity;
+    for (const key of this.shopUpgradeKeys()) {
+      if (!this.canBuyShopUpgrade(key)) continue;
+      const price = this.session.price(key);
+      if (price < cheapestPrice) {
+        cheapestPrice = price;
+        cheapest = key;
+      }
+    }
+    return cheapest;
+  }
+
+  private autoBuyUpgrades(): void {
+    while (true) {
+      const key = this.findCheapestBuyableUpgrade();
+      if (!key) break;
+      this.buyUpgrade(key);
+    }
   }
 
   private closeShop(): void {
@@ -1305,6 +1336,7 @@ export class GameScene extends Container implements MenuActionsHost {
       await this.startRound(this.roundIndex + 1);
       return;
     }
+    this.onLevelWon?.();
     this.phase = 'levelComplete';
     this.closeShop();
     this.clearTransientGameUi();

@@ -34,6 +34,14 @@ export class CampaignProgress {
     this.save();
   }
 
+  /** Ensure a level is playable without lowering existing unlock progress. */
+  ensureUnlockedAtLeast(levelIndex: number): void {
+    const next = Math.max(0, levelIndex);
+    if (next <= this.unlockedIndex) return;
+    this.unlockedIndex = next;
+    this.save();
+  }
+
   unlockAll(maxUnlockedIndex: number): void {
     this.unlockedIndex = Math.max(0, maxUnlockedIndex);
     this.save();
@@ -57,7 +65,11 @@ export class CampaignProgress {
   }
 
   private save(): void {
-    const data: SavedCampaign = { unlockedIndex: this.unlockedIndex };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    try {
+      const data: SavedCampaign = { unlockedIndex: this.unlockedIndex };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch {
+      // ignore quota / private browsing
+    }
   }
 }
