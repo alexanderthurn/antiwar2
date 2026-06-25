@@ -652,7 +652,7 @@
       "weapons": [
         "ROCKET_0"
       ],
-      "ai": "FIGHTERSIMPLE",
+      "ai": "FIGHTERMG",
       "aiParams": [
         0,
         422,
