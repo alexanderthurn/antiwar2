@@ -19,6 +19,8 @@ const MAP_BUTTON_BY_PATH: Record<number, string> = {
 
 const MAP_ICON_SCALE = 1.5;
 const FOCUS_SCALE = 1.06;
+/** Kewl glyph box center ≠ visual center on map button art — nudge label up/left. */
+const MAP_LEVEL_LABEL_OFFSET = { x: -8, y: -6 };
 
 export class CampaignViewScene extends Container implements MenuActionsHost {
   private menuActions: UiAction[] = [];
@@ -108,6 +110,7 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
       text: String(levelIndex + 1),
       size: 18,
     });
+    levelNum.position.set(MAP_LEVEL_LABEL_OFFSET.x, MAP_LEVEL_LABEL_OFFSET.y);
     node.addChild(levelNum);
 
     if (unlocked) {
