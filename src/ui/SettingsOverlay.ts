@@ -17,24 +17,38 @@ const ROW_FONT = 22;
 const ROW_H = kewlLineHeight(ROW_FONT) + kewlBlockGap(ROW_FONT);
 const ROW_GAP = kewlBlockGap(18);
 const BACK_FONT = 20;
+const IN_GAME_DIM_ALPHA = 0.3;
+const MENU_DIM_ALPHA = 0.45;
+
+export interface SettingsOverlayOptions {
+  /** Dim gameplay behind the panel instead of the main-menu wallpaper. */
+  inGame?: boolean;
+}
 
 export class SettingsOverlay extends Container implements MenuActionsHost {
   private menuActions: UiAction[] = [];
   private rowLabels = new Map<string, { prefix: string; text: BitmapText }>();
   private onBack: () => void;
+  private inGame: boolean;
   private unsub: (() => void) | null = null;
 
-  constructor(onBack: () => void) {
+  constructor(onBack: () => void, options: SettingsOverlayOptions = {}) {
     super();
     this.onBack = onBack;
+    this.inGame = options.inGame ?? false;
     void this.build();
   }
 
   private async build(): Promise<void> {
-    this.addChild(await createMenuBackground());
+    if (!this.inGame) {
+      this.addChild(await createMenuBackground());
+    }
 
     const dim = new Graphics();
-    dim.rect(0, 0, DESIGN.width, DESIGN.height).fill({ color: 0x000000, alpha: 0.45 });
+    dim.rect(0, 0, DESIGN.width, DESIGN.height).fill({
+      color: 0x000000,
+      alpha: this.inGame ? IN_GAME_DIM_ALPHA : MENU_DIM_ALPHA,
+    });
     dim.eventMode = 'static';
     this.addChild(dim);
 

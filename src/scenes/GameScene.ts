@@ -899,7 +899,7 @@ export class GameScene extends Container implements MenuActionsHost {
 
   private openSettings(): void {
     if (this.settingsOverlay) return;
-    this.settingsOverlay = new SettingsOverlay(() => this.closeSettings());
+    this.settingsOverlay = new SettingsOverlay(() => this.closeSettings(), { inGame: true });
     this.uiLayer.addChild(this.settingsOverlay);
     this.menuSource = null;
     this.menuActionsKey = '';

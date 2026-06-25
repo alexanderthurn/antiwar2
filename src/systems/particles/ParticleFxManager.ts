@@ -797,18 +797,20 @@ export class ParticleFxManager {
   private emitDamagedPlaneSmoke(plane: CombatEntity): void {
     const w = Math.abs(plane.sprite.width);
     const h = Math.abs(plane.sprite.height);
-    this.pushPlaneSmoke({
-      x: plane.x + (Math.random() - 0.5) * w * 0.45,
-      y: plane.y + (Math.random() - 0.5) * h * 0.25,
-      vx: (Math.random() - 0.5) * 16,
-      vy: -38 - Math.random() * 42,
-      life: 0.55 + Math.random() * 0.45,
-      scale: 0.11 + Math.random() * 0.08,
-      grow: 0.12,
-      tint: this.pickPlaneSmokeTint(),
-      peakAlpha: 0.62,
-      gravity: -12,
-    });
+    for (let i = 0; i < 2; i++) {
+      this.pushPlaneSmoke({
+        x: plane.x + (Math.random() - 0.5) * w * 0.45,
+        y: plane.y + (Math.random() - 0.5) * h * 0.25,
+        vx: (Math.random() - 0.5) * 16,
+        vy: -38 - Math.random() * 42,
+        life: 0.55 + Math.random() * 0.45,
+        scale: 0.22 + Math.random() * 0.16,
+        grow: 0.24,
+        tint: this.pickPlaneSmokeTint(),
+        peakAlpha: 0.62,
+        gravity: -12,
+      });
+    }
   }
 
   private emitCrashTrail(plane: CombatEntity): void {
