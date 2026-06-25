@@ -1,20 +1,16 @@
-import { Container, Graphics, BitmapText } from 'pixi.js';
+import { Container, Graphics } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
 import type { CombatEntity } from '../entities/CombatEntity';
-import { kewlText } from './KewlFont';
 
 export class BossHpBar extends Container {
   private barBg = new Graphics();
   private barFill = new Graphics();
-  private hpText: BitmapText;
   private boss: CombatEntity | null = null;
 
   constructor() {
     super();
-    this.hpText = kewlText({ text: '', size: 18, anchorX: 0.5 });
     this.position.set(DESIGN.width / 2 - 280, 88);
-    this.addChild(this.barBg, this.barFill, this.hpText);
-    this.hpText.position.set(280, -26);
+    this.addChild(this.barBg, this.barFill);
     this.visible = false;
   }
 
@@ -49,7 +45,5 @@ export class BossHpBar extends Container {
         alpha: 0.95,
       });
     }
-
-    this.hpText.text = `${Math.ceil(this.boss.hp).toLocaleString()} / ${this.boss.maxHp.toLocaleString()}`;
   }
 }

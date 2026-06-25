@@ -10,6 +10,7 @@ export class PauseOverlay extends Container {
   constructor(
     onResume: () => void,
     onSettings: () => void,
+    onRestart: () => void,
     onExit: () => void,
   ) {
     super();
@@ -26,6 +27,7 @@ export class PauseOverlay extends Container {
     const btnStep = kewlLineHeight(btnSize) + kewlBlockGap(btnSize);
     const labels = [
       { id: 'pause-resume', label: 'Resume', onPress: onResume },
+      { id: 'pause-restart', label: 'Restart', onPress: onRestart },
       { id: 'pause-settings', label: 'Options', onPress: onSettings },
       { id: 'pause-quit', label: 'Quit', onPress: onExit },
     ];

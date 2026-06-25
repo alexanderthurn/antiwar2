@@ -332,7 +332,8 @@ export class GameScene extends Container implements MenuActionsHost {
         damage: number,
         explosionType: number,
         rumble: 'plane' | 'explosion' | 'none',
-      ) => this.handleGroundExplosion(x, y, range, damage, explosionType, rumble),
+        hurtsCivilians = true,
+      ) => this.handleGroundExplosion(x, y, range, damage, explosionType, rumble, hurtsCivilians),
       onDropBomb: (_parent: CombatEntity, bombDef: BombDef, x: number, y: number) => {
         void this.entities.spawnFallingBomb(bombDef, x, y, (p) => this.tex(p), this.entityLayer);
       },
@@ -362,8 +363,11 @@ export class GameScene extends Container implements MenuActionsHost {
         const planeWillBurst = killed && target.traits.countsForRoundWin;
         this.spawnExplosionAt(hitX, hitY, rocketType, rocketRadius, 'none', !planeWillBurst);
         this.particleFx.spawnImpact(hitX, hitY, { guided, killed });
-        if (!killed && target.traits.countsForRoundWin && target.airplaneDef?.scream) {
-          this.levelAudio.playNamed(target.airplaneDef.scream, 0.65);
+        if (!killed && target.traits.countsForRoundWin) {
+          this.particleFx.spawnAirplaneHitDebris(hitX, hitY);
+          if (target.airplaneDef?.scream) {
+            this.levelAudio.playNamed(target.airplaneDef.scream, 0.65);
+          }
         }
         const ps = this.players.slot(ownerSlot);
         if (!ps) return;
@@ -437,8 +441,11 @@ export class GameScene extends Container implements MenuActionsHost {
     damage: number,
     explosionType: number,
     rumble: 'plane' | 'explosion' | 'none',
+    hurtsCivilians = true,
   ): void {
-    this.damageCiviliansAt(x, GROUND_FEET_Y, range, damage, explosionType);
+    if (hurtsCivilians) {
+      this.damageCiviliansAt(x, GROUND_FEET_Y, range, damage, explosionType);
+    }
     this.spawnExplosionAt(x, y, explosionType, range, rumble);
   }
 
@@ -880,6 +887,7 @@ export class GameScene extends Container implements MenuActionsHost {
     this.pauseOverlay = new PauseOverlay(
       () => this.closePause(),
       () => this.openSettings(),
+      () => void this.restartLevel(),
       () => {
         this.closePause();
         this.onReturnToCampaign?.();
@@ -916,6 +924,31 @@ export class GameScene extends Container implements MenuActionsHost {
         this.phase = this.pauseBeforePhase;
       }
     }
+  }
+
+  private clearAllCivilians(): void {
+    for (const c of this.civilians) c.sprite.destroy();
+    this.civilians = [];
+  }
+
+  private async restartLevel(): Promise<void> {
+    if (this.roundBootstrapping || !this.level) return;
+
+    if (this.inputRef) this.releaseTouchFire(this.inputRef);
+
+    this.closePause();
+    this.closeShop();
+    if (this.endScreenFx) {
+      this.endScreenFx.overlay.destroy({ children: true });
+      this.endScreenFx = null;
+    }
+
+    this.session.initFromLevel(this.level);
+    this.clearAllCivilians();
+    await this.spawnCivilians(this.level.config.startHumans);
+    this.levelElapsedSec = 0;
+
+    await this.startRound(0);
   }
 
   private closePause(): void {

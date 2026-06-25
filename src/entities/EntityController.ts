@@ -34,6 +34,7 @@ export interface EntityControllerCallbacks {
     damage: number,
     explosionType: number,
     rumble: 'plane' | 'explosion' | 'none',
+    hurtsCivilians?: boolean,
   ): void;
   onDropBomb(parent: CombatEntity, bombDef: BombDef, x: number, y: number): void;
   onSkyBomb(bombDef: BombDef, x: number): void;
@@ -66,6 +67,7 @@ interface PendingDeath {
     damage: number;
     type: number;
     rumble: 'plane' | 'explosion' | 'none';
+    hurtsCivilians: boolean;
   };
 }
 
@@ -308,7 +310,7 @@ export class EntityController {
       if (death.submunitions) this.spawnSubmunitions(e, level, spawnCtx);
       if (death.groundExplosion) {
         const g = death.groundExplosion;
-        cb.onGroundExplosion(g.x, g.y, g.range, g.damage, g.type, g.rumble);
+        cb.onGroundExplosion(g.x, g.y, g.range, g.damage, g.type, g.rumble, g.hurtsCivilians);
       }
       if (death.callEntityDeath) {
         cb.onEntityDeath(e, death.skipDeathExplosion ? { skipExplosion: true } : undefined);
@@ -395,6 +397,7 @@ export class EntityController {
               damage: Math.max(50, Math.round(e.maxHp / 20)),
               type: planeExplosionType(e),
               rumble: 'plane',
+              hurtsCivilians: true,
             },
           });
         }
@@ -441,6 +444,7 @@ export class EntityController {
                   damage: expPower,
                   type: def.explosion.type,
                   rumble: e.traits.deathRumble,
+                  hurtsCivilians: true,
                 }
               : undefined,
         });
@@ -484,6 +488,7 @@ export class EntityController {
               damage: expPower,
               type: def.explosion.type,
               rumble: bomb.traits.deathRumble,
+              hurtsCivilians: true,
             }
           : undefined,
     });
@@ -594,6 +599,7 @@ export class EntityController {
               damage: proj.damage,
               type: proj.bombDef?.explosion.type ?? 1,
               rumble: 'explosion',
+              hurtsCivilians: proj.traits.hurtsHumansOnGround,
             },
           });
           spent = true;
@@ -619,10 +625,9 @@ export class EntityController {
     cb: EntityControllerCallbacks,
   ): boolean {
     for (const target of this.entities) {
-      if (!target.alive || target === proj || !target.traits.hittableByPlayer || target.crashing) {
-        continue;
-      }
-      if (target.stealthHidden && !target.traits.countsForRoundWin) continue;
+      if (!target.alive || target === proj || !target.traits.hittableByPlayer) continue;
+      if (target.crashing && !target.traits.countsForRoundWin) continue;
+      if (!target.crashing && target.stealthHidden && !target.traits.countsForRoundWin) continue;
       if (!rocketHitsSprite(proj.sprite, target.sprite, prevX, prevY)) continue;
 
       target.hp -= proj.damage;
@@ -640,19 +645,28 @@ export class EntityController {
       );
       if (killed) {
         const isPlane = target.traits.countsForRoundWin;
-        const shouldCrash =
-          isPlane &&
-          this.crashingRockets > 0 &&
-          target.rocketHitCount >= this.crashingRockets;
-        if (shouldCrash) {
-          this.startPlaneCrash(target);
-        } else {
+        if (isPlane && target.crashing) {
           this.queueDeath({
             entity: target,
-            submunitions: target.motion.kind === 'fall',
+            submunitions: false,
             callEntityDeath: true,
-            despawn: !isPlane,
+            despawn: true,
           });
+        } else {
+          const shouldCrash =
+            isPlane &&
+            this.crashingRockets > 0 &&
+            target.rocketHitCount >= this.crashingRockets;
+          if (shouldCrash) {
+            this.startPlaneCrash(target);
+          } else {
+            this.queueDeath({
+              entity: target,
+              submunitions: target.motion.kind === 'fall',
+              callEntityDeath: true,
+              despawn: !isPlane,
+            });
+          }
         }
       }
       return true;

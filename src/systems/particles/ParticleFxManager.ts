@@ -13,6 +13,9 @@ const FIRE_FRAME_START = 0;
 const FIRE_FRAME_COUNT = 4;
 const CLOUD_FRAME_START = 4;
 const CLOUD_FRAME_COUNT = 8;
+/** Second row of particle.png — dark metal shrapnel. */
+const DEBRIS_FRAME_START = 4;
+const DEBRIS_FRAME_COUNT = 4;
 const BLOOD_PARTICLE_SCALE = 2;
 const BLOOD_SCALE_MIN = 0.07 * BLOOD_PARTICLE_SCALE;
 const BLOOD_SCALE_MAX = 0.22 * BLOOD_PARTICLE_SCALE;
@@ -145,6 +148,7 @@ export class ParticleFxManager {
   }>();
 
   private cloudFrames: Texture[] = [];
+  private debrisFrames: Texture[] = [];
   private fireFrames: Texture[] = [];
   private bloodFrames: Texture[] = [];
   private readonly trailEmitters = new Map<number, TrailEmitter>();
@@ -200,6 +204,13 @@ export class ParticleFxManager {
       SHEET_ROWS,
       CLOUD_FRAME_START,
       CLOUD_FRAME_COUNT,
+    );
+    this.debrisFrames = sliceParticleSheet(
+      sheet,
+      SHEET_COLS,
+      SHEET_ROWS,
+      DEBRIS_FRAME_START,
+      DEBRIS_FRAME_COUNT,
     );
     this.loaded = true;
   }
@@ -335,6 +346,33 @@ export class ParticleFxManager {
         tint: opts.guided ? 0xffe0e0 : 0xe8eeff,
         peakAlpha: 0.5,
         gravity: 0,
+      });
+    }
+  }
+
+  /** Dark metal shards when a rocket damages an airplane without destroying it. */
+  spawnAirplaneHitDebris(x: number, y: number, spread = 22): void {
+    const profile = QUALITY[this.quality];
+    if (!profile || this.debrisFrames.length === 0) return;
+
+    const count = profile.budget >= 200 ? 9 : 6;
+    for (let i = 0; i < count; i++) {
+      if (!this.hasBudget()) break;
+      const px = x + (Math.random() - 0.5) * spread * 2;
+      const py = y + (Math.random() - 0.5) * spread * 2;
+      const vx = (Math.random() - 0.5) * 50;
+      const vy = 40 + Math.random() * 60;
+      this.pushDebris({
+        x: px,
+        y: py,
+        vx,
+        vy,
+        life: 0.5 + Math.random() * 0.4,
+        scale: 0.2 + Math.random() * 0.05,
+        grow: 0,
+        tint: this.pickDebrisTint(),
+        peakAlpha: 0.88,
+        gravity: 320,
       });
     }
   }
@@ -878,6 +916,23 @@ export class ParticleFxManager {
     this.pushParticle(poolId, frame, opts);
   }
 
+  private pushDebris(opts: {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    life: number;
+    scale: number;
+    grow: number;
+    tint: number;
+    peakAlpha: number;
+    gravity: number;
+  }): void {
+    const frame = this.pickDebrisFrame();
+    if (!frame) return;
+    this.pushParticle('fxSmoke', frame, opts);
+  }
+
   private pushFire(
     poolId: 'trailSmoke' | 'fxFire',
     opts: {
@@ -1007,6 +1062,16 @@ export class ParticleFxManager {
   private pickBloodFrame(): Texture | null {
     if (this.bloodFrames.length === 0) return null;
     return this.bloodFrames[Math.floor(Math.random() * this.bloodFrames.length)] ?? null;
+  }
+
+  private pickDebrisFrame(): Texture | null {
+    if (this.debrisFrames.length === 0) return null;
+    return this.debrisFrames[Math.floor(Math.random() * this.debrisFrames.length)] ?? null;
+  }
+
+  private pickDebrisTint(): number {
+    const tints = [0xbbbbbb, 0x999999, 0x888888, 0xaaaaaa, 0x777777];
+    return tints[Math.floor(Math.random() * tints.length)] ?? 0x999999;
   }
 
   private acquire(poolId: PoolId, texture: Texture): Particle {
