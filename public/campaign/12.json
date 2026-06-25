@@ -86,8 +86,8 @@
     "BOMB_PLAYER": {
       "image": "assets/gfx/BOMBS/player_rocket.png",
       "scale": [
-        0.5,
-        0.5
+        0.8,
+        0.8
       ],
       "hp": 10,
       "damage": 100,
@@ -105,8 +105,8 @@
     "MG_BUSH": {
       "image": "assets/gfx/BOMBS/bush_rocket.png",
       "scale": [
-        1,
-        1
+        1.6,
+        1.6
       ],
       "hp": 1,
       "damage": 150,
@@ -124,8 +124,8 @@
     "PHASER": {
       "image": "assets/gfx/BOMBS/phaser.png",
       "scale": [
-        1,
-        1
+        1.6,
+        1.6
       ],
       "hp": 1,
       "damage": 60,
@@ -159,8 +159,8 @@
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/endmaster_bush.png",
       "scale": [
-        0.4,
-        0.4
+        0.64,
+        0.64
       ]
     },
     "UFO": {
@@ -179,8 +179,8 @@
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/endmaster_bush.png",
       "scale": [
-        0.09,
-        0.09
+        0.144,
+        0.144
       ]
     }
   },

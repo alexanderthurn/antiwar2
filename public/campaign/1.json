@@ -73,8 +73,8 @@
     "BOMB_0": {
       "image": "assets/gfx/BOMBS/bomb.png",
       "scale": [
-        0.8,
-        0.6
+        1.28,
+        0.96
       ],
       "hp": 10,
       "damage": 100,
@@ -92,8 +92,8 @@
     "BOMB_PLAYER": {
       "image": "assets/gfx/BOMBS/player_rocket.png",
       "scale": [
-        0.5,
-        0.2
+        0.8,
+        0.32
       ],
       "hp": 10,
       "damage": 50,
@@ -126,8 +126,8 @@
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber.png",
       "scale": [
-        0.5,
-        0.5
+        0.8,
+        0.8
       ]
     },
     "BOMBER2": {
@@ -146,8 +146,8 @@
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber.png",
       "scale": [
-        0.8,
-        0.8
+        1.28,
+        1.28
       ]
     },
     "BOMBER3": {
@@ -166,8 +166,8 @@
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_big.png",
       "scale": [
-        1.4,
-        1.4
+        2.24,
+        2.24
       ]
     }
   },

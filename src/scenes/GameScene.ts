@@ -46,7 +46,7 @@ const CIVILIAN_MAX_X = DESIGN.width - 120;
 
 /** Top-right player roster — disabled until the UI is redesigned. */
 const SHOW_JOIN_PANEL = false;
-const PLAYER_ROCKET_DISPLAY_SCALE = 1.25;
+const PLAYER_ROCKET_DISPLAY_SCALE = 1;
 const END_SCREEN_ANIM_S = 2.4;
 /** Seconds between player rocket shots while fire is held (lower = faster). */
 const PLAYER_FIRE_COOLDOWN_S = 0.5;

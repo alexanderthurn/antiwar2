@@ -84,8 +84,8 @@
     "BOMB_PLAYER": {
       "image": "assets/gfx/BOMBS/player_rocket.png",
       "scale": [
-        0.5,
-        0.5
+        0.8,
+        0.8
       ],
       "hp": 10,
       "damage": 100,
@@ -103,8 +103,8 @@
     "BOMB_EI": {
       "image": "assets/gfx/BOMBS/ei.png",
       "scale": [
-        0.6,
-        0.6
+        0.96,
+        0.96
       ],
       "hp": 1,
       "damage": 90,
@@ -122,8 +122,8 @@
     "BOMB_EI_ANTHRAX": {
       "image": "assets/gfx/BOMBS/ei_anthrax.png",
       "scale": [
-        0.5,
-        0.5
+        0.8,
+        0.8
       ],
       "hp": 1,
       "damage": 0,
@@ -157,8 +157,8 @@
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/endmaster_vogel.png",
       "scale": [
-        1,
-        1
+        1.6,
+        1.6
       ],
       "scream": "scream1.ogg"
     }

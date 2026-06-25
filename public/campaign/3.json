@@ -84,8 +84,8 @@
     "BOMB_PLAYER": {
       "image": "assets/gfx/BOMBS/player_rocket.png",
       "scale": [
-        0.5,
-        0.5
+        0.8,
+        0.8
       ],
       "hp": 10,
       "damage": 100,
@@ -103,8 +103,8 @@
     "BOMB_OLD": {
       "image": "assets/gfx/BOMBS/bomb_old.png",
       "scale": [
-        1,
-        1
+        1.6,
+        1.6
       ],
       "hp": 10,
       "damage": 100,
@@ -122,8 +122,8 @@
     "ROCKET_COLA": {
       "image": "assets/gfx/BOMBS/rocket_cola.png",
       "scale": [
-        1,
-        1
+        1.6,
+        1.6
       ],
       "hp": 1,
       "damage": 20,
@@ -157,8 +157,8 @@
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/endmaster_baron.png",
       "scale": [
-        0.4,
-        0.4
+        0.64,
+        0.64
       ]
     }
   },

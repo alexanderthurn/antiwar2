@@ -81,8 +81,8 @@
     "BOMB_EI": {
       "image": "assets/gfx/BOMBS/ei.png",
       "scale": [
-        0.5,
-        0.5
+        0.8,
+        0.8
       ],
       "hp": 10,
       "damage": 100,
@@ -100,8 +100,8 @@
     "BOMB_PLAYER": {
       "image": "assets/gfx/BOMBS/harpune.png",
       "scale": [
-        1,
-        1
+        1.6,
+        1.6
       ],
       "hp": 10,
       "damage": 100,
@@ -132,8 +132,8 @@
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/saegefisch.png",
       "scale": [
-        0.5,
-        0.5
+        0.8,
+        0.8
       ],
       "lastScream": "headshot.ogg"
     },
@@ -151,8 +151,8 @@
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/fischli_grins.png",
       "scale": [
-        1,
-        1
+        1.6,
+        1.6
       ],
       "lastScream": "holyshit.ogg"
     },
@@ -170,8 +170,8 @@
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/hai.png",
       "scale": [
-        0.5,
-        0.5
+        0.8,
+        0.8
       ],
       "lastScream": "crash_shot.ogg"
     }

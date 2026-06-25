@@ -81,8 +81,8 @@
     "BOMB_EI": {
       "image": "assets/gfx/BOMBS/bomb_nuke.png",
       "scale": [
-        0.5,
-        0.5
+        0.8,
+        0.8
       ],
       "hp": 10,
       "damage": 80,
@@ -100,8 +100,8 @@
     "BOMB_EI2": {
       "image": "assets/gfx/BOMBS/torpedo.png",
       "scale": [
-        0.5,
-        0.5
+        0.8,
+        0.8
       ],
       "hp": 10,
       "damage": 49,
@@ -119,8 +119,8 @@
     "BOMB_EI3": {
       "image": "assets/gfx/BOMBS/buschfeuer.png",
       "scale": [
-        0.2,
-        0.2
+        0.32,
+        0.32
       ],
       "hp": 10,
       "damage": 700,
@@ -138,8 +138,8 @@
     "BOMB_PLAYER": {
       "image": "assets/gfx/BOMBS/player_rocket.png",
       "scale": [
-        0.4,
-        0.4
+        0.64,
+        0.64
       ],
       "hp": 100,
       "damage": 100,
@@ -172,8 +172,8 @@
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/satelit2.png",
       "scale": [
-        0.75,
-        0.75
+        1.2,
+        1.2
       ],
       "scream": "bloodscream.ogg"
     },
@@ -193,8 +193,8 @@
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/satelit.png",
       "scale": [
-        1,
-        1
+        1.6,
+        1.6
       ],
       "scream": "bloodscream.ogg"
     },
@@ -214,8 +214,8 @@
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/direktor.png",
       "scale": [
-        1.8,
-        1.8
+        2.88,
+        2.88
       ],
       "scream": "bloodscream.ogg"
     }

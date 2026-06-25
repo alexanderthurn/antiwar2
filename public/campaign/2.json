@@ -81,8 +81,8 @@
     "BOMB_0": {
       "image": "assets/gfx/BOMBS/bomb.png",
       "scale": [
-        0.8,
-        0.6
+        1.28,
+        0.96
       ],
       "hp": 10,
       "damage": 100,
@@ -100,8 +100,8 @@
     "BOMB_1": {
       "image": "assets/gfx/BOMBS/bomb.png",
       "scale": [
-        0.8,
-        1.6
+        1.28,
+        2.56
       ],
       "hp": 100,
       "damage": 500,
@@ -119,8 +119,8 @@
     "BOMB_SPLITTER": {
       "image": "assets/gfx/BOMBS/bomb.png",
       "scale": [
-        0.8,
-        0.6
+        1.28,
+        0.96
       ],
       "hp": 1,
       "damage": 0,
@@ -142,8 +142,8 @@
     "BOMB_SPECIAL": {
       "image": "assets/gfx/BOMBS/bomb_special.png",
       "scale": [
-        1,
-        1
+        1.6,
+        1.6
       ],
       "hp": 10,
       "damage": 10,
@@ -161,8 +161,8 @@
     "ROCKET_0": {
       "image": "assets/gfx/BOMBS/bomb.png",
       "scale": [
-        0.5,
-        0.1
+        0.8,
+        0.16
       ],
       "hp": 1,
       "damage": 30,
@@ -180,8 +180,8 @@
     "ROCKET_1": {
       "image": "assets/gfx/BOMBS/bomb.png",
       "scale": [
-        0.5,
-        0.1
+        0.8,
+        0.16
       ],
       "hp": 1,
       "damage": 20,
@@ -199,8 +199,8 @@
     "BOMB_BIG": {
       "image": "assets/gfx/BOMBS/bomb_big.png",
       "scale": [
-        0.7,
-        0.7
+        1.12,
+        1.12
       ],
       "hp": 200,
       "damage": 200,
@@ -218,8 +218,8 @@
     "BOMB_BIG2": {
       "image": "assets/gfx/BOMBS/bomb_big.png",
       "scale": [
-        0.7,
-        0.7
+        1.12,
+        1.12
       ],
       "hp": 200,
       "damage": 1000,
@@ -237,8 +237,8 @@
     "BOMB_ANTHRAX": {
       "image": "assets/gfx/BOMBS/bomb_anthrax.png",
       "scale": [
-        0.5,
-        1.5
+        0.8,
+        2.4
       ],
       "hp": 1,
       "damage": 2,
@@ -256,8 +256,8 @@
     "BOMB_BIGANTHRAX": {
       "image": "assets/gfx/BOMBS/bomb_anthrax.png",
       "scale": [
-        2.5,
-        1.5
+        4,
+        2.4
       ],
       "hp": 200,
       "damage": 2,
@@ -275,8 +275,8 @@
     "BOMB_MG": {
       "image": "assets/gfx/BOMBS/bomb_mg.png",
       "scale": [
-        1,
-        1.5
+        1.6,
+        2.4
       ],
       "hp": 1,
       "damage": 10,
@@ -294,8 +294,8 @@
     "BOMB_NAPALM": {
       "image": "assets/gfx/BOMBS/bomb_napalm.png",
       "scale": [
-        0.5,
-        1.5
+        0.8,
+        2.4
       ],
       "hp": 1,
       "damage": 100,
@@ -313,8 +313,8 @@
     "BOMB_NUKE": {
       "image": "assets/gfx/BOMBS/bomb_nuke.png",
       "scale": [
-        0.5,
-        1.5
+        0.8,
+        2.4
       ],
       "hp": 1,
       "damage": 3000,
@@ -332,8 +332,8 @@
     "BOMB_PLAYER": {
       "image": "assets/gfx/BOMBS/player_rocket.png",
       "scale": [
-        0.5,
-        0.5
+        0.8,
+        0.8
       ],
       "hp": 10,
       "damage": 100,
@@ -351,8 +351,8 @@
     "BOMB_EI": {
       "image": "assets/gfx/BOMBS/ei.png",
       "scale": [
-        0.6,
-        0.6
+        0.96,
+        0.96
       ],
       "hp": 10,
       "damage": 100,
@@ -370,8 +370,8 @@
     "BOMB_EI_ANTHRAX": {
       "image": "assets/gfx/BOMBS/ei_anthrax.png",
       "scale": [
-        0.5,
-        0.5
+        0.8,
+        0.8
       ],
       "hp": 10,
       "damage": 100,
@@ -389,8 +389,8 @@
     "BOMB_OLD": {
       "image": "assets/gfx/BOMBS/bomb_old.png",
       "scale": [
-        1,
-        1
+        1.6,
+        1.6
       ],
       "hp": 10,
       "damage": 100,
@@ -408,8 +408,8 @@
     "ROCKET_COLA": {
       "image": "assets/gfx/BOMBS/rocket_cola.png",
       "scale": [
-        1,
-        1
+        1.6,
+        1.6
       ],
       "hp": 1,
       "damage": 20,
@@ -427,8 +427,8 @@
     "QUANTUM_TORPEDO": {
       "image": "assets/gfx/BOMBS/quantum.png",
       "scale": [
-        0.5,
-        0.5
+        0.8,
+        0.8
       ],
       "hp": 1,
       "damage": 20,
@@ -446,8 +446,8 @@
     "PHASER": {
       "image": "assets/gfx/BOMBS/phaser.png",
       "scale": [
-        0.4,
-        0.4
+        0.64,
+        0.64
       ],
       "hp": 1,
       "damage": 10,
@@ -465,8 +465,8 @@
     "MG_BUSH": {
       "image": "assets/gfx/BOMBS/bomb_mg.png",
       "scale": [
-        2,
-        4
+        3.2,
+        6.4
       ],
       "hp": 1,
       "damage": 10,
@@ -499,8 +499,8 @@
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber.png",
       "scale": [
-        0.5,
-        0.5
+        0.8,
+        0.8
       ]
     },
     "BOMBER_BETTER": {
@@ -519,8 +519,8 @@
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber.png",
       "scale": [
-        0.9,
-        0.9
+        1.44,
+        1.44
       ]
     },
     "BOMBER_ANTHRAX": {
@@ -539,8 +539,8 @@
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_anthrax.png",
       "scale": [
-        1,
-        1
+        1.6,
+        1.6
       ]
     },
     "BOMBER_HARD": {
@@ -559,8 +559,8 @@
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_hard.png",
       "scale": [
-        1,
-        1
+        1.6,
+        1.6
       ]
     },
     "BOMBER_BIG": {
@@ -579,8 +579,8 @@
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_big.png",
       "scale": [
-        1,
-        1
+        1.6,
+        1.6
       ]
     },
     "BOMBER_BIG2": {
@@ -599,8 +599,8 @@
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_big.png",
       "scale": [
-        0.5,
-        0.5
+        0.8,
+        0.8
       ]
     },
     "BOMBER_STEALTH": {
@@ -619,8 +619,8 @@
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_stealth.png",
       "scale": [
-        0.3,
-        0.3
+        0.48,
+        0.48
       ],
       "stealthTicks": 4
     },
@@ -640,8 +640,8 @@
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_stealth.png",
       "scale": [
-        0.5,
-        0.5
+        0.8,
+        0.8
       ],
       "stealthTicks": 4
     },
@@ -661,8 +661,8 @@
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/fighter.PNG",
       "scale": [
-        0.2,
-        0.2
+        0.32,
+        0.32
       ]
     },
     "FIGHTER_MG": {
@@ -681,8 +681,8 @@
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/fighter_mg.png",
       "scale": [
-        0.2,
-        0.2
+        0.32,
+        0.32
       ]
     },
     "BOMBER_SPECIAL": {
@@ -701,8 +701,8 @@
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_special.png",
       "scale": [
-        1,
-        1
+        1.6,
+        1.6
       ]
     },
     "HELI_BILLIG": {
@@ -721,8 +721,8 @@
       "drawStyle": 2,
       "image": "assets/gfx/AIRPLANES/helikopter.png",
       "scale": [
-        0.3,
-        0.3
+        0.48,
+        0.48
       ]
     },
     "HELI_APACHE": {
@@ -741,8 +741,8 @@
       "drawStyle": 2,
       "image": "assets/gfx/AIRPLANES/helikopter_apache.png",
       "scale": [
-        0.3,
-        0.3
+        0.48,
+        0.48
       ]
     }
   },
