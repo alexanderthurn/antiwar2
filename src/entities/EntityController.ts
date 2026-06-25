@@ -4,6 +4,11 @@ import type { AirplaneDef, BombDef, LevelPack } from '../data/types';
 import { pointHitsSprite, rocketHitsSprite, rocketSweepStep, spritesOverlap } from '../systems/collision';
 import { createPatrolMotion, updateAirplaneAI, type AIUpdateContext } from './AISystem';
 import { CombatEntity } from './CombatEntity';
+import {
+  bombExplosionRadius,
+  planeExplosionRadius,
+  planeExplosionType,
+} from './ExplosionRadius';
 import { traitsForAirplane, traitsForEnemyBomb, traitsForPlayerProjectile } from './entityProfiles';
 
 const TICK_SCALE = 60;
@@ -21,7 +26,7 @@ export interface CivilianHitTarget {
 }
 
 export interface EntityControllerCallbacks {
-  onEntityDeath(entity: CombatEntity): void;
+  onEntityDeath(entity: CombatEntity, opts?: { skipExplosion?: boolean }): void;
   onGroundExplosion(
     x: number,
     y: number,
@@ -42,6 +47,7 @@ export interface EntityControllerCallbacks {
     guided: boolean,
     hitX: number,
     hitY: number,
+    rocketDef: BombDef,
   ): void;
   /** Direct civilian hit by a falling bomb with no explosion (e.g. machine-gun round). */
   onBombHitsCivilian(bomb: CombatEntity, civilianId: number, hitX: number, hitY: number): void;
@@ -51,6 +57,7 @@ interface PendingDeath {
   entity: CombatEntity;
   submunitions: boolean;
   callEntityDeath: boolean;
+  skipDeathExplosion?: boolean;
   despawn: boolean;
   groundExplosion?: {
     x: number;
@@ -303,7 +310,9 @@ export class EntityController {
         const g = death.groundExplosion;
         cb.onGroundExplosion(g.x, g.y, g.range, g.damage, g.type, g.rumble);
       }
-      if (death.callEntityDeath) cb.onEntityDeath(e);
+      if (death.callEntityDeath) {
+        cb.onEntityDeath(e, death.skipDeathExplosion ? { skipExplosion: true } : undefined);
+      }
 
       if (death.despawn) {
         e.sprite.destroy();
@@ -372,18 +381,19 @@ export class EntityController {
         e.sprite.rotation += (motion.spin ?? 0) * dt;
         e.syncSprite();
         if (e.y >= DESIGN.groundY) {
-          const range = Math.min(160, 40 + e.maxHp / 200);
+          const range = planeExplosionRadius(e);
           this.queueDeath({
             entity: e,
             submunitions: false,
             callEntityDeath: true,
+            skipDeathExplosion: true,
             despawn: true,
             groundExplosion: {
               x: e.x,
               y: DESIGN.groundY,
               range,
               damage: Math.max(50, Math.round(e.maxHp / 20)),
-              type: e.maxHp > 8000 ? 3 : 1,
+              type: planeExplosionType(e),
               rumble: 'plane',
             },
           });
@@ -571,7 +581,7 @@ export class EntityController {
           proj.y = groundHit.y;
           proj.syncSprite();
           cb.onProjectileRemoved(proj.ownerSlot);
-          const range = (proj.bombDef?.explosion.range ?? 1) * 40;
+          const range = bombExplosionRadius(proj.bombDef);
           this.queueDeath({
             entity: proj,
             submunitions: false,
@@ -618,7 +628,16 @@ export class EntityController {
       target.hp -= proj.damage;
       const killed = target.hp <= 0;
       if (target.traits.countsForRoundWin) target.rocketHitCount += 1;
-      cb.onProjectileHit(proj.ownerSlot, target, proj.damage, killed, proj.guidedShot, proj.x, proj.y);
+      cb.onProjectileHit(
+        proj.ownerSlot,
+        target,
+        proj.damage,
+        killed,
+        proj.guidedShot,
+        proj.x,
+        proj.y,
+        proj.bombDef!,
+      );
       if (killed) {
         const isPlane = target.traits.countsForRoundWin;
         const shouldCrash =

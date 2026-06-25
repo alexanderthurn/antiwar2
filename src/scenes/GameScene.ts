@@ -10,6 +10,11 @@ import { loadTexture, preloadRound } from '../data/AssetLoader';
 import type { BombDef, LevelPack, RoundDef } from '../data/types';
 import { CombatEntity } from '../entities/CombatEntity';
 import { EntityController } from '../entities/EntityController';
+import {
+  bombExplosionRadius,
+  planeExplosionRadius,
+  planeExplosionType,
+} from '../entities/ExplosionRadius';
 import { PlayerManager } from '../multiplayer/PlayerManager';
 import type { InputSystem } from '../input/InputSystem';
 import { PlayerSlot } from '../multiplayer/PlayerSlot';
@@ -307,7 +312,8 @@ export class GameScene extends Container implements MenuActionsHost {
 
   private entityCallbacks() {
     return {
-      onEntityDeath: (entity: CombatEntity) => this.handleEntityDeath(entity),
+      onEntityDeath: (entity: CombatEntity, opts?: { skipExplosion?: boolean }) =>
+        this.handleEntityDeath(entity, opts),
       onGroundExplosion: (
         x: number,
         y: number,
@@ -337,8 +343,13 @@ export class GameScene extends Container implements MenuActionsHost {
         guided: boolean,
         hitX: number,
         hitY: number,
+        rocketDef: BombDef,
       ) => {
         this.entityHpBars.notifyHit(target);
+        const rocketType = rocketDef.explosion.type ?? 1;
+        const rocketRadius = bombExplosionRadius(rocketDef);
+        const planeWillBurst = killed && target.traits.countsForRoundWin;
+        this.spawnExplosionAt(hitX, hitY, rocketType, rocketRadius, 'none', !planeWillBurst);
         this.particleFx.spawnImpact(hitX, hitY, { guided, killed });
         if (!killed && target.traits.countsForRoundWin && target.airplaneDef?.scream) {
           this.levelAudio.playNamed(target.airplaneDef.scream, 0.65);
@@ -367,20 +378,36 @@ export class GameScene extends Container implements MenuActionsHost {
     };
   }
 
-  private handleEntityDeath(entity: CombatEntity): void {
+  private spawnExplosionAt(
+    x: number,
+    y: number,
+    type: number,
+    radius: number,
+    rumble: 'plane' | 'explosion' | 'none' = 'none',
+    playAudio = true,
+  ): void {
+    this.explosionManager.spawn(x, y, type, radius);
+    this.particleFx.spawnExplosion(x, y, type, radius);
+    if (playAudio) this.levelAudio.playExplosion(type);
+    if (rumble === 'plane') this.triggerRumble(true);
+    else if (rumble === 'explosion') this.triggerRumble(false);
+  }
+
+  private handleEntityDeath(entity: CombatEntity, opts?: { skipExplosion?: boolean }): void {
     if (entity.traits.countsForRoundWin) {
       const deathVoice = entity.airplaneDef?.lastScream ?? entity.airplaneDef?.scream;
       if (deathVoice) this.levelAudio.playNamed(deathVoice, 0.75);
     }
-    const expType = entity.maxHp > 8000 ? 3 : entity.bombDef?.explosion.type ?? 1;
-    const radius = entity.traits.countsForRoundWin
-      ? Math.min(160, 40 + entity.maxHp / 200)
-      : (entity.bombDef?.explosion.range ?? 1) * 40;
-    this.explosionManager.spawn(entity.x, entity.y, expType, radius);
-    this.particleFx.spawnExplosion(entity.x, entity.y, expType, radius);
-    this.levelAudio.playExplosion(expType);
-    if (entity.traits.deathRumble === 'plane') this.triggerRumble(true);
-    else if (entity.traits.deathRumble === 'explosion') this.triggerRumble(false);
+    if (!opts?.skipExplosion) {
+      const expType = entity.traits.countsForRoundWin
+        ? planeExplosionType(entity)
+        : entity.bombDef?.explosion.type ?? 1;
+      const radius = entity.traits.countsForRoundWin
+        ? planeExplosionRadius(entity)
+        : bombExplosionRadius(entity.bombDef);
+      const rumble = entity.traits.deathRumble;
+      this.spawnExplosionAt(entity.x, entity.y, expType, radius, rumble);
+    }
 
     for (const p of this.players.active()) {
       if (p.lockTarget === entity) {
@@ -401,11 +428,7 @@ export class GameScene extends Container implements MenuActionsHost {
     rumble: 'plane' | 'explosion' | 'none',
   ): void {
     this.damageCiviliansAt(x, GROUND_FEET_Y, range, damage, explosionType);
-    this.explosionManager.spawn(x, y, explosionType, range);
-    this.particleFx.spawnExplosion(x, y, explosionType, range);
-    this.levelAudio.playExplosion(explosionType);
-    if (rumble === 'plane') this.triggerRumble(true);
-    else if (rumble === 'explosion') this.triggerRumble(false);
+    this.spawnExplosionAt(x, y, explosionType, range, rumble);
   }
 
   private async spawnChildAirplane(typeName: string, x: number, y: number): Promise<void> {
