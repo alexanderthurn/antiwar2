@@ -345,6 +345,13 @@ export class GameScene extends Container implements MenuActionsHost {
           ps.stats.bombsDestroyed += 1;
         }
       },
+      onBombHitsCivilian: (bomb: CombatEntity, civilianId: number) => {
+        const def = bomb.bombDef;
+        if (!def) return;
+        const civilian = this.civilians.find((c) => c.id === civilianId);
+        if (!civilian?.alive) return;
+        this.applyCivilianDamage(civilian, def.damage);
+      },
     };
   }
 
@@ -914,7 +921,13 @@ export class GameScene extends Container implements MenuActionsHost {
     }
 
     this.updateCivilians(dt);
-    this.entities.update(dt, this.level, { loadTex: (p) => this.tex(p), layer: this.entityLayer }, this.entityCallbacks());
+    this.entities.update(
+      dt,
+      this.level,
+      { loadTex: (p) => this.tex(p), layer: this.entityLayer },
+      this.entityCallbacks(),
+      this.civilians,
+    );
     this.checkWinLoss();
     this.updateHud();
   }
@@ -1057,6 +1070,18 @@ export class GameScene extends Container implements MenuActionsHost {
     };
   }
 
+  private applyCivilianDamage(c: Civilian, damage: number): void {
+    if (!c.alive || damage <= 0) return;
+    const wasAlive = c.hp > 0;
+    c.hp -= damage;
+    if (c.hp <= 0) {
+      this.killCivilian(c);
+    } else if (wasAlive) {
+      this.entityHpBars.notifyCivilianHit(c);
+      this.levelAudio.playCivilianHit();
+    }
+  }
+
   private damageCiviliansAt(x: number, y: number, radius: number, damage: number): void {
     const r2 = radius * radius;
     for (const c of this.civilians) {
@@ -1064,14 +1089,7 @@ export class GameScene extends Container implements MenuActionsHost {
       const dx = c.x - x;
       const dy = (GROUND_FEET_Y - 20) - y;
       if (dx * dx + dy * dy > r2) continue;
-      const wasAlive = c.hp > 0;
-      c.hp -= damage;
-      if (c.hp <= 0) {
-        this.killCivilian(c);
-      } else if (wasAlive && damage > 0) {
-        this.entityHpBars.notifyCivilianHit(c);
-        this.levelAudio.playCivilianHit();
-      }
+      this.applyCivilianDamage(c, damage);
     }
   }
 

@@ -1,7 +1,7 @@
 import { Graphics, Sprite, type Container } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
 import type { AirplaneDef, BombDef, LevelPack } from '../data/types';
-import { pointHitsSprite, rocketHitsSprite, rocketSweepStep } from '../systems/collision';
+import { pointHitsSprite, rocketHitsSprite, rocketSweepStep, spritesOverlap } from '../systems/collision';
 import { createPatrolMotion, updateAirplaneAI, type AIUpdateContext } from './AISystem';
 import { CombatEntity } from './CombatEntity';
 import { traitsForAirplane, traitsForEnemyBomb, traitsForPlayerProjectile } from './entityProfiles';
@@ -12,6 +12,12 @@ const MAX_SUBMUNITION_DEPTH = 4;
 export interface BombSpawnContext {
   loadTex: (path: string) => Promise<import('pixi.js').Texture>;
   layer: { addChild(s: Sprite): void };
+}
+
+export interface CivilianHitTarget {
+  id: number;
+  alive: boolean;
+  sprite: Sprite;
 }
 
 export interface EntityControllerCallbacks {
@@ -37,6 +43,8 @@ export interface EntityControllerCallbacks {
     hitX: number,
     hitY: number,
   ): void;
+  /** Direct civilian hit by a falling bomb with no explosion (e.g. machine-gun round). */
+  onBombHitsCivilian(bomb: CombatEntity, civilianId: number, hitX: number, hitY: number): void;
 }
 
 interface PendingDeath {
@@ -307,11 +315,17 @@ export class EntityController {
     }
   }
 
-  update(dt: number, level: LevelPack, spawnCtx: BombSpawnContext, cb: EntityControllerCallbacks): void {
+  update(
+    dt: number,
+    level: LevelPack,
+    spawnCtx: BombSpawnContext,
+    cb: EntityControllerCallbacks,
+    civilians: CivilianHitTarget[] = [],
+  ): void {
     this.crashingRockets = level.config.crashingRockets ?? 0;
     this.updateStealth(dt);
     this.updateAirplanes(dt, level, cb);
-    this.updateFalling(dt, cb);
+    this.updateFalling(dt, cb, civilians);
     this.updateProjectiles(dt, cb);
     this.flushDeaths(level, spawnCtx, cb);
     this.redrawHomingLines();
@@ -345,7 +359,7 @@ export class EntityController {
     }
   }
 
-  private updateFalling(dt: number, _cb: EntityControllerCallbacks): void {
+  private updateFalling(dt: number, cb: EntityControllerCallbacks, civilians: CivilianHitTarget[]): void {
     for (let i = this.entities.length - 1; i >= 0; i--) {
       const e = this.entities[i]!;
       if (!e.alive || e.motion.kind !== 'fall') continue;
@@ -377,28 +391,92 @@ export class EntityController {
         continue;
       }
 
-      e.y += e.vy * dt;
-      e.syncSprite();
+      const prevY = e.y;
+      const dy = e.vy * dt;
+      const steps = Math.max(1, Math.ceil(Math.abs(dy) / 12));
+      let consumed = false;
+
+      for (let s = 1; s <= steps; s++) {
+        e.y = prevY + dy * (s / steps);
+        e.syncSprite();
+
+        if (e.traits.hurtsHumansOnGround) {
+          const civilian = this.findCivilianHit(e, civilians);
+          if (civilian) {
+            this.resolveBombCivilianHit(e, civilian, cb);
+            consumed = true;
+            break;
+          }
+        }
+      }
+
+      if (consumed) continue;
+
       if (e.y >= DESIGN.groundY) {
+        const def = e.bombDef;
+        const expRange = e.explosionRange;
+        const expPower = def?.explosion.power ?? e.damage;
+        const hasExplosion = expRange > 0 || expPower > 0;
         this.queueDeath({
           entity: e,
           submunitions: true,
           callEntityDeath: false,
           despawn: true,
           groundExplosion:
-            e.traits.hurtsHumansOnGround && e.bombDef
+            e.traits.hurtsHumansOnGround && hasExplosion && def
               ? {
                   x: e.x,
                   y: DESIGN.groundY,
-                  range: e.explosionRange,
-                  damage: e.damage,
-                  type: e.bombDef.explosion.type,
+                  range: expRange,
+                  damage: expPower,
+                  type: def.explosion.type,
                   rumble: e.traits.deathRumble,
                 }
               : undefined,
         });
       }
     }
+  }
+
+  private findCivilianHit(bomb: CombatEntity, civilians: CivilianHitTarget[]): CivilianHitTarget | null {
+    for (const civilian of civilians) {
+      if (!civilian.alive) continue;
+      if (spritesOverlap(bomb.sprite, civilian.sprite, 4, 8)) return civilian;
+    }
+    return null;
+  }
+
+  private resolveBombCivilianHit(
+    bomb: CombatEntity,
+    civilian: CivilianHitTarget,
+    cb: EntityControllerCallbacks,
+  ): void {
+    const def = bomb.bombDef;
+    const expRange = bomb.explosionRange;
+    const expPower = def?.explosion.power ?? bomb.damage;
+    const hasExplosion = expRange > 0 || expPower > 0;
+
+    if (!hasExplosion) {
+      cb.onBombHitsCivilian(bomb, civilian.id, bomb.x, bomb.y);
+    }
+
+    this.queueDeath({
+      entity: bomb,
+      submunitions: true,
+      callEntityDeath: false,
+      despawn: true,
+      groundExplosion:
+        bomb.traits.hurtsHumansOnGround && hasExplosion && def
+          ? {
+              x: bomb.x,
+              y: DESIGN.groundY,
+              range: expRange,
+              damage: expPower,
+              type: def.explosion.type,
+              rumble: bomb.traits.deathRumble,
+            }
+          : undefined,
+    });
   }
 
   private startPlaneCrash(entity: CombatEntity): void {
