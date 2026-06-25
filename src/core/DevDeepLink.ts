@@ -1,5 +1,6 @@
 import type { UpgradeKey } from './LevelSession';
 import { UPGRADE_KEYS } from './LevelSession';
+import { appendDebugParam, isDebugMode } from './DebugMode';
 
 /** Set to `false` before release — disables reading and writing dev URL params. */
 export const DEV_DEEP_LINK_ENABLED = true;
@@ -77,6 +78,7 @@ export function syncDevUrl(state: DevGameState): void {
   const upgradeStr = serializeUpgrades(state.upgrades);
   if (upgradeStr) params.set('upgrades', upgradeStr);
   if (state.money != null) params.set('money', String(Math.floor(state.money)));
+  appendDebugParam(params);
 
   const query = params.toString();
   const url = query ? `${window.location.pathname}?${query}` : window.location.pathname;
@@ -87,5 +89,9 @@ export function syncDevUrl(state: DevGameState): void {
 export function clearDevUrl(): void {
   if (!DEV_DEEP_LINK_ENABLED) return;
   if (!window.location.search) return;
+  if (isDebugMode()) {
+    window.history.replaceState(null, '', `${window.location.pathname}?debug=true`);
+    return;
+  }
   window.history.replaceState(null, '', window.location.pathname);
 }

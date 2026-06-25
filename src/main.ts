@@ -2,6 +2,7 @@ import { Application } from 'pixi.js';
 import { App } from './App';
 import { DESIGN } from './core/DesignSpace';
 import { DEV_DEEP_LINK_ENABLED } from './core/DevDeepLink';
+import { isDebugMode } from './core/DebugMode';
 import { installKewlFont } from './ui/KewlFont';
 
 async function main(): Promise<void> {
@@ -25,6 +26,9 @@ async function main(): Promise<void> {
     console.info(
       'Dev URL: ?level=1&round=2&upgrades=rocket:2,aim&money=5000 (level/round are 1-based)',
     );
+  }
+  if (isDebugMode()) {
+    console.info('Debug overlay: ?debug=true');
   }
 }
 

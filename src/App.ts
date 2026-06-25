@@ -21,6 +21,8 @@ import { MenuCursor } from './input/MenuCursor';
 import { UiMenuController } from './input/UiMenuController';
 import { LetterboxOverlay } from './ui/LetterboxOverlay';
 import { BlurBackdrop } from './ui/BlurBackdrop';
+import { DebugOverlay } from './ui/DebugOverlay';
+import { isDebugMode } from './core/DebugMode';
 import { MENU_POINTER_CURSOR } from './ui/MenuPointer';
 import { CampaignViewScene } from './scenes/CampaignViewScene';
 import { CreditsScene } from './scenes/CreditsScene';
@@ -47,6 +49,7 @@ export class App {
   private menuCursor = new MenuCursor();
   private letterbox = new LetterboxOverlay();
   private blurBackdrop = new BlurBackdrop();
+  private debugOverlay: DebugOverlay | null = null;
   private menuActionsKey = '';
 
   private mouseButtons = { left: false, right: false };
@@ -73,6 +76,9 @@ export class App {
     this.bindInput();
     settingsStore.subscribe(() => this.applyGraphicsSettings());
     this.applyGraphicsSettings();
+    if (isDebugMode()) {
+      this.debugOverlay = new DebugOverlay(host);
+    }
   }
 
   private applyGraphicsSettings(): void {
@@ -259,28 +265,36 @@ export class App {
       this.game.update(dt, this.input, this.menuController);
       this.syncMenuCursor();
       this.syncBackdrop();
-      return;
-    }
-
-    this.input.setMode('menu');
-    const scene = this.gameRoot.children[0];
-    if (isMenuActionsHost(scene)) {
-      const actions = scene.getMenuActions();
-      const key = actions.map((a) => a.id).join('|');
-      if (key !== this.menuActionsKey) {
-        this.menuActionsKey = key;
-        this.menuController.setActions(actions);
+    } else {
+      this.input.setMode('menu');
+      const scene = this.gameRoot.children[0];
+      if (isMenuActionsHost(scene)) {
+        const actions = scene.getMenuActions();
+        const key = actions.map((a) => a.id).join('|');
+        if (key !== this.menuActionsKey) {
+          this.menuActionsKey = key;
+          this.menuController.setActions(actions);
+        }
+        this.menuController.update(this.input);
+        if (this.input.cancelPressed()) scene.onMenuCancel?.();
       }
-      this.menuController.update(this.input);
-      if (this.input.cancelPressed()) scene.onMenuCancel?.();
+
+      if (scene && 'update' in scene && typeof scene.update === 'function') {
+        scene.update(dt);
+      }
+
+      this.syncMenuCursor();
+      this.syncBackdrop();
     }
 
-    if (scene && 'update' in scene && typeof scene.update === 'function') {
-      scene.update(dt);
-    }
-
-    this.syncMenuCursor();
-    this.syncBackdrop();
+    this.debugOverlay?.update(this.pixi.ticker, {
+      graphicsQuality: settingsStore.get().graphicsQuality,
+      renderer: this.pixi.renderer,
+      stage: this.pixi.stage,
+      viewportWidth: this.host.clientWidth,
+      viewportHeight: this.host.clientHeight,
+      devicePixelRatio: window.devicePixelRatio,
+    });
   };
 
   private bindInput(): void {

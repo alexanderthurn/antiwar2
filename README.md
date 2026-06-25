@@ -13,6 +13,16 @@ npm run dev
 
 Open http://localhost:5173 — campaign, local co-op (mouse + gamepads), 12 levels.
 
+## Debug
+
+Add `?debug=true` to the URL to show an on-screen stats overlay (top-left). Updates twice per second.
+
+```
+http://localhost:5173/?debug=true
+```
+
+Shows FPS, graphics preset, renderer, viewport size, device pixel ratio, canvas resolution, memory (Chrome), and Pixi render stats when available. Works in menus and gameplay; the flag is kept when navigating (e.g. `?debug=true&level=1`).
+
 ## Docs
 
 See [docs/PLAN.md](docs/PLAN.md) for status and remaining work.
