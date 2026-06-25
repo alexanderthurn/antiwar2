@@ -33,18 +33,29 @@ export interface CivilianBloodOpts {
   intensityTier?: number;
   /** Random start position within this rectangle (e.g. human sprite bounds). */
   spawnArea?: BloodSpawnArea;
+  /** Impact origin — blood sprays away from this point. */
+  hitFrom?: { x: number; y: number };
 }
 
-/** Particle count per cheat tier — wide spread so each step is obvious. */
-const CHEAT_BLOOD_COUNTS: Record<EffectQuality, number[]> = {
+interface BloodHitBias {
+  /** -1 = spray left, +1 = spray right, 0 = symmetric. */
+  lateral: number;
+  /** 1 = full cone width, lower = tighter directional fan. */
+  spreadSymmetry: number;
+}
+
+/** Particle count per strength tier (0–6). */
+const BLOOD_COUNT_BY_TIER: Record<EffectQuality, number[]> = {
   low: [0, 0, 0, 0, 0, 0, 0],
-  normal: [6, 22, 60, 140, 260, 420, 600],
-  high: [10, 34, 90, 200, 360, 580, 820],
-  ultra: [12, 44, 115, 260, 460, 740, 1050],
+  normal: [10, 36, 95, 185, 330, 530, 760],
+  high: [14, 52, 130, 265, 460, 720, 1020],
+  ultra: [18, 68, 165, 330, 580, 920, 1280],
 };
 
-const CHEAT_BLOOD_SPEED_MUL = [1, 1.3, 1.6, 2, 2.6, 3.4, 4.5];
-const CHEAT_BLOOD_SPREAD_MUL = [1, 1.4, 1.8, 2.3, 3, 3.8, 5];
+/** Tiers 0–2: farther fling. Tiers 3–6: shorter arc, denser cloud. */
+const BLOOD_SPEED_BY_TIER = [1.6, 1.95, 2.3, 1.5, 1.38, 1.28, 1.18];
+const BLOOD_SPREAD_BY_TIER = [1.15, 1.4, 1.7, 1.45, 1.32, 1.22, 1.12];
+const BLOOD_GRAVITY_BY_TIER = [228, 224, 220, 262, 272, 282, 292];
 
 type PoolId = 'trailSmoke' | 'fxSmoke' | 'fxFire' | 'fxBlood';
 
@@ -385,15 +396,15 @@ export class ParticleFxManager {
     const profile = QUALITY[this.quality];
     if (!profile || this.bloodFrames.length === 0) return;
 
-    const cheatTier = opts.intensityTier;
-    const cheatMode = cheatTier != null;
-    const tierIndex = cheatMode ? Math.max(0, Math.min(6, cheatTier)) : 0;
-
+    const strengthTier = this.bloodStrengthTier(opts);
     const count = this.bloodParticleCount(opts, profile);
     const allowOverflow = count > 24;
-    const extreme = cheatMode ? tierIndex >= 4 : count >= 60;
-    const speedMul = cheatMode ? (CHEAT_BLOOD_SPEED_MUL[tierIndex] ?? 1) : 1;
-    const spreadMul = cheatMode ? (CHEAT_BLOOD_SPREAD_MUL[tierIndex] ?? 1) : 1;
+    const extreme = strengthTier >= 4;
+    const speedMul = BLOOD_SPEED_BY_TIER[strengthTier] ?? 1;
+    const spreadMul = BLOOD_SPREAD_BY_TIER[strengthTier] ?? 1;
+    const gravity = BLOOD_GRAVITY_BY_TIER[strengthTier] ?? 290;
+    const hitBias = this.bloodHitBias(opts.spawnArea, opts.hitFrom);
+    const cheatMode = opts.intensityTier != null;
 
     for (let i = 0; i < count; i++) {
       if (!cheatMode && !this.canSpawnBlood(allowOverflow, count)) break;
@@ -404,7 +415,7 @@ export class ParticleFxManager {
           Math.min(opts.damage, 800) * 0.035) *
         speedMul;
       const { x: px, y: py } = this.randomBloodSpawnPoint(x, y, opts.spawnArea);
-      const { vx, vy } = this.bloodBurstVelocity(speed, spreadMul, extreme);
+      const { vx, vy } = this.bloodBurstVelocity(speed, spreadMul, extreme, hitBias);
 
       this.pushBlood(
         {
@@ -417,7 +428,7 @@ export class ParticleFxManager {
           grow: this.bloodParticleGrow(),
           tint: this.pickBloodTint(),
           peakAlpha: 0.82 + Math.random() * 0.15,
-          gravity: extreme ? 250 : 290,
+          gravity,
         },
         cheatMode,
       );
@@ -429,18 +440,19 @@ export class ParticleFxManager {
         if (!cheatMode && !this.canSpawnBlood(true, count)) break;
         const popSpeed = (32 + Math.random() * 55) * speedMul;
         const { x: px, y: py } = this.randomBloodSpawnPoint(x, y, opts.spawnArea);
+        const sideKick = hitBias.lateral * 58 * spreadMul;
         this.pushBlood(
           {
             x: px,
             y: py,
-            vx: (Math.random() - 0.5) * 95 * spreadMul,
+            vx: sideKick + (Math.random() - 0.5) * 95 * spreadMul * hitBias.spreadSymmetry,
             vy: -popSpeed,
             life: 0.28 + Math.random() * 0.38,
             scale: this.bloodParticleSize() * 0.85,
             grow: this.bloodParticleGrow() * 0.8,
             tint: this.pickBloodTint(),
             peakAlpha: 0.75,
-            gravity: 240,
+            gravity: gravity + 8,
           },
           cheatMode,
         );
@@ -469,14 +481,43 @@ export class ParticleFxManager {
     };
   }
 
+  private bloodHitBias(
+    area: BloodSpawnArea | undefined,
+    hitFrom?: { x: number; y: number },
+  ): BloodHitBias {
+    if (!area || !hitFrom) return { lateral: 0, spreadSymmetry: 1 };
+
+    const dx = hitFrom.x - area.cx;
+    const headTop = area.cy - area.height * 0.42;
+
+    // Head-on hit from above — fan out both ways.
+    if (hitFrom.y < headTop && Math.abs(dx) < area.width * 0.42) {
+      return { lateral: 0, spreadSymmetry: 1 };
+    }
+
+    const sideReach = Math.max(area.width * 0.38, 22);
+    const lateral = -Math.max(-1, Math.min(1, dx / sideReach));
+
+    // High glancing hit — mostly up, mild sideways lean.
+    if (hitFrom.y < area.cy - area.height * 0.12) {
+      return { lateral: lateral * 0.3, spreadSymmetry: 0.88 };
+    }
+
+    const focus = 0.5 + Math.abs(lateral) * 0.22;
+    return { lateral, spreadSymmetry: focus };
+  }
+
   /** Upward spray with generous left/right spread (screen Y grows downward). */
   private bloodBurstVelocity(
     speed: number,
     spreadMul: number,
     extreme: boolean,
+    hitBias: BloodHitBias,
   ): { vx: number; vy: number } {
-    const spread = (extreme ? 1.9 : 1.35) * spreadMul;
-    const angle = -Math.PI / 2 + (Math.random() - 0.5) * spread;
+    const lateralShift = hitBias.lateral * (extreme ? 0.82 : 0.62);
+    const centerAngle = -Math.PI / 2 + lateralShift;
+    const spread = (extreme ? 1.9 : 1.35) * spreadMul * hitBias.spreadSymmetry;
+    const angle = centerAngle + (Math.random() - 0.5) * spread;
     const lift = speed * (0.95 + Math.random() * 0.5);
     const horizontal = 0.62 + Math.random() * 0.45;
     const upwardBoost = extreme ? 1.22 : 1.08;
@@ -486,32 +527,32 @@ export class ParticleFxManager {
     };
   }
 
-  private bloodParticleCount(opts: CivilianBloodOpts, profile: QualityProfile): number {
+  private bloodStrengthTier(opts: CivilianBloodOpts): number {
     if (opts.intensityTier != null) {
-      const tier = Math.max(0, Math.min(6, opts.intensityTier));
-      return CHEAT_BLOOD_COUNTS[this.quality][tier] ?? CHEAT_BLOOD_COUNTS.normal[tier] ?? 5;
+      return Math.max(0, Math.min(6, opts.intensityTier));
     }
 
-    const { damage, explosionType = 0, explosionRange = 0 } = opts;
-    const qualityMul =
-      profile.budget >= 320 ? 2.6 : profile.budget >= 240 ? 1.85 : profile.budget >= 130 ? 1 : 0.6;
+    let damage = opts.damage;
+    if (opts.explosionType === 3) damage *= 1.5;
+    else if (opts.explosionType === 4) damage *= 1.2;
 
-    let base = 4;
-    if (damage >= 2000) base = 110;
-    else if (damage >= 800) base = 72;
-    else if (damage >= 300) base = 45;
-    else if (damage >= 120) base = 26;
-    else if (damage >= 50) base = 14;
-    else if (damage >= 20) base = 8;
+    if (damage >= 2000) return 6;
+    if (damage >= 800) return 5;
+    if (damage >= 250) return 4;
+    if (damage >= 100) return 3;
+    if (damage >= 50) return 2;
+    if (damage >= 20) return 1;
+    return 0;
+  }
 
-    if (explosionType === 3) base *= 3.2;
-    else if (explosionType === 4) base *= 2.2;
-    else if (explosionType === 2) base *= 1.5;
-
-    if (explosionRange >= 140) base *= 1.5;
-    else if (explosionRange >= 80) base *= 1.2;
-
-    return Math.max(2, Math.round(base * qualityMul));
+  private bloodParticleCount(opts: CivilianBloodOpts, profile: QualityProfile): number {
+    const tier = this.bloodStrengthTier(opts);
+    const counts = BLOOD_COUNT_BY_TIER[this.quality] ?? BLOOD_COUNT_BY_TIER.normal;
+    const fromTier = counts[tier] ?? 5;
+    if (opts.intensityTier != null || profile.budget >= 130) {
+      return fromTier;
+    }
+    return Math.max(2, Math.round(fromTier * 0.6));
   }
 
   private canSpawnBlood(allowOverflow: boolean, requested: number): boolean {

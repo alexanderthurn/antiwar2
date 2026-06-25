@@ -61,6 +61,12 @@ interface AirplaneSpawn {
   y: number;
 }
 
+interface CivilianDamageSource {
+  explosionType?: number;
+  explosionRange?: number;
+  hitFrom?: { x: number; y: number };
+}
+
 interface Civilian {
   id: number;
   sprite: Sprite;
@@ -351,12 +357,12 @@ export class GameScene extends Container implements MenuActionsHost {
           ps.stats.bombsDestroyed += 1;
         }
       },
-      onBombHitsCivilian: (bomb: CombatEntity, civilianId: number) => {
+      onBombHitsCivilian: (bomb: CombatEntity, civilianId: number, hitX: number, hitY: number) => {
         const def = bomb.bombDef;
         if (!def) return;
         const civilian = this.civilians.find((c) => c.id === civilianId);
         if (!civilian?.alive) return;
-        this.applyCivilianDamage(civilian, def.damage);
+        this.applyCivilianDamage(civilian, def.damage, { hitFrom: { x: hitX, y: hitY } });
       },
     };
   }
@@ -1114,7 +1120,7 @@ export class GameScene extends Container implements MenuActionsHost {
   private applyCivilianDamage(
     c: Civilian,
     damage: number,
-    source?: { explosionType?: number; explosionRange?: number },
+    source?: CivilianDamageSource,
   ): void {
     if (!c.alive || damage <= 0) return;
     const wasAlive = c.hp > 0;
@@ -1135,7 +1141,11 @@ export class GameScene extends Container implements MenuActionsHost {
     explosionType = 0,
   ): void {
     const r2 = radius * radius;
-    const source = { explosionType, explosionRange: radius };
+    const source: CivilianDamageSource = {
+      explosionType,
+      explosionRange: radius,
+      hitFrom: { x, y },
+    };
     for (const c of this.civilians) {
       if (!c.alive) continue;
       const dx = c.x - x;
@@ -1159,7 +1169,7 @@ export class GameScene extends Container implements MenuActionsHost {
   private killCivilian(
     c: Civilian,
     killingDamage = 0,
-    source?: { explosionType?: number; explosionRange?: number },
+    source?: CivilianDamageSource,
   ): void {
     c.alive = false;
     c.sprite.visible = false;
@@ -1168,6 +1178,7 @@ export class GameScene extends Container implements MenuActionsHost {
       explosionType: source?.explosionType,
       explosionRange: source?.explosionRange,
       spawnArea: this.civilianBloodSpawnArea(c),
+      hitFrom: source?.hitFrom,
     });
     this.levelAudio.playCivilianDeath();
     this.session.resetHumanPrice();
@@ -1390,12 +1401,14 @@ export class GameScene extends Container implements MenuActionsHost {
       if (!c.alive) continue;
       c.alive = false;
       c.sprite.visible = false;
+      const hitSide = killed % 2 === 0 ? 1 : -1;
       this.particleFx.spawnCivilianBlood(c.x, 0, {
         damage: tier.damage,
         explosionType: tier.explosionType,
         explosionRange: tier.explosionRange,
         intensityTier: tierIndex,
         spawnArea: this.civilianBloodSpawnArea(c),
+        hitFrom: { x: c.x + hitSide * 140, y: GROUND_FEET_Y - c.sprite.height * 0.55 },
       });
       killed += 1;
     }
