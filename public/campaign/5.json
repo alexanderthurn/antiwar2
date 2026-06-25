@@ -524,7 +524,7 @@
         300
       ],
       "drawStyle": 0,
-      "image": "assets/gfx/AIRPLANES/para_bomb.png",
+      "image": "assets/gfx/BOMBS/para_bomb.png",
       "scale": [
         0.32,
         0.32
