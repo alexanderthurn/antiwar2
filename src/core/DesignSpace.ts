@@ -8,6 +8,9 @@ export const DESIGN = {
   /** Top edge of the ground HUD strip — units stand here (dune line in background). */
   groundY: 1080 - V1_GROUND_HEIGHT * (1080 / 768),
 } as const;
+
+/** Effects and physics stop at this Y (top of ground strip). */
+export const GROUND_SURFACE_Y = DESIGN.groundY;
 export const TOWER = {
   baseLeft: 60,
   baseRight: 1860,

@@ -1,5 +1,5 @@
 import { Container, Particle, ParticleContainer, type Texture } from 'pixi.js';
-import { DESIGN } from '../../core/DesignSpace';
+import { GROUND_SURFACE_Y } from '../../core/DesignSpace';
 import type { EffectQuality } from '../../core/GraphicsQuality';
 import { loadTexture } from '../../data/AssetLoader';
 import type { CombatEntity } from '../../entities/CombatEntity';
@@ -14,6 +14,16 @@ const FIRE_FRAME_COUNT = 4;
 const CLOUD_FRAME_START = 4;
 const CLOUD_FRAME_COUNT = 8;
 const BLOOD_PARTICLE_SCALE = 2;
+const BLOOD_SCALE_MIN = 0.07 * BLOOD_PARTICLE_SCALE;
+const BLOOD_SCALE_MAX = 0.22 * BLOOD_PARTICLE_SCALE;
+const BLOOD_GROW_MAX = 0.022 * BLOOD_PARTICLE_SCALE;
+
+export interface BloodSpawnArea {
+  cx: number;
+  cy: number;
+  width: number;
+  height: number;
+}
 
 export interface CivilianBloodOpts {
   damage: number;
@@ -21,19 +31,20 @@ export interface CivilianBloodOpts {
   explosionRange?: number;
   /** Cheat / test tier (0–6) — bypasses global budget and uses dramatic per-tier counts. */
   intensityTier?: number;
+  /** Random start position within this rectangle (e.g. human sprite bounds). */
+  spawnArea?: BloodSpawnArea;
 }
 
 /** Particle count per cheat tier — wide spread so each step is obvious. */
 const CHEAT_BLOOD_COUNTS: Record<EffectQuality, number[]> = {
   low: [0, 0, 0, 0, 0, 0, 0],
-  normal: [5, 16, 38, 80, 140, 220, 320],
-  high: [8, 24, 58, 120, 210, 340, 480],
-  ultra: [10, 32, 78, 160, 280, 450, 650],
+  normal: [6, 22, 60, 140, 260, 420, 600],
+  high: [10, 34, 90, 200, 360, 580, 820],
+  ultra: [12, 44, 115, 260, 460, 740, 1050],
 };
 
-const CHEAT_BLOOD_SCALE_MUL = [1, 1.15, 1.35, 1.6, 2, 2.6, 3.4];
-const CHEAT_BLOOD_SPEED_MUL = [1, 1.2, 1.45, 1.75, 2.2, 2.9, 3.8];
-const CHEAT_BLOOD_SPREAD_MUL = [1, 1.2, 1.5, 1.9, 2.4, 3.2, 4.5];
+const CHEAT_BLOOD_SPEED_MUL = [1, 1.3, 1.6, 2, 2.6, 3.4, 4.5];
+const CHEAT_BLOOD_SPREAD_MUL = [1, 1.4, 1.8, 2.3, 3, 3.8, 5];
 
 type PoolId = 'trailSmoke' | 'fxSmoke' | 'fxFire' | 'fxBlood';
 
@@ -357,7 +368,7 @@ export class ParticleFxManager {
       this.ringSmoke(x, y, radius * 0.7, scale * mul, 0xffaa66, 8);
       this.groundFires.push({
         x,
-        y: DESIGN.groundY - 4,
+        y: GROUND_SURFACE_Y - 4,
         life: 2.4 + Math.random() * 0.8,
         cooldown: 0,
         radius: radius * 0.55,
@@ -381,66 +392,98 @@ export class ParticleFxManager {
     const count = this.bloodParticleCount(opts, profile);
     const allowOverflow = count > 24;
     const extreme = cheatMode ? tierIndex >= 4 : count >= 60;
-    const scaleMul = cheatMode ? (CHEAT_BLOOD_SCALE_MUL[tierIndex] ?? 1) : 1;
     const speedMul = cheatMode ? (CHEAT_BLOOD_SPEED_MUL[tierIndex] ?? 1) : 1;
     const spreadMul = cheatMode ? (CHEAT_BLOOD_SPREAD_MUL[tierIndex] ?? 1) : 1;
 
     for (let i = 0; i < count; i++) {
       if (!cheatMode && !this.canSpawnBlood(allowOverflow, count)) break;
 
-      const angle = Math.random() * Math.PI * 2;
       const speed =
-        ((extreme ? 70 : 40) +
-          Math.random() * (extreme ? 160 : 90) +
-          Math.min(opts.damage, 800) * 0.04) *
+        ((extreme ? 95 : 48) +
+          Math.random() * (extreme ? 210 : 105) +
+          Math.min(opts.damage, 800) * 0.035) *
         speedMul;
-      const upward = extreme ? 0.35 + Math.random() * 0.55 : 0.15 + Math.random() * 0.45;
-      const spreadX = (extreme ? 28 : 14) * spreadMul;
-      const spreadY = (extreme ? 20 : 10) * spreadMul;
+      const { x: px, y: py } = this.randomBloodSpawnPoint(x, y, opts.spawnArea);
+      const { vx, vy } = this.bloodBurstVelocity(speed, spreadMul, extreme);
 
       this.pushBlood(
         {
-          x: x + (Math.random() - 0.5) * spreadX,
-          y: y + (Math.random() - 0.5) * spreadY,
-          vx: Math.cos(angle) * speed * (1 - upward * 0.35),
-          vy: Math.sin(angle) * speed - (40 + Math.random() * (extreme ? 120 : 60)) * speedMul,
-          life: (extreme ? 0.55 : 0.35) + Math.random() * (extreme ? 0.7 : 0.45),
-          scale:
-            ((extreme ? 0.14 : 0.08) + Math.random() * (extreme ? 0.2 : 0.12)) *
-            BLOOD_PARTICLE_SCALE *
-            scaleMul,
-          grow: (extreme ? 0.04 : 0.02) * BLOOD_PARTICLE_SCALE * scaleMul,
+          x: px,
+          y: py,
+          vx,
+          vy,
+          life: (extreme ? 0.6 : 0.38) + Math.random() * (extreme ? 0.75 : 0.48),
+          scale: this.bloodParticleSize(),
+          grow: this.bloodParticleGrow(),
           tint: this.pickBloodTint(),
           peakAlpha: 0.82 + Math.random() * 0.15,
-          gravity: (extreme ? 420 : 300) * (cheatMode ? 0.85 + tierIndex * 0.05 : 1),
+          gravity: extreme ? 250 : 290,
         },
         cheatMode,
       );
     }
 
     if (extreme) {
-      const extra = Math.round(count * (cheatMode ? 0.45 : 0.35));
+      const extra = Math.round(count * (cheatMode ? 0.5 : 0.38));
       for (let i = 0; i < extra; i++) {
         if (!cheatMode && !this.canSpawnBlood(true, count)) break;
-        const angle = Math.random() * Math.PI * 2;
-        const dist = (8 + Math.random() * 48) * spreadMul;
+        const popSpeed = (32 + Math.random() * 55) * speedMul;
+        const { x: px, y: py } = this.randomBloodSpawnPoint(x, y, opts.spawnArea);
         this.pushBlood(
           {
-            x: x + Math.cos(angle) * dist,
-            y: y + Math.sin(angle) * dist * 0.25,
-            vx: Math.cos(angle) * (20 + Math.random() * 50) * speedMul,
-            vy: (-10 - Math.random() * 40) * speedMul,
-            life: 0.25 + Math.random() * 0.35,
-            scale: (0.06 + Math.random() * 0.1) * BLOOD_PARTICLE_SCALE * scaleMul,
-            grow: 0.03 * BLOOD_PARTICLE_SCALE * scaleMul,
+            x: px,
+            y: py,
+            vx: (Math.random() - 0.5) * 95 * spreadMul,
+            vy: -popSpeed,
+            life: 0.28 + Math.random() * 0.38,
+            scale: this.bloodParticleSize() * 0.85,
+            grow: this.bloodParticleGrow() * 0.8,
             tint: this.pickBloodTint(),
             peakAlpha: 0.75,
-            gravity: 360,
+            gravity: 240,
           },
           cheatMode,
         );
       }
     }
+  }
+
+  private bloodParticleSize(): number {
+    const raw = BLOOD_SCALE_MIN + Math.random() * (BLOOD_SCALE_MAX - BLOOD_SCALE_MIN);
+    return Math.min(raw, BLOOD_SCALE_MAX);
+  }
+
+  private bloodParticleGrow(): number {
+    return BLOOD_GROW_MAX * (0.6 + Math.random() * 0.5);
+  }
+
+  private randomBloodSpawnPoint(
+    x: number,
+    y: number,
+    area?: BloodSpawnArea,
+  ): { x: number; y: number } {
+    if (!area) return { x, y };
+    return {
+      x: area.cx + (Math.random() - 0.5) * area.width,
+      y: area.cy + (Math.random() - 0.5) * area.height,
+    };
+  }
+
+  /** Upward spray with generous left/right spread (screen Y grows downward). */
+  private bloodBurstVelocity(
+    speed: number,
+    spreadMul: number,
+    extreme: boolean,
+  ): { vx: number; vy: number } {
+    const spread = (extreme ? 1.9 : 1.35) * spreadMul;
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * spread;
+    const lift = speed * (0.95 + Math.random() * 0.5);
+    const horizontal = 0.62 + Math.random() * 0.45;
+    const upwardBoost = extreme ? 1.22 : 1.08;
+    return {
+      vx: Math.cos(angle) * lift * horizontal,
+      vy: Math.sin(angle) * lift * upwardBoost,
+    };
   }
 
   private bloodParticleCount(opts: CivilianBloodOpts, profile: QualityProfile): number {
@@ -453,17 +496,17 @@ export class ParticleFxManager {
     const qualityMul =
       profile.budget >= 320 ? 2.6 : profile.budget >= 240 ? 1.85 : profile.budget >= 130 ? 1 : 0.6;
 
-    let base = 3;
-    if (damage >= 2000) base = 72;
-    else if (damage >= 800) base = 48;
-    else if (damage >= 300) base = 30;
-    else if (damage >= 120) base = 18;
-    else if (damage >= 50) base = 10;
-    else if (damage >= 20) base = 6;
+    let base = 4;
+    if (damage >= 2000) base = 110;
+    else if (damage >= 800) base = 72;
+    else if (damage >= 300) base = 45;
+    else if (damage >= 120) base = 26;
+    else if (damage >= 50) base = 14;
+    else if (damage >= 20) base = 8;
 
-    if (explosionType === 3) base *= 2.8;
-    else if (explosionType === 4) base *= 2;
-    else if (explosionType === 2) base *= 1.4;
+    if (explosionType === 3) base *= 3.2;
+    else if (explosionType === 4) base *= 2.2;
+    else if (explosionType === 2) base *= 1.5;
 
     if (explosionRange >= 140) base *= 1.5;
     else if (explosionRange >= 80) base *= 1.2;
@@ -872,10 +915,17 @@ export class ParticleFxManager {
 
         const t = 1 - entry.life / entry.maxLife;
         const fade = (1 - t) ** 1.35;
+        entry.vy += entry.gravity * dt;
         entry.particle.x += entry.vx * dt;
         entry.particle.y += entry.vy * dt;
         entry.particle.rotation += entry.spin * dt;
-        entry.vy += entry.gravity * dt;
+
+        if (this.particleHitGround(entry)) {
+          this.recycle(entry);
+          pool.live.splice(i, 1);
+          continue;
+        }
+
         const scale = entry.baseScale + entry.grow * t;
         entry.particle.scaleX = scale;
         entry.particle.scaleY = scale;
@@ -884,6 +934,15 @@ export class ParticleFxManager {
         if (entry.gravity === 0) entry.vy *= 1 - dt * 1.8;
       }
     }
+  }
+
+  /** Blood and falling fire/smoke die at the ground surface instead of sinking through. */
+  private particleHitGround(entry: LiveParticle): boolean {
+    if (entry.particle.y < GROUND_SURFACE_Y) return false;
+    if (entry.pool === 'fxBlood') return true;
+    if (entry.pool === 'fxFire' && entry.gravity > 0) return true;
+    if (entry.pool === 'fxSmoke' && entry.gravity > 0) return true;
+    return false;
   }
 
   private hasBudget(): boolean {

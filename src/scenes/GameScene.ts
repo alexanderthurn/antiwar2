@@ -96,6 +96,8 @@ export class GameScene extends Container implements MenuActionsHost {
   private nightVisionLayer = new NightVisionLayer();
   private entityLayer = new Container();
   private fxLayer = new Container();
+  private groundLayer = new Container();
+  private groundEntityLayer = new Container();
   private uiLayer = new Container();
   private entities = new EntityController();
   private explosionManager = new ExplosionManager();
@@ -151,12 +153,16 @@ export class GameScene extends Container implements MenuActionsHost {
 
   constructor() {
     super();
+    this.groundLayer.eventMode = 'none';
+    this.groundEntityLayer.eventMode = 'none';
     this.addChild(
       this.bgLayer,
       this.weatherLayer,
       this.trailLayer,
       this.entityLayer,
       this.fxLayer,
+      this.groundLayer,
+      this.groundEntityLayer,
       this.nightVisionLayer,
       this.uiLayer,
     );
@@ -468,12 +474,13 @@ export class GameScene extends Container implements MenuActionsHost {
     bg.height = DESIGN.height;
     this.bgLayer.addChild(bg);
 
+    this.groundLayer.removeChildren();
     const groundTex = await loadTexture(assets.ground ?? 'assets/gfx/backgrounds/ground.png');
     const ground = new Sprite(groundTex);
     ground.width = DESIGN.width;
     ground.height = DESIGN.groundHeight;
     ground.y = DESIGN.groundY;
-    this.bgLayer.addChild(ground);
+    this.groundLayer.addChild(ground);
   }
 
   private async setupPlayers(pack: LevelPack): Promise<void> {
@@ -496,14 +503,14 @@ export class GameScene extends Container implements MenuActionsHost {
 
       for (const s of [slot.leftBase, slot.rightBase]) {
         s.anchor.set(0.5, 1);
-        if (!s.parent) this.entityLayer.addChild(s);
+        if (!s.parent) this.groundEntityLayer.addChild(s);
       }
       slot.leftBase.scale.set(1, 1);
       slot.rightBase.scale.set(-1, 1);
 
       for (const s of [slot.leftCannon, slot.rightCannon]) {
         s.anchor.set(pivot.x, pivot.y);
-        if (!s.parent) this.entityLayer.addChild(s);
+        if (!s.parent) this.groundEntityLayer.addChild(s);
       }
       slot.leftCannon.scale.set(1, 1);
       slot.rightCannon.scale.set(-1, 1);
@@ -561,7 +568,7 @@ export class GameScene extends Container implements MenuActionsHost {
     const sprite = new Sprite(Texture.EMPTY);
     this.placeHuman(sprite, x, dir);
     sprite.visible = true;
-    this.entityLayer.addChild(sprite);
+    this.groundEntityLayer.addChild(sprite);
 
     this.civilians.push({
       id: GameScene.nextCivilianId++,
@@ -1138,6 +1145,17 @@ export class GameScene extends Container implements MenuActionsHost {
     }
   }
 
+  private civilianBloodSpawnArea(c: Civilian) {
+    const h = c.sprite.height;
+    const w = c.sprite.width;
+    return {
+      cx: c.x,
+      cy: GROUND_FEET_Y - h * 0.52,
+      width: w * 0.94,
+      height: h * 0.9,
+    };
+  }
+
   private killCivilian(
     c: Civilian,
     killingDamage = 0,
@@ -1145,11 +1163,11 @@ export class GameScene extends Container implements MenuActionsHost {
   ): void {
     c.alive = false;
     c.sprite.visible = false;
-    const bloodY = GROUND_FEET_Y - c.sprite.height * 0.55;
-    this.particleFx.spawnCivilianBlood(c.x, bloodY, {
+    this.particleFx.spawnCivilianBlood(c.x, 0, {
       damage: killingDamage,
       explosionType: source?.explosionType,
       explosionRange: source?.explosionRange,
+      spawnArea: this.civilianBloodSpawnArea(c),
     });
     this.levelAudio.playCivilianDeath();
     this.session.resetHumanPrice();
@@ -1372,12 +1390,12 @@ export class GameScene extends Container implements MenuActionsHost {
       if (!c.alive) continue;
       c.alive = false;
       c.sprite.visible = false;
-      const bloodY = GROUND_FEET_Y - c.sprite.height * 0.55;
-      this.particleFx.spawnCivilianBlood(c.x, bloodY, {
+      this.particleFx.spawnCivilianBlood(c.x, 0, {
         damage: tier.damage,
         explosionType: tier.explosionType,
         explosionRange: tier.explosionRange,
         intensityTier: tierIndex,
+        spawnArea: this.civilianBloodSpawnArea(c),
       });
       killed += 1;
     }
