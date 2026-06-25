@@ -60,6 +60,8 @@ export class App {
   private menuActionsKey = '';
 
   private mouseButtons = { left: false, right: false };
+  /** Only one touch finger drives aim/fire; ignores extra touches that confuse input. */
+  private activeTouchPointerId: number | null = null;
 
   constructor(
     private readonly pixi: Application,
@@ -71,6 +73,10 @@ export class App {
     pixi.canvas.style.height = '100%';
     pixi.canvas.style.cursor = 'none';
     pixi.canvas.style.touchAction = 'none';
+    pixi.canvas.style.userSelect = 'none';
+    pixi.canvas.style.setProperty('-webkit-user-select', 'none');
+    pixi.canvas.style.setProperty('-webkit-touch-callout', 'none');
+    pixi.canvas.style.setProperty('-webkit-tap-highlight-color', 'transparent');
     pixi.stage.addChild(this.blurBackdrop);
     pixi.stage.addChild(this.gameRoot);
     this.viewportMask.rect(0, 0, DESIGN.width, DESIGN.height).fill(0xffffff);
@@ -304,29 +310,76 @@ export class App {
   };
 
   private bindInput(): void {
-    this.pixi.canvas.addEventListener('pointermove', (e) => {
+    const canvas = this.pixi.canvas;
+
+    const isPrimaryTouch = (e: PointerEvent): boolean => {
+      if (e.pointerType !== 'touch') return true;
+      return this.activeTouchPointerId === null || e.pointerId === this.activeTouchPointerId;
+    };
+
+    const suppressTouchDefault = (e: PointerEvent): void => {
+      if (e.pointerType === 'touch') e.preventDefault();
+    };
+
+    const beginPointer = (e: PointerEvent): void => {
+      if (e.pointerType === 'touch') {
+        suppressTouchDefault(e);
+        if (this.activeTouchPointerId !== null && e.pointerId !== this.activeTouchPointerId) {
+          return;
+        }
+        this.activeTouchPointerId = e.pointerId;
+        canvas.setPointerCapture(e.pointerId);
+      }
+
+      const { x, y } = this.stagePointer(e.clientX, e.clientY);
+      this.input.onPointerDown(x, y);
+      if (this.mode !== 'game') return;
+      if (this.touchUi) this.game?.handleTouchPointerDown(this.input, x, y);
+    };
+
+    const movePointer = (e: PointerEvent): void => {
+      if (!isPrimaryTouch(e)) return;
+      suppressTouchDefault(e);
+
       const { x, y } = this.stagePointer(e.clientX, e.clientY);
       this.input.onPointerMove(x, y);
       if (this.mode === 'game' && this.game) {
         if (this.touchUi) this.game.handleTouchPointerMove(this.input, x, y);
         else this.game.handlePointerMove(this.input, x, y);
       }
-    });
+    };
 
-    this.pixi.canvas.addEventListener('pointerdown', (e) => {
-      const { x, y } = this.stagePointer(e.clientX, e.clientY);
-      this.input.onPointerDown(x, y);
-      if (this.mode !== 'game') return;
-      if (this.touchUi) this.game?.handleTouchPointerDown(this.input, x, y);
-    });
+    const endPointer = (e: PointerEvent): void => {
+      if (e.pointerType === 'touch') {
+        if (this.activeTouchPointerId !== e.pointerId) return;
+        suppressTouchDefault(e);
+        this.activeTouchPointerId = null;
+        if (canvas.hasPointerCapture(e.pointerId)) {
+          canvas.releasePointerCapture(e.pointerId);
+        }
+      }
 
-    this.pixi.canvas.addEventListener('pointerup', () => {
       this.input.onPointerUp();
       if (this.mode !== 'game') return;
       if (this.touchUi) this.game?.handleTouchPointerUp(this.input);
-    });
+    };
 
-    this.pixi.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    canvas.addEventListener('pointerdown', beginPointer);
+    canvas.addEventListener('pointermove', movePointer);
+    canvas.addEventListener('pointerup', endPointer);
+    canvas.addEventListener('pointercancel', endPointer);
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    canvas.addEventListener('selectstart', (e) => e.preventDefault());
+    canvas.addEventListener('dragstart', (e) => e.preventDefault());
+
+    if (this.touchUi) {
+      document.addEventListener('contextmenu', (e) => e.preventDefault(), { capture: true });
+      document.addEventListener(
+        'gesturestart',
+        (e) => e.preventDefault(),
+        { capture: true, passive: false },
+      );
+    }
 
     if (!this.touchUi) {
       this.pixi.canvas.addEventListener('mousedown', (e) => {
