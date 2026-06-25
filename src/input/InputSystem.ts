@@ -161,6 +161,16 @@ export class InputSystem {
     if (inGame) slot.setAim(x, y);
   }
 
+  /** Touch aim — crosshair sits above the finger by one ground-strip height. */
+  applyTouchPointerMove(players: PlayerManager, stageX: number, stageY: number): void {
+    if (!this.layout || this.mode !== 'combat') return;
+    const slot = this.pointerSlot(players);
+    if (!slot) return;
+    const { x, y, inGame } = screenToDesign(stageX, stageY, this.layout);
+    if (!inGame) return;
+    slot.setAim(x, Math.max(0, y - DESIGN.groundHeight));
+  }
+
   setPointerFire(players: PlayerManager, left: boolean, right: boolean): void {
     if (this.mode !== 'combat') return;
     const slot = this.pointerSlot(players);

@@ -25,7 +25,10 @@ export class PlayerSlot {
   lockTarget: CombatEntity | null = null;
   rocketsInFlight = 0;
   rocketCap = 0;
-  fireCooldown = 0;
+  autoFireCooldownLeft = 0;
+  autoFireCooldownRight = 0;
+  holdFireLeftMs = 0;
+  holdFireRightMs = 0;
   fireLeft = false;
   fireRight = false;
 

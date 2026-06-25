@@ -61,6 +61,9 @@ const END_SCREEN_ANIM_S = 2.4;
 const PLAYER_ROCKET_DAMAGE_SCALE_MAX = 2;
 /** Seconds between autofire shots while fire is held (clicks are not limited). */
 const PLAYER_AUTO_FIRE_COOLDOWN_S = 0.5;
+const PLAYER_TOUCH_AUTO_FIRE_COOLDOWN_S = PLAYER_AUTO_FIRE_COOLDOWN_S * 0.5;
+/** Hold this long before autofire replaces click-fire (keeps rapid clicks instant). */
+const PLAYER_AUTO_FIRE_HOLD_MS = 150;
 /** Damage multiplier for rockets fired with an active lock-on target. */
 const LOCK_ON_ROCKET_DAMAGE_FACTOR = 2.0;
 
@@ -768,7 +771,7 @@ export class GameScene extends Container implements MenuActionsHost {
     if (this.phase !== 'playing') return;
     if (this.touchControls?.isOnButton(designX, designY)) return;
     this.touchFireActive = true;
-    input.applyPointerMove(this.players, designX, designY);
+    input.applyTouchPointerMove(this.players, designX, designY);
     const fire = this.resolveTouchFireTower(designX);
     if (fire.left) this.pointerFireEdgeLeft = true;
     if (fire.right) this.pointerFireEdgeRight = true;
@@ -777,7 +780,7 @@ export class GameScene extends Container implements MenuActionsHost {
 
   handleTouchPointerMove(input: InputSystem, designX: number, designY: number): void {
     if (this.phase !== 'playing') return;
-    input.applyPointerMove(this.players, designX, designY);
+    input.applyTouchPointerMove(this.players, designX, designY);
     if (!this.touchFireActive) return;
     this.syncTouchFire(input, designX);
   }
@@ -1054,7 +1057,12 @@ export class GameScene extends Container implements MenuActionsHost {
     input.setJoinPanelFocused(this.joinPanel?.hasFocus() ?? false);
 
     for (const player of this.players.active()) {
-      player.fireCooldown = Math.max(0, player.fireCooldown - dt);
+      player.autoFireCooldownLeft = Math.max(0, player.autoFireCooldownLeft - dt);
+      player.autoFireCooldownRight = Math.max(0, player.autoFireCooldownRight - dt);
+      if (player.fireLeft) player.holdFireLeftMs += dt * 1000;
+      else player.holdFireLeftMs = 0;
+      if (player.fireRight) player.holdFireRightMs += dt * 1000;
+      else player.holdFireRightMs = 0;
       this.updateAimLock(player, dt);
       this.updateTurretAim(player);
       const isPointer = player.aimSource === 'pointer';
@@ -1062,8 +1070,20 @@ export class GameScene extends Container implements MenuActionsHost {
       const clickRight = isPointer && this.pointerFireEdgeRight;
       if (clickLeft) this.tryFireClick(player, player.leftCannon);
       if (clickRight) this.tryFireClick(player, player.rightCannon);
-      if (player.fireLeft && !clickLeft) this.tryFireAuto(player, player.leftCannon);
-      if (player.fireRight && !clickRight) this.tryFireAuto(player, player.rightCannon);
+      if (
+        player.fireLeft &&
+        !clickLeft &&
+        player.holdFireLeftMs >= PLAYER_AUTO_FIRE_HOLD_MS
+      ) {
+        this.tryFireAuto(player, player.leftCannon, 'left');
+      }
+      if (
+        player.fireRight &&
+        !clickRight &&
+        player.holdFireRightMs >= PLAYER_AUTO_FIRE_HOLD_MS
+      ) {
+        this.tryFireAuto(player, player.rightCannon, 'right');
+      }
     }
     this.pointerFireEdgeLeft = false;
     this.pointerFireEdgeRight = false;
@@ -1173,11 +1193,17 @@ export class GameScene extends Container implements MenuActionsHost {
     this.spawnRocket(player, cannon);
   }
 
-  private tryFireAuto(player: PlayerSlot, cannon: Sprite): void {
-    if (player.fireCooldown > 0) return;
+  private tryFireAuto(player: PlayerSlot, cannon: Sprite, side: 'left' | 'right'): void {
+    const cooldown =
+      side === 'left' ? player.autoFireCooldownLeft : player.autoFireCooldownRight;
+    if (cooldown > 0) return;
     if (player.rocketsInFlight >= player.rocketCap) return;
     this.spawnRocket(player, cannon);
-    player.fireCooldown = PLAYER_AUTO_FIRE_COOLDOWN_S;
+    const delay = this.touchControls
+      ? PLAYER_TOUCH_AUTO_FIRE_COOLDOWN_S
+      : PLAYER_AUTO_FIRE_COOLDOWN_S;
+    if (side === 'left') player.autoFireCooldownLeft = delay;
+    else player.autoFireCooldownRight = delay;
   }
 
   private rocketDamageDisplayScale(damage: number, baseDamage: number): number {

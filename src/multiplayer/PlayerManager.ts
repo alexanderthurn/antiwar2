@@ -60,6 +60,10 @@ export class PlayerManager {
     slot.gamepadIndex = -1;
     slot.fireLeft = false;
     slot.fireRight = false;
+    slot.holdFireLeftMs = 0;
+    slot.holdFireRightMs = 0;
+    slot.autoFireCooldownLeft = 0;
+    slot.autoFireCooldownRight = 0;
     slot.lockTarget = null;
     slot.lockProgressMs = 0;
     slot.crosshair.visible = false;

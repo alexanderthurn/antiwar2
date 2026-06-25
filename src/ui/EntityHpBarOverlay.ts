@@ -4,6 +4,8 @@ import { pointHitsSprite } from '../systems/collision';
 
 const HIT_FLASH_SEC = 0.5;
 const HOVER_PAD = 28;
+/** When sprite top is above this Y, draw the HP bar below instead of above. */
+const BAR_FLIP_TOP_Y = 200;
 
 export interface HpBarCivilian {
   id: number;
@@ -99,9 +101,12 @@ export class EntityHpBarOverlay extends Container {
     const ratio = Math.max(0, Math.min(1, hp / maxHp));
     const w = Math.max(1, sprite.width);
     const h = 6;
+    const gap = 4;
     const x = sprite.x - w / 2;
     const topY = sprite.y - sprite.height * sprite.anchor.y;
-    const y = topY - h - 4;
+    const bottomY = sprite.y + sprite.height * (1 - sprite.anchor.y);
+    const aboveY = topY - h - gap;
+    const y = topY < BAR_FLIP_TOP_Y ? bottomY + gap : aboveY;
     const pulse = hitFlash > 0 ? 0.65 + 0.35 * Math.min(1, hitFlash / 0.25) : 1;
 
     this.gfx.roundRect(x, y, w, h, 2).fill({ color: 0x000000, alpha: 0.6 * pulse });
