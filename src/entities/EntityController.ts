@@ -2,7 +2,7 @@ import { Graphics, Sprite, type Container } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
 import type { AirplaneDef, BombDef, LevelPack } from '../data/types';
 import { pointHitsSprite, rocketHitsSprite, rocketSweepStep, spritesOverlap } from '../systems/collision';
-import { createPatrolMotion, normalizeAI, updateAirplaneAI, type AIUpdateContext } from './AISystem';
+import { createPatrolMotion, updateAirplaneAI, type AIUpdateContext } from './AISystem';
 import { CombatEntity } from './CombatEntity';
 import {
   bombExplosionRadius,
@@ -162,7 +162,9 @@ export class EntityController {
     const sprite = new Sprite(tex);
     sprite.anchor.set(0.5);
     sprite.scale.set(def.scale[0], def.scale[1]);
-    if (x >= DESIGN.width / 2 && normalizeAI(def.ai) !== 'FIGHTERMG') {
+    if (def.drawStyle === 1) {
+      sprite.scale.x = Math.abs(sprite.scale.x);
+    } else if (x >= DESIGN.width / 2) {
       sprite.scale.x = -Math.abs(sprite.scale.x);
     }
     layer.addChild(sprite);
@@ -175,7 +177,7 @@ export class EntityController {
       damage: 0,
       airplaneDef: def,
     });
-    if (normalizeAI(def.ai) === 'FIGHTERMG' && motion.kind === 'patrol') {
+    if (def.drawStyle === 1 && motion.kind === 'patrol') {
       entity.sprite.rotation = motion.dir > 0 ? 0 : Math.PI;
     }
     if (def.stealthTicks && def.stealthTicks > 0) {

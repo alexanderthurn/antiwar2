@@ -33,6 +33,7 @@ export function normalizeAI(ai: string): string {
 }
 
 function flipHorizontal(entity: CombatEntity, dir: 1 | -1): void {
+  if (entity.airplaneDef?.drawStyle === 1) return;
   entity.sprite.scale.x = Math.abs(entity.sprite.scale.x) * dir;
 }
 
@@ -89,17 +90,24 @@ function maybeRetargetY(motion: PatrolMotion, def: AirplaneDef, dt: number, chan
 
 function applyDrawStyle(entity: CombatEntity, def: AirplaneDef, motion: PatrolMotion): void {
   if (def.drawStyle === 1) {
+    entity.sprite.scale.x = Math.abs(entity.sprite.scale.x);
     entity.sprite.rotation = motion.dir > 0 ? 0 : Math.PI;
   } else if (def.drawStyle === 2) {
     entity.sprite.rotation = motion.dir * 0.12;
   }
 }
 
+function retargetAltitude(motion: PatrolMotion, def: AirplaneDef): void {
+  const [minY, maxY] = def.aiParams;
+  motion.targetY = minY + Math.random() * Math.max(1, maxY - minY);
+}
+
 function updateBomberSimple(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
   const speed = def.speed * TICK_SCALE;
+  const prevDir = motion.dir;
   patrolEdges(motion, entity, speed, ctx.dt);
+  if (motion.dir !== prevDir) retargetAltitude(motion, def);
   driftY(motion, entity, ctx.dt);
-  maybeRetargetY(motion, def, ctx.dt);
   rollWeaponDrop(entity, def, ctx.dt, ctx);
   applyDrawStyle(entity, def, motion);
 }
