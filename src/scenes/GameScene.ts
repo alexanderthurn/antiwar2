@@ -29,6 +29,7 @@ import {
 } from '../systems/RumbleController';
 import { BossHpBar } from '../ui/BossHpBar';
 import { EntityHpBarOverlay } from '../ui/EntityHpBarOverlay';
+import { GameHud } from '../ui/GameHud';
 import { JoinPanel } from '../ui/JoinPanel';
 import { PauseOverlay } from '../ui/PauseOverlay';
 import { TouchControls } from '../ui/TouchControls';
@@ -130,6 +131,8 @@ export class GameScene extends Container implements MenuActionsHost {
 
   private civilians: Civilian[] = [];
   private introOverlay: Container | null = null;
+  private gameHud: GameHud | null = null;
+  private levelElapsedSec = 0;
   private shopOverlay: ShopOverlay | null = null;
   private joinPanel: JoinPanel | null = null;
   private bossHpBar: BossHpBar | null = null;
@@ -214,6 +217,7 @@ export class GameScene extends Container implements MenuActionsHost {
     }
 
     this.clearCombat();
+    this.levelElapsedSec = 0;
     this.playerRocketTex = await loadTexture(this.level.bombs.BOMB_PLAYER!.image);
     this.humanBaseTex = await loadTexture(pack.config.assets.human ?? 'assets/gfx/human.png');
 
@@ -232,6 +236,10 @@ export class GameScene extends Container implements MenuActionsHost {
     }
 
     await this.setupPlayers(pack);
+    if (this.gameHud) this.gameHud.destroy({ children: true });
+    this.gameHud = new GameHud(this.playerRocketTex);
+    this.uiLayer.addChild(this.gameHud);
+    this.syncHudVisibility();
     this.updateHud();
     this.levelAudio = createLevelAudio(pack.config.sounds);
     this.levelAudio.playMusic();
@@ -923,10 +931,15 @@ export class GameScene extends Container implements MenuActionsHost {
 
   update(dt: number, input: InputSystem, menu: UiMenuController): void {
     this.inputRef = input;
+    this.syncHudVisibility();
 
     if (this.endScreenFx) {
       this.tickEndScreenFx(dt);
       return;
+    }
+
+    if (this.phase === 'playing' || this.phase === 'shop') {
+      this.levelElapsedSec += dt;
     }
 
     const menuPhase =
@@ -941,6 +954,7 @@ export class GameScene extends Container implements MenuActionsHost {
     }
 
     if (menuPhase) {
+      if (this.phase === 'shop') this.updateHud();
       if (input.cancelPressed()) this.onMenuCancel();
       this.syncMenuActions(menu);
       menu.update(input);
@@ -1399,9 +1413,27 @@ export class GameScene extends Container implements MenuActionsHost {
     }
   }
 
+  private availableRockets(): number {
+    return this.players.active().reduce(
+      (sum, player) => sum + Math.max(0, player.rocketCap - player.rocketsInFlight),
+      0,
+    );
+  }
+
+  private syncHudVisibility(): void {
+    if (!this.gameHud) return;
+    this.gameHud.visible =
+      this.phase === 'playing' || this.phase === 'shop' || this.phase === 'paused';
+  }
+
   private updateHud(): void {
     if (!this.round) return;
     this.joinPanel?.refresh(this.players);
+    this.gameHud?.refresh(
+      this.availableRockets(),
+      this.session.money,
+      this.levelElapsedSec,
+    );
   }
 
   isRoundComplete(): boolean {

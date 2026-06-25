@@ -10,7 +10,7 @@ import { createMenuBackground } from '../ui/MenuBackground';
 import { MenuLogo } from '../ui/MenuLogo';
 import { HowToPlayOverlay } from '../ui/HowToPlayOverlay';
 import { SettingsOverlay } from '../ui/SettingsOverlay';
-import { kewlBlockGap, kewlLineHeight, kewlMeasuredSize, kewlTextLeftInset, UI_TITLE_MAIN_MENU_Y } from '../ui/KewlFont';
+import { kewlLineHeight, kewlMeasuredSize, kewlTextLeftInset, UI_TITLE_MAIN_MENU_Y } from '../ui/KewlFont';
 
 const LOGO_PATH = 'assets/gfx/logo.png';
 const LOGO_HEIGHT = 200;
@@ -101,7 +101,7 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     const btnW = 420;
     const btnX = centerX - btnW / 2;
     const btnSize = 28;
-    const btnStep = kewlLineHeight(btnSize) + kewlBlockGap(btnSize);
+    const btnStep = kewlLineHeight(btnSize) + 10;
     let btnY = 400;
 
     this.addChild(this.makeButton('menu-campaign', 'Campaign', btnX, btnY, btnW, onCampaign));
