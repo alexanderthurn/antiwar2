@@ -1,8 +1,0 @@
-[0]
-Nick: tester
-Time: 130360
-Score: 63120
-Map: schnappi
-Date: 1128014033
-Version: 1.5
-Checksum: -56731997
