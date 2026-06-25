@@ -364,6 +364,12 @@ export class App {
         }
         return;
       }
+      if (e.code === 'NumpadMultiply' || e.key === '*') {
+        if (this.mode === 'game' && this.game) {
+          this.game.cheatTestRumble();
+        }
+        return;
+      }
     });
   }
 }

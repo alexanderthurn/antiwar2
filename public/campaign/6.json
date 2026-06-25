@@ -202,7 +202,7 @@
       "intro": {
         "text": "You are dead",
         "image": "assets/gfx/AIRPLANES/endmaster_vogel.png",
-        "time": 300,
+        "time": 5000,
         "sound": "yeahbaby.ogg"
       },
       "winSound": "winner.ogg"

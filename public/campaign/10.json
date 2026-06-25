@@ -458,7 +458,7 @@
       "intro": {
         "text": "Viech Attacks!",
         "image": "assets/gfx/viech/viech_lvl1.png",
-        "time": 300,
+        "time": 5000,
         "sound": "oerks.ogg"
       }
     },
@@ -563,7 +563,7 @@
       "intro": {
         "text": "Here comes Fred",
         "image": "assets/gfx/viech/viech_lvl2.png",
-        "time": 300,
+        "time": 5000,
         "sound": "oe.ogg"
       }
     },
@@ -682,7 +682,7 @@
       "intro": {
         "text": "Nuclear Winter",
         "image": "assets/gfx/viech/viech_lvl3.png",
-        "time": 300,
+        "time": 5000,
         "sound": "oerks.ogg"
       }
     },
@@ -1263,7 +1263,7 @@
       "intro": {
         "text": "No Blood for Oe",
         "image": "assets/gfx/viech/viech_lvl4.png",
-        "time": 300,
+        "time": 5000,
         "sound": "pay.ogg"
       }
     },
@@ -1564,7 +1564,7 @@
       "intro": {
         "text": "Hidden and dangerous",
         "image": "assets/gfx/viech/viech_lvl5.png",
-        "time": 300,
+        "time": 5000,
         "sound": "gong.ogg"
       }
     },
@@ -2432,7 +2432,7 @@
       "intro": {
         "text": "Survive this!",
         "image": "assets/gfx/viech/viech_lvl6.png",
-        "time": 300,
+        "time": 5000,
         "sound": "oerks.ogg"
       }
     }

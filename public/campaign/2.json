@@ -770,7 +770,7 @@
       ],
       "intro": {
         "text": "Welcome to Mangoos Game",
-        "time": 300,
+        "time": 5000,
         "sound": "welcome.ogg"
       }
     },

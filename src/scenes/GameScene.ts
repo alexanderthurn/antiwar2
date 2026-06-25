@@ -23,6 +23,10 @@ import { NightVisionLayer } from '../systems/NightVisionLayer';
 import { ExplosionManager } from '../systems/ExplosionManager';
 import { ParticleFxManager } from '../systems/particles/ParticleFxManager';
 import { KillStreakManager } from '../systems/KillStreakTracker';
+import {
+  explosionRadiusToIntensity,
+  RumbleController,
+} from '../systems/RumbleController';
 import { BossHpBar } from '../ui/BossHpBar';
 import { EntityHpBarOverlay } from '../ui/EntityHpBarOverlay';
 import { JoinPanel } from '../ui/JoinPanel';
@@ -142,8 +146,8 @@ export class GameScene extends Container implements MenuActionsHost {
   private pendingAirplaneSpawns = 0;
   private airplaneSpawnGeneration = 0;
   private roundBootstrapping = false;
-  private rumbleTimer = 0;
-  private rumbleAmp = 0;
+  private readonly rumbleFx = new RumbleController(this);
+  private rumbleTestStep = 0;
   private endScreenFx: {
     overlay: Container;
     label: BitmapText;
@@ -246,8 +250,7 @@ export class GameScene extends Container implements MenuActionsHost {
       this.round = round;
       this.phase = 'playing';
       this.wonRound = false;
-      this.position.set(0, 0);
-      this.rumbleTimer = 0;
+      this.rumbleFx.reset();
       this.clearCombat();
       this.closeShop();
       this.syncCombatStats();
@@ -389,8 +392,8 @@ export class GameScene extends Container implements MenuActionsHost {
     this.explosionManager.spawn(x, y, type, radius);
     this.particleFx.spawnExplosion(x, y, type, radius);
     if (playAudio) this.levelAudio.playExplosion(type);
-    if (rumble === 'plane') this.triggerRumble(true);
-    else if (rumble === 'explosion') this.triggerRumble(false);
+    if (rumble === 'plane') this.triggerRumble(true, explosionRadiusToIntensity(radius));
+    else if (rumble === 'explosion') this.triggerRumble(false, explosionRadiusToIntensity(radius));
   }
 
   private handleEntityDeath(entity: CombatEntity, opts?: { skipExplosion?: boolean }): void {
@@ -727,12 +730,12 @@ export class GameScene extends Container implements MenuActionsHost {
     }
 
     this.introOverlay = overlay;
-    if (backgroundHint) return;
 
-    const ms = ((intro?.time ?? 120) / 60) * 1000;
+    const ms = intro?.time ?? 3000;
     setTimeout(() => {
+      if (this.introOverlay !== overlay) return;
       overlay.destroy({ children: true });
-      if (this.introOverlay === overlay) this.introOverlay = null;
+      this.introOverlay = null;
     }, ms);
   }
 
@@ -862,6 +865,7 @@ export class GameScene extends Container implements MenuActionsHost {
 
     this.pauseBeforePhase = this.phase;
     this.phase = 'paused';
+    this.rumbleFx.reset();
     if (this.inputRef) this.releaseTouchFire(this.inputRef);
     if (this.pauseOverlay) return;
 
@@ -1020,23 +1024,25 @@ export class GameScene extends Container implements MenuActionsHost {
   }
 
   private updateRumble(dt: number): void {
-    if (this.rumbleTimer > 0) {
-      this.rumbleTimer -= dt;
-      this.position.set(
-        (Math.random() - 0.5) * this.rumbleAmp,
-        (Math.random() - 0.5) * this.rumbleAmp,
-      );
-      return;
-    }
-    if (this.position.x !== 0 || this.position.y !== 0) this.position.set(0, 0);
+    this.rumbleFx.update(dt);
   }
 
-  private triggerRumble(planeOnly = false): void {
-    const mode = this.round.rumble ?? 0;
-    if (mode === 0) return;
-    if (planeOnly && mode < 1) return;
-    this.rumbleAmp = 5 + Math.random() * 4;
-    this.rumbleTimer = 0.2;
+  private triggerRumble(planeOnly = false, intensity = 0.5, force = false): void {
+    this.rumbleFx.trigger(intensity, 0.2, {
+      force,
+      planeOnly,
+      roundMode: this.round.rumble ?? 0,
+    });
+  }
+
+  /** Cheat: cycle rumble intensity — bound to `*` / numpad multiply. */
+  cheatTestRumble(): void {
+    if (this.phase !== 'playing') return;
+    const steps = [0.2, 0.4, 0.6, 0.8, 1] as const;
+    const intensity = steps[this.rumbleTestStep % steps.length]!;
+    this.rumbleTestStep += 1;
+    this.rumbleFx.trigger(intensity, 0.35, { force: true });
+    console.info(`[rumble test] intensity ${intensity} (screen + gamepad + vibrate)`);
   }
 
   private aimEnabled(): boolean {

@@ -726,7 +726,7 @@
       ],
       "intro": {
         "text": "get your money to start",
-        "time": 300,
+        "time": 5000,
         "sound": "pay.ogg"
       }
     },
@@ -774,7 +774,7 @@
       ],
       "intro": {
         "text": "kill your first enemies",
-        "time": 300,
+        "time": 5000,
         "sound": "gong.ogg"
       }
     },
@@ -822,7 +822,7 @@
       ],
       "intro": {
         "text": "ok, this is the bigger version",
-        "time": 300,
+        "time": 5000,
         "sound": "gong.ogg"
       }
     },
@@ -877,7 +877,7 @@
       ],
       "intro": {
         "text": "Can the rain extinguish the napalm?",
-        "time": 300,
+        "time": 5000,
         "sound": "gong.ogg"
       }
     },
@@ -939,7 +939,7 @@
       ],
       "intro": {
         "text": "BOMBS, BOMBS, BOMBS",
-        "time": 300,
+        "time": 5000,
         "sound": "gong.ogg"
       }
     },
@@ -987,7 +987,7 @@
       ],
       "intro": {
         "text": "anthrax darkens the sky",
-        "time": 300,
+        "time": 5000,
         "sound": "gong.ogg"
       }
     },
@@ -1161,7 +1161,7 @@
       ],
       "intro": {
         "text": "Fight!",
-        "time": 300,
+        "time": 5000,
         "sound": "gong.ogg"
       }
     },
@@ -1223,7 +1223,7 @@
       ],
       "intro": {
         "text": "search and find???",
-        "time": 300,
+        "time": 5000,
         "sound": "gong.ogg"
       }
     },
@@ -1327,7 +1327,7 @@
       ],
       "intro": {
         "text": "The nuclear sun is rising.",
-        "time": 300,
+        "time": 5000,
         "sound": "gong.ogg"
       }
     },
@@ -1375,7 +1375,7 @@
       ],
       "intro": {
         "text": "clean your carpet... NO, it cleans you!",
-        "time": 300,
+        "time": 5000,
         "sound": "laugh.ogg"
       }
     },
@@ -1507,7 +1507,7 @@
       ],
       "intro": {
         "text": "the next day starts with... WAR!!!",
-        "time": 300,
+        "time": 5000,
         "sound": "gong.ogg"
       }
     },
@@ -1569,7 +1569,7 @@
       ],
       "intro": {
         "text": "find the nukes, or they'll find you",
-        "time": 300,
+        "time": 5000,
         "sound": "gong.ogg"
       }
     },
@@ -1617,7 +1617,7 @@
       ],
       "intro": {
         "text": "oh oh, new developed bombs...",
-        "time": 300,
+        "time": 5000,
         "sound": "gong.ogg"
       }
     },
@@ -1686,7 +1686,7 @@
       ],
       "intro": {
         "text": "again the sky rains fire",
-        "time": 300,
+        "time": 5000,
         "sound": "gong.ogg"
       }
     },
@@ -1755,7 +1755,7 @@
       ],
       "intro": {
         "text": "Spr�che leider ausgegangen...",
-        "time": 400,
+        "time": 6667,
         "sound": "laugh.ogg"
       }
     },
@@ -1964,7 +1964,7 @@
       ],
       "intro": {
         "text": "you are the best, kill the rest",
-        "time": 400,
+        "time": 6667,
         "sound": "winner.ogg"
       }
     }

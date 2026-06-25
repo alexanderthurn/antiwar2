@@ -185,7 +185,7 @@
         "text": "Shoot hostile aircraft.",
         "image": "assets/gfx/AIRPLANES/bomber.png",
         "sound": "tutorial/shootall.ogg",
-        "time": 180
+        "time": 3000
       },
       "winSound": "tutorial/buyupgrades.ogg",
       "maxAirplanes": 0,
@@ -234,7 +234,7 @@
       "intro": {
         "text": "Use both cannons.",
         "sound": "tutorial/leftright.ogg",
-        "time": 120
+        "time": 2000
       },
       "winSound": "tutorial/eachhuman.ogg",
       "maxAirplanes": 0,
@@ -269,7 +269,7 @@
       "intro": {
         "text": "Hold to lock on.",
         "sound": "tutorial/leftright.ogg",
-        "time": 120
+        "time": 2000
       },
       "winSound": "pay.ogg",
       "maxAirplanes": 0,
