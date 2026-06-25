@@ -3,20 +3,14 @@ import { DESIGN } from '../core/DesignSpace';
 import {
   settingsStore,
   type GameSettings,
-  type ParticleQuality,
 } from '../core/SettingsStore';
+import { GRAPHICS_LABELS } from '../core/GraphicsQuality';
 import { createFocusableButton } from '../input/FocusableButton';
 import type { MenuActionsHost } from '../input/MenuActionsHost';
 import type { UiAction } from '../input/UiMenuController';
 import { playMenuClick } from '../audio/UiSounds';
 import { kewlBlockGap, kewlLineHeight, kewlString, kewlText } from './KewlFont';
 import { createMenuBackground } from './MenuBackground';
-
-const PARTICLE_LABELS: Record<ParticleQuality, string> = {
-  low: 'Low',
-  normal: 'Normal',
-  high: 'High',
-};
 
 const PANEL_W = 560;
 const ROW_FONT = 22;
@@ -64,9 +58,12 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
         },
       },
       {
-        id: 'settings-particles',
-        label: 'Particles',
-        onPress: () => settingsStore.cycleParticleQuality(),
+        id: 'settings-graphics',
+        label: 'Graphics',
+        onPress: () => {
+          settingsStore.cycleGraphicsQuality();
+          playMenuClick();
+        },
       },
     ] as const;
 
@@ -160,7 +157,7 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
     const s = settingsStore.get();
     this.setRow('settings-sound', s.soundEnabled ? 'ON' : 'OFF');
     this.setRow('settings-music', s.musicEnabled ? 'ON' : 'OFF');
-    this.setRow('settings-particles', PARTICLE_LABELS[s.particleQuality]);
+    this.setRow('settings-graphics', GRAPHICS_LABELS[s.graphicsQuality]);
   }
 
   private setRow(id: string, value: string): void {
@@ -170,5 +167,5 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
 }
 
 export function formatSettingsSummary(s: GameSettings): string {
-  return `Sound ${s.soundEnabled ? 'on' : 'off'} / Music ${s.musicEnabled ? 'on' : 'off'} / ${PARTICLE_LABELS[s.particleQuality]} particles`;
+  return `Sound ${s.soundEnabled ? 'on' : 'off'} / Music ${s.musicEnabled ? 'on' : 'off'} / ${GRAPHICS_LABELS[s.graphicsQuality]} graphics`;
 }

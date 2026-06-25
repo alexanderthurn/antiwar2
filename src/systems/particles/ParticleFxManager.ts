@@ -1,5 +1,6 @@
 import { Container, Particle, ParticleContainer, type Texture } from 'pixi.js';
 import { DESIGN } from '../../core/DesignSpace';
+import type { EffectQuality } from '../../core/GraphicsQuality';
 import { loadTexture } from '../../data/AssetLoader';
 import type { CombatEntity } from '../../entities/CombatEntity';
 import { sliceParticleSheet } from './sliceParticleSheet';
@@ -50,7 +51,7 @@ interface QualityProfile {
   bombInterval: number;
 }
 
-const QUALITY: Record<'low' | 'normal' | 'high', QualityProfile | null> = {
+const QUALITY: Record<EffectQuality, QualityProfile | null> = {
   low: null,
   normal: {
     budget: 130,
@@ -63,6 +64,12 @@ const QUALITY: Record<'low' | 'normal' | 'high', QualityProfile | null> = {
     rocketInterval: 0.028,
     crashInterval: 0.022,
     bombInterval: 0.06,
+  },
+  ultra: {
+    budget: 320,
+    rocketInterval: 0.02,
+    crashInterval: 0.016,
+    bombInterval: 0.045,
   },
 };
 
@@ -98,7 +105,7 @@ export class ParticleFxManager {
   private trailLayer: Container | null = null;
   private fxLayer: Container | null = null;
   private loaded = false;
-  private quality: 'low' | 'normal' | 'high' = 'normal';
+  private quality: EffectQuality = 'normal';
 
   constructor() {
     for (const id of ['trailSmoke', 'fxSmoke', 'fxFire'] as const) {
@@ -118,7 +125,7 @@ export class ParticleFxManager {
     this.fxRoot.eventMode = 'none';
   }
 
-  setParticleQuality(quality: 'low' | 'normal' | 'high'): void {
+  setEffectQuality(quality: EffectQuality): void {
     this.quality = quality;
     if (quality === 'low') this.clear();
   }

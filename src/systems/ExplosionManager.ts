@@ -1,5 +1,6 @@
 import { Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
 import { loadTexture } from '../data/AssetLoader';
+import type { EffectQuality } from '../core/GraphicsQuality';
 
 const EXPLOSION_COLS = 4;
 const EXPLOSION_ROWS = 3;
@@ -52,10 +53,10 @@ export class ExplosionManager {
   private readonly bursts: Burst[] = [];
   private layer: Container | null = null;
   private loaded = false;
-  private particleQuality: 'low' | 'normal' | 'high' = 'normal';
+  private effectQuality: EffectQuality = 'normal';
 
-  setParticleQuality(quality: 'low' | 'normal' | 'high'): void {
-    this.particleQuality = quality;
+  setEffectQuality(quality: EffectQuality): void {
+    this.effectQuality = quality;
   }
 
   async load(): Promise<void> {
@@ -85,7 +86,8 @@ export class ExplosionManager {
     const tint =
       type === 2 ? 0x88ff44 : type === 4 ? 0xff6622 : type === 3 ? 0xffffff : 0xffffff;
     const pixelScale = (baseScale * radius) / Math.max(first.width, first.height);
-    const quality = this.particleQuality;
+    const quality = this.effectQuality;
+    const rich = quality === 'high' || quality === 'ultra';
 
     const sprite = new Sprite(first);
     sprite.anchor.set(0.5);
@@ -102,8 +104,8 @@ export class ExplosionManager {
       glow.anchor.set(0.5);
       glow.position.set(x, y);
       glow.tint = type === 2 ? 0x44aa22 : 0xffaa44;
-      glow.alpha = quality === 'high' ? 0.55 : 0.45;
-      glow.scale.set(pixelScale * (quality === 'high' ? 1.25 : 1.15));
+      glow.alpha = quality === 'ultra' ? 0.62 : rich ? 0.55 : 0.45;
+      glow.scale.set(pixelScale * (quality === 'ultra' ? 1.35 : rich ? 1.25 : 1.15));
       glow.blendMode = 'add';
       this.layer.addChild(glow);
     }
@@ -112,14 +114,15 @@ export class ExplosionManager {
     if (quality !== 'low') {
       ring.circle(0, 0, radius * 0.5).fill({
         color: type === 2 ? 0x66cc33 : type === 3 ? 0xff8844 : 0xff6600,
-        alpha: quality === 'high' ? 0.45 : 0.35,
+        alpha: quality === 'ultra' ? 0.52 : rich ? 0.45 : 0.35,
       });
       ring.position.set(x, y);
       ring.scale.set(0.3);
       this.layer.addChild(ring);
     }
 
-    const sparkMul = quality === 'high' ? 1.6 : quality === 'normal' ? 1 : 0;
+    const sparkMul =
+      quality === 'ultra' ? 2 : quality === 'high' ? 1.6 : quality === 'normal' ? 1 : 0;
     const sparkCount = sparkMul > 0 ? Math.round((isNuke ? 16 : 10) * sparkMul) : 0;
     const sparks: Spark[] = [];
     for (let i = 0; i < sparkCount; i++) {

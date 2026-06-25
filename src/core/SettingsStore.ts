@@ -1,11 +1,15 @@
-export type ParticleQuality = 'low' | 'normal' | 'high';
+import {
+  GRAPHICS_ORDER,
+  graphicsQualityFromLegacyParticle,
+  type GraphicsQuality,
+} from './GraphicsQuality';
 
 export interface GameSettings {
   soundEnabled: boolean;
   musicEnabled: boolean;
   soundVolume: number;
   musicVolume: number;
-  particleQuality: ParticleQuality;
+  graphicsQuality: GraphicsQuality;
 }
 
 const STORAGE_KEY = 'antiwar2_settings';
@@ -15,12 +19,14 @@ const DEFAULTS: GameSettings = {
   musicEnabled: true,
   soundVolume: 0.7,
   musicVolume: 0.5,
-  particleQuality: 'normal',
+  graphicsQuality: 'high',
 };
 
-const PARTICLE_ORDER: ParticleQuality[] = ['low', 'normal', 'high'];
-
 type Listener = (settings: GameSettings) => void;
+
+interface LegacyStoredSettings extends Partial<GameSettings> {
+  particleQuality?: 'low' | 'normal' | 'high';
+}
 
 export class SettingsStore {
   private settings: GameSettings;
@@ -40,10 +46,10 @@ export class SettingsStore {
     this.notify();
   }
 
-  cycleParticleQuality(): void {
-    const idx = PARTICLE_ORDER.indexOf(this.settings.particleQuality);
-    const next = PARTICLE_ORDER[(idx + 1) % PARTICLE_ORDER.length]!;
-    this.set({ particleQuality: next });
+  cycleGraphicsQuality(): void {
+    const idx = GRAPHICS_ORDER.indexOf(this.settings.graphicsQuality);
+    const next = GRAPHICS_ORDER[(idx + 1) % GRAPHICS_ORDER.length]!;
+    this.set({ graphicsQuality: next });
   }
 
   subscribe(listener: Listener): () => void {
@@ -61,8 +67,13 @@ export class SettingsStore {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return { ...DEFAULTS };
-      const parsed = JSON.parse(raw) as Partial<GameSettings>;
-      return { ...DEFAULTS, ...parsed };
+      const parsed = JSON.parse(raw) as LegacyStoredSettings;
+      const graphicsQuality =
+        parsed.graphicsQuality ??
+        (parsed.particleQuality
+          ? graphicsQualityFromLegacyParticle(parsed.particleQuality)
+          : DEFAULTS.graphicsQuality);
+      return { ...DEFAULTS, ...parsed, graphicsQuality };
     } catch {
       return { ...DEFAULTS };
     }

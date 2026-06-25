@@ -2,6 +2,7 @@ import { BitmapText, Container, Graphics, Rectangle, Sprite, Texture, type Textu
 import { playSound, sfxPath } from '../audio/SoundManager';
 import { createLevelAudio, type LevelAudio } from '../audio/LevelSounds';
 import { DESIGN, V1_SPRITES, towerXForSlot } from '../core/DesignSpace';
+import { effectQualityForGraphics } from '../core/GraphicsQuality';
 import { settingsStore } from '../core/SettingsStore';
 import { LevelSession, type UpgradeKey } from '../core/LevelSession';
 import { DEV_DEEP_LINK_ENABLED, type DevGameState } from '../core/DevDeepLink';
@@ -173,9 +174,9 @@ export class GameScene extends Container implements MenuActionsHost {
   }
 
   private applySettingsEffects(): void {
-    const quality = settingsStore.get().particleQuality;
-    this.explosionManager.setParticleQuality(quality);
-    this.particleFx.setParticleQuality(quality);
+    const quality = effectQualityForGraphics(settingsStore.get().graphicsQuality);
+    this.explosionManager.setEffectQuality(quality);
+    this.particleFx.setEffectQuality(quality);
   }
 
   async loadLevel(pack: LevelPack, roundIndex = 0, devBootstrap?: DevBootstrap): Promise<void> {

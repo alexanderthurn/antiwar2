@@ -8,6 +8,8 @@ import {
   type DevGameState,
 } from './core/DevDeepLink';
 import { computeLayout, clientToStage, type ViewportLayout } from './core/Viewport';
+import { blurBackdropEnabled } from './core/GraphicsQuality';
+import { settingsStore } from './core/SettingsStore';
 import { watchViewportResize } from './core/ViewportResize';
 import { preloadRound } from './data/AssetLoader';
 import { loadCampaignIndex, loadLevelPack } from './data/types';
@@ -18,6 +20,7 @@ import { isMenuActionsHost } from './input/MenuActionsHost';
 import { MenuCursor } from './input/MenuCursor';
 import { UiMenuController } from './input/UiMenuController';
 import { LetterboxOverlay } from './ui/LetterboxOverlay';
+import { BlurBackdrop } from './ui/BlurBackdrop';
 import { MENU_POINTER_CURSOR } from './ui/MenuPointer';
 import { CampaignViewScene } from './scenes/CampaignViewScene';
 import { CreditsScene } from './scenes/CreditsScene';
@@ -43,6 +46,7 @@ export class App {
   private menuController = new UiMenuController();
   private menuCursor = new MenuCursor();
   private letterbox = new LetterboxOverlay();
+  private blurBackdrop = new BlurBackdrop();
   private menuActionsKey = '';
 
   private mouseButtons = { left: false, right: false };
@@ -57,6 +61,7 @@ export class App {
     pixi.canvas.style.height = '100%';
     pixi.canvas.style.cursor = 'none';
     pixi.canvas.style.touchAction = 'none';
+    pixi.stage.addChild(this.blurBackdrop);
     pixi.stage.addChild(this.gameRoot);
     this.viewportMask.rect(0, 0, DESIGN.width, DESIGN.height).fill(0xffffff);
     this.gameRoot.mask = this.viewportMask;
@@ -66,6 +71,12 @@ export class App {
     this.touchUi = wantsTouchUi();
     this.pixi.ticker.add(this.tick);
     this.bindInput();
+    settingsStore.subscribe(() => this.applyGraphicsSettings());
+    this.applyGraphicsSettings();
+  }
+
+  private applyGraphicsSettings(): void {
+    this.blurBackdrop.setEnabled(blurBackdropEnabled(settingsStore.get().graphicsQuality));
   }
 
   init(): void {
@@ -119,8 +130,22 @@ export class App {
     this.layout = computeLayout(width, height);
     this.gameRoot.scale.set(this.layout.scale);
     this.gameRoot.position.set(this.layout.offsetX, this.layout.offsetY);
+    this.blurBackdrop.sync(width, height);
     this.letterbox.sync(width, height, this.layout);
     this.input.setLayout(this.layout);
+  }
+
+  private syncBackdrop(): void {
+    if (!this.blurBackdrop.isEnabled()) return;
+    const { width, height } = this.pixi.screen;
+    if (width <= 0 || height <= 0) return;
+    this.blurBackdrop.capture(
+      this.pixi.renderer,
+      this.gameRoot,
+      this.menuCursor,
+      this.viewportMask,
+    );
+    this.blurBackdrop.sync(width, height);
   }
 
   private stagePointer(clientX: number, clientY: number): { x: number; y: number } {
@@ -233,6 +258,7 @@ export class App {
     if (this.mode === 'game' && this.game) {
       this.game.update(dt, this.input, this.menuController);
       this.syncMenuCursor();
+      this.syncBackdrop();
       return;
     }
 
@@ -254,6 +280,7 @@ export class App {
     }
 
     this.syncMenuCursor();
+    this.syncBackdrop();
   };
 
   private bindInput(): void {
