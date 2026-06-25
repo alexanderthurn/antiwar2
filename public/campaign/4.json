@@ -2059,7 +2059,15 @@
       "maxAirplanes": 0,
       "endmaster": -1,
       "rumble": 2,
-      "spawns": []
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "SCHNAPPI3",
+          "x": 750,
+          "y": -422,
+          "angle": 0
+        }
+      ]
     }
   ]
 }

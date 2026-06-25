@@ -195,7 +195,7 @@
         {
           "kind": "airplane",
           "type": "BOMBER",
-          "x": -188,
+          "x": -187,
           "y": 141,
           "angle": 0
         },
@@ -209,7 +209,7 @@
         {
           "kind": "airplane",
           "type": "BOMBER",
-          "x": -188,
+          "x": -187,
           "y": 563,
           "angle": 0
         },
@@ -244,7 +244,7 @@
         {
           "kind": "airplane",
           "type": "BOMBER2",
-          "x": -188,
+          "x": -187,
           "y": 141,
           "angle": 0
         },
@@ -279,7 +279,7 @@
         {
           "kind": "airplane",
           "type": "BOMBER3",
-          "x": -188,
+          "x": -187,
           "y": 141,
           "angle": 0
         }
