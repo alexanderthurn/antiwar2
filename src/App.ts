@@ -245,7 +245,7 @@ export class App {
 
     const bootstrap: DevBootstrap = devBootstrap ?? { levelIndex, roundIndex: 0 };
     await game.loadLevel(pack, bootstrap.roundIndex, bootstrap);
-    if (this.touchUi) game.enableTouchControls(this.input);
+    if (this.touchUi) game.enableTouchControls();
 
     this.game = game;
     this.setScene(game);

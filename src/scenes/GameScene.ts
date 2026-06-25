@@ -805,10 +805,10 @@ export class GameScene extends Container implements MenuActionsHost {
     this.setPointerFire(input, false, false);
   }
 
-  enableTouchControls(input: InputSystem): void {
+  enableTouchControls(): void {
     if (this.touchControls) return;
     this.touchFireActive = false;
-    this.touchControls = new TouchControls(() => this.openTouchSettings(input));
+    this.touchControls = new TouchControls(() => this.togglePause());
     this.uiLayer.addChild(this.touchControls);
   }
 
@@ -905,16 +905,6 @@ export class GameScene extends Container implements MenuActionsHost {
     this.uiLayer.addChild(this.settingsOverlay);
     this.menuSource = null;
     this.menuActionsKey = '';
-  }
-
-  private openTouchSettings(input: InputSystem): void {
-    if (this.settingsOverlay) return;
-    if (this.phase === 'playing' || this.phase === 'shop') {
-      this.pauseBeforePhase = this.phase;
-      this.phase = 'paused';
-    }
-    this.releaseTouchFire(input);
-    this.openSettings();
   }
 
   private closeSettings(): void {
