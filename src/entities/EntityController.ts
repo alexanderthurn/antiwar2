@@ -176,12 +176,7 @@ export class EntityController {
       airplaneDef: def,
     });
     if (normalizeAI(def.ai) === 'FIGHTERMG' && motion.kind === 'patrol') {
-      const lowY = def.aiParams[1] - 40;
-      const dx = motion.targetX - x;
-      const dy = lowY - y;
-      if (Math.hypot(dx, dy) > 1) {
-        entity.sprite.rotation = Math.atan2(dy, dx);
-      }
+      entity.sprite.rotation = motion.dir > 0 ? 0 : Math.PI;
     }
     if (def.stealthTicks && def.stealthTicks > 0) {
       entity.stealthPhaseTimer = def.stealthTicks;

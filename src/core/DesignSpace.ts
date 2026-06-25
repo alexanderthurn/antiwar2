@@ -53,3 +53,8 @@ export function scaleCoord(x: number, y: number): { x: number; y: number } {
     y: y * (DESIGN.height / 768),
   };
 }
+
+/** Scale a v1 (768p) Y coordinate into current design space. */
+export function scaleV1Y(y: number): number {
+  return y * (DESIGN.height / 768);
+}

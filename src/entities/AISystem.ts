@@ -1,4 +1,4 @@
-import { DESIGN } from '../core/DesignSpace';
+import { DESIGN, scaleV1Y } from '../core/DesignSpace';
 import type { AirplaneDef, BombDef, LevelPack } from '../data/types';
 import type { CombatEntity } from './CombatEntity';
 import type { PatrolMotion } from './EntityTraits';
@@ -168,7 +168,23 @@ function pickFighterMgTargetX(currentX: number): number {
   return x;
 }
 
-function steerToward(
+function scaledAiBand(def: AirplaneDef): { min: number; max: number } {
+  const [minY, maxY] = def.aiParams;
+  return { min: scaleV1Y(minY), max: scaleV1Y(maxY) };
+}
+
+function pickHighTargetY(band: { min: number; max: number }): number {
+  const span = Math.max(1, band.max - band.min);
+  return band.min + Math.random() * span * 0.25;
+}
+
+function pickLowTargetY(band: { min: number; max: number }): number {
+  const span = Math.max(1, band.max - band.min);
+  return band.min + span * 0.75 + Math.random() * span * 0.25;
+}
+
+/** Turn toward waypoint, then fly along the nose. rotationSpeed matches rocket homing (deg/tick @ 60hz). */
+function steerFighterToward(
   entity: CombatEntity,
   def: AirplaneDef,
   targetX: number,
@@ -179,17 +195,15 @@ function steerToward(
   const dx = targetX - entity.x;
   const dy = targetY - entity.y;
   const dist = Math.hypot(dx, dy);
-  if (dist < 40) return true;
+  if (dist < 50) return true;
 
-  const move = Math.min(dist, speed * dt);
-  entity.x += (dx / dist) * move;
-  entity.y += (dy / dist) * move;
+  const targetAngle = Math.atan2(dy, dx);
+  const maxTurnRad = def.rotationSpeed * (Math.PI / 180) * dt * TICK_SCALE;
+  entity.sprite.rotation = rotateToward(entity.sprite.rotation, targetAngle, maxTurnRad);
 
-  if (def.drawStyle === 1) {
-    const targetAngle = Math.atan2(dy, dx);
-    const turnRate = def.rotationSpeed * (Math.PI / 180) * TICK_SCALE;
-    entity.sprite.rotation = rotateToward(entity.sprite.rotation, targetAngle, turnRate * dt);
-  }
+  const move = speed * dt;
+  entity.x += Math.cos(entity.sprite.rotation) * move;
+  entity.y += Math.sin(entity.sprite.rotation) * move;
   return false;
 }
 
@@ -232,25 +246,26 @@ function rollDirectionalWeaponDrop(
 }
 
 function updateFighterMg(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
-  const [minY, maxY] = def.aiParams;
-  const highY = minY + 80;
-  const lowY = maxY - 40;
+  const band = scaledAiBand(def);
   const speed = def.speed * TICK_SCALE * 1.15;
 
   if (motion.phase === 0) {
-    if (steerToward(entity, def, motion.targetX, highY, speed, ctx.dt)) {
+    if (steerFighterToward(entity, def, motion.targetX, motion.targetY, speed, ctx.dt)) {
       motion.phase = 1;
       motion.targetX = pickFighterMgTargetX(entity.x);
+      motion.targetY = pickLowTargetY(band);
     }
   } else if (motion.phase === 1) {
     rollDirectionalWeaponDrop(entity, def, ctx.dt, ctx);
-    if (steerToward(entity, def, motion.targetX, lowY, speed * 1.1, ctx.dt)) {
+    if (steerFighterToward(entity, def, motion.targetX, motion.targetY, speed * 1.1, ctx.dt)) {
       motion.phase = 2;
       motion.targetX = pickFighterMgTargetX(entity.x);
+      motion.targetY = pickHighTargetY(band);
     }
-  } else if (steerToward(entity, def, motion.targetX, highY, speed, ctx.dt)) {
+  } else if (steerFighterToward(entity, def, motion.targetX, motion.targetY, speed, ctx.dt)) {
     motion.phase = 0;
     motion.targetX = pickFighterMgTargetX(entity.x);
+    motion.targetY = pickHighTargetY(band);
   }
 }
 
@@ -443,18 +458,23 @@ export function createPatrolMotion(
 ): PatrolMotion {
   const [minY, maxY] = [def.aiParams[0], def.aiParams[1]];
   const ai = normalizeAI(def.ai);
+  const band = { min: scaleV1Y(minY), max: scaleV1Y(maxY) };
   const targetX =
     ai === 'FIGHTERMG'
-      ? x + (x < DESIGN.width / 2 ? 360 : -360)
+      ? pickFighterMgTargetX(x)
       : x;
+  const targetY =
+    ai === 'FIGHTERMG'
+      ? pickHighTargetY(band)
+      : minY + Math.random() * Math.max(1, maxY - minY);
   return {
     kind: 'patrol',
     ai,
     dir: x < DESIGN.width / 2 ? 1 : -1,
     targetX,
-    targetY: minY + Math.random() * Math.max(1, maxY - minY),
+    targetY,
     bombTimer: 0,
-    phase: ai === 'FIGHTERMG' ? 1 : 0,
+    phase: 0,
     phaseT: 0,
     altChanges: 0,
     spawnIndex,

@@ -674,8 +674,8 @@
       ],
       "ai": "FIGHTERMG",
       "aiParams": [
-        50,
-        844,
+        0,
+        422,
         5
       ],
       "drawStyle": 1,
