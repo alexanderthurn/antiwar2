@@ -86,7 +86,7 @@ export class MainMenuScene extends Container implements MenuActionsHost {
 
     this.addChild(this.makeButton('menu-campaign', 'Campaign', btnX, btnY, btnW, onCampaign));
     btnY += btnStep;
-    this.addChild(this.makeButton('menu-settings', 'Settings', btnX, btnY, btnW, onSettings));
+    this.addChild(this.makeButton('menu-settings', 'Options', btnX, btnY, btnW, onSettings));
     btnY += btnStep;
     this.addChild(this.makeButton('menu-credits', 'Credits', btnX, btnY, btnW, onCredits));
 

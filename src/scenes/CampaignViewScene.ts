@@ -5,9 +5,10 @@ import { createFocusableButton } from '../input/FocusableButton';
 import type { MenuActionsHost } from '../input/MenuActionsHost';
 import type { UiAction } from '../input/UiMenuController';
 import { loadTexture } from '../data/AssetLoader';
-import { loadCampaignIndex, type CampaignIndex } from '../data/types';
+import { loadCampaignIndex, loadLevelPack, type CampaignIndex, type LevelPack } from '../data/types';
 import { MENU_POINTER_CURSOR } from '../ui/MenuPointer';
 import { createMenuBackground } from '../ui/MenuBackground';
+import { CampaignLevelPreview } from '../ui/CampaignLevelPreview';
 import { kewlTextAtCenter } from '../ui/KewlFont';
 
 const MAP_BUTTON_BY_PATH: Record<number, string> = {
@@ -25,6 +26,8 @@ const MAP_LEVEL_LABEL_OFFSET = { x: -8, y: -6 };
 export class CampaignViewScene extends Container implements MenuActionsHost {
   private menuActions: UiAction[] = [];
   private onBack: () => void;
+  private levelPacks: LevelPack[] = [];
+  private preview: CampaignLevelPreview | null = null;
 
   constructor(
     progress: CampaignProgress,
@@ -49,12 +52,17 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
     onStartLevel: (file: string, levelIndex: number) => void,
   ): Promise<void> {
     const index = await loadCampaignIndex();
+    this.levelPacks = await Promise.all(index.levels.map((entry) => loadLevelPack(entry.file)));
+
     this.addChild(await createMenuBackground());
     const mapTex = await loadTexture(index.mapImage);
     const map = new Sprite(mapTex);
     map.width = DESIGN.width;
     map.height = DESIGN.height;
     this.addChild(map);
+
+    this.preview = new CampaignLevelPreview();
+    await this.preview.preloadThumbnails(this.levelPacks);
 
     const dim = new Graphics();
     dim.rect(0, 0, DESIGN.width, 72).fill({ color: 0x000000, alpha: 0.55 });
@@ -80,6 +88,8 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
     for (let i = 0; i < index.levels.length; i++) {
       this.addChild(this.makeNode(index, i, progress, onStartLevel, buttonTex));
     }
+
+    this.addChild(this.preview);
   }
 
   private makeNode(
@@ -114,6 +124,7 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
     node.addChild(levelNum);
 
     if (unlocked) {
+      const pack = this.levelPacks[levelIndex]!;
       const activate = () => onStartLevel(entry.file, levelIndex);
       node.on('pointertap', activate);
 
@@ -127,6 +138,8 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
         setFocused: (focused) => {
           if (node.destroyed) return;
           node.scale.set(focused ? FOCUS_SCALE : 1);
+          if (focused) this.preview?.show(levelIndex, pack, { x: entry.mapX, y: entry.mapY });
+          else this.preview?.hideIfLevel(levelIndex);
         },
       });
     }

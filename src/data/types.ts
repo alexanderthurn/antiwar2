@@ -88,7 +88,7 @@ export interface UpgradeDef {
 export interface LevelPack {
   schemaVersion: number;
   id: number;
-  meta: { name: string; author: string; description: string; thumbnail?: string };
+  meta: { name: string; author: string; description: string; thumbnail?: string; difficulty?: string };
   config: LevelConfig;
   bombs: Record<string, BombDef>;
   airplanes: Record<string, AirplaneDef>;
