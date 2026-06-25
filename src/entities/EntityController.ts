@@ -550,10 +550,23 @@ export class EntityController {
   }
 
   private startPlaneCrash(entity: CombatEntity): void {
-    const dir =
-      entity.motion.kind === 'patrol'
-        ? entity.motion.dir
-        : ((entity.sprite.scale.x < 0 ? -1 : 1) as 1 | -1);
+    const horizSpeed = 140;
+    const minFallVy = 80;
+    let vx: number;
+    let vy: number;
+
+    if (entity.airplaneDef?.drawStyle === 1) {
+      const angle = entity.sprite.rotation;
+      vx = Math.cos(angle) * horizSpeed;
+      vy = Math.max(minFallVy, Math.sin(angle) * horizSpeed);
+    } else if (entity.motion.kind === 'patrol') {
+      vx = entity.motion.dir * horizSpeed;
+      vy = 100;
+    } else {
+      vx = (entity.sprite.scale.x < 0 ? -1 : 1) * horizSpeed;
+      vy = 100;
+    }
+
     entity.crashing = true;
     entity.hp = 0;
     entity.stealthHidden = false;
@@ -561,10 +574,10 @@ export class EntityController {
     entity.motion = {
       kind: 'fall',
       crashPlane: true,
-      vx: dir * 140,
-      spin: dir * 2.8,
+      vx,
+      spin: (vx >= 0 ? 1 : -1) * 2.8,
     };
-    entity.vy = 100;
+    entity.vy = vy;
   }
 
   private isPlayerProjectileOutOfScreen(proj: CombatEntity): boolean {
