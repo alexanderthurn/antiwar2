@@ -22,7 +22,7 @@ export class TouchControls extends Container {
     this.eventMode = 'passive';
 
     this.addChild(this.makeTowerButton('LEFT', LEFT_BTN_X, BTN_Y, () => onToggle('left')));
-    this.addChild(this.makeActionButton('SETTINGS', SETTINGS_BTN_X, BTN_Y, onSettings));
+    this.addChild(this.makeActionButton('Pause', SETTINGS_BTN_X, BTN_Y, onSettings));
     this.addChild(this.makeTowerButton('RIGHT', RIGHT_BTN_X, BTN_Y, () => onToggle('right')));
     this.refreshVisuals();
   }

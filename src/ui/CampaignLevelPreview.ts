@@ -15,7 +15,7 @@ const PAD = 28;
 const UPPER_GAP = 16;
 const RIGHT_COL_W = 300;
 const TITLE_SIZE = 32;
-const META_SIZE = 20;
+const META_SIZE = 16;
 const DESC_SIZE = 20;
 const PANEL_RADIUS = 10;
 const PANEL_FILL = { color: 0x000000, alpha: 0.92 };
@@ -111,12 +111,12 @@ export class CampaignLevelPreview extends Container {
     this.thumbSprite = new Sprite();
     this.card.addChild(this.thumbSprite);
 
-    this.titleText = kewlText({ text: '', size: TITLE_SIZE, anchorX: 1 });
+    this.titleText = kewlText({ text: '', size: TITLE_SIZE });
     this.card.addChild(this.titleText);
 
-    this.difficultyLine = kewlText({ text: '', size: META_SIZE, anchorX: 1 });
+    this.difficultyLine = kewlText({ text: '', size: META_SIZE });
     this.card.addChild(this.difficultyLine);
-    this.authorLine = kewlText({ text: '', size: META_SIZE, anchorX: 1 });
+    this.authorLine = kewlText({ text: '', size: META_SIZE });
     this.card.addChild(this.authorLine);
 
     this.descriptionText = kewlText({ text: '', size: DESC_SIZE });
@@ -137,33 +137,35 @@ export class CampaignLevelPreview extends Container {
     const upperTop = PAD;
     const upperBottom = midY - 12;
     const upperH = upperBottom - upperTop;
-    const rightX = CARD_W - PAD;
     const thumbW = CARD_W - PAD * 2 - RIGHT_COL_W - UPPER_GAP;
     const thumbH = upperH;
     const thumbX = PAD;
     const thumbY = upperTop;
 
+    let thumbDisplayW = thumbW;
     if (tex) {
       const scale = Math.min(thumbW / tex.width, thumbH / tex.height);
+      thumbDisplayW = tex.width * scale;
       this.thumbSprite.texture = tex;
       this.thumbSprite.scale.set(scale);
       this.thumbSprite.position.set(
-        thumbX + (thumbW - tex.width * scale) / 2,
+        thumbX,
         thumbY + (thumbH - tex.height * scale) / 2,
       );
     }
 
-    let rightY = upperTop;
+    const infoX = thumbX + thumbDisplayW + UPPER_GAP;
+    let infoY = upperTop;
     this.titleText.text = pack.meta.name;
-    this.titleText.position.set(rightX, rightY);
-    rightY += kewlLineHeight(TITLE_SIZE) + 12;
+    this.titleText.position.set(infoX, infoY);
+    infoY += kewlLineHeight(TITLE_SIZE) + 12;
 
     const metaLineH = kewlLineHeight(META_SIZE);
     this.difficultyLine.text = `Difficulty: ${deriveLevelDifficulty(pack)}`;
-    this.difficultyLine.position.set(rightX, rightY);
-    rightY += metaLineH + 8;
+    this.difficultyLine.position.set(infoX, infoY);
+    infoY += metaLineH + 8;
     this.authorLine.text = `Author: ${pack.meta.author}`;
-    this.authorLine.position.set(rightX, rightY);
+    this.authorLine.position.set(infoX, infoY);
 
     this.descriptionText.text = wrapKewlText(
       pack.meta.description,

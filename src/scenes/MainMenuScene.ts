@@ -8,6 +8,7 @@ import type { MenuActionsHost } from '../input/MenuActionsHost';
 import type { UiAction } from '../input/UiMenuController';
 import { createMenuBackground } from '../ui/MenuBackground';
 import { MenuLogo } from '../ui/MenuLogo';
+import { HowToPlayOverlay } from '../ui/HowToPlayOverlay';
 import { SettingsOverlay } from '../ui/SettingsOverlay';
 import { kewlBlockGap, kewlLineHeight, kewlMeasuredSize, kewlTextLeftInset, UI_TITLE_MAIN_MENU_Y } from '../ui/KewlFont';
 
@@ -24,6 +25,7 @@ export class MainMenuScene extends Container implements MenuActionsHost {
   private menuActions: UiAction[] = [];
   private mainActions: UiAction[] = [];
   private settingsOverlay: SettingsOverlay | null = null;
+  private howToPlayOverlay: HowToPlayOverlay | null = null;
   private logo: MenuLogo | null = null;
 
   constructor(
@@ -52,12 +54,30 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     }
   }
 
+  showHowToPlay(): void {
+    if (this.howToPlayOverlay) return;
+    this.howToPlayOverlay = new HowToPlayOverlay(() => this.closeHowToPlay());
+    this.addChild(this.howToPlayOverlay);
+  }
+
+  closeHowToPlay(): void {
+    if (this.howToPlayOverlay) {
+      this.howToPlayOverlay.destroy({ children: true });
+      this.howToPlayOverlay = null;
+    }
+  }
+
   getMenuActions(): UiAction[] {
-    return this.settingsOverlay?.getMenuActions() ?? this.mainActions;
+    return (
+      this.howToPlayOverlay?.getMenuActions()
+      ?? this.settingsOverlay?.getMenuActions()
+      ?? this.mainActions
+    );
   }
 
   onMenuCancel(): void {
-    if (this.settingsOverlay) this.closeSettings();
+    if (this.howToPlayOverlay) this.closeHowToPlay();
+    else if (this.settingsOverlay) this.closeSettings();
   }
 
   private async build(
@@ -87,6 +107,8 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     this.addChild(this.makeButton('menu-campaign', 'Campaign', btnX, btnY, btnW, onCampaign));
     btnY += btnStep;
     this.addChild(this.makeButton('menu-settings', 'Options', btnX, btnY, btnW, onSettings));
+    btnY += btnStep;
+    this.addChild(this.makeButton('menu-how-to-play', 'How to play', btnX, btnY, btnW, () => this.showHowToPlay()));
     btnY += btnStep;
     this.addChild(this.makeButton('menu-credits', 'Credits', btnX, btnY, btnW, onCredits));
 

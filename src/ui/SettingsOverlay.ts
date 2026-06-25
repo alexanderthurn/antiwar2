@@ -84,7 +84,7 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
     });
     this.addChild(panel);
 
-    const title = kewlText({ text: 'Settings', size: 36, anchorX: 0.5 });
+    const title = kewlText({ text: 'Options', size: 36, anchorX: 0.5 });
     title.position.set(centerX, panelY + padTop);
     this.addChild(title);
 
