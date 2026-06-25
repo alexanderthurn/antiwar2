@@ -120,7 +120,6 @@ export class App {
       roundIndex,
       upgradePurchases: dev.upgrades,
       money: dev.money,
-      skipIntro: true,
     });
   }
 

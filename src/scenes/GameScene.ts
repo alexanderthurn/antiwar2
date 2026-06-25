@@ -695,40 +695,38 @@ export class GameScene extends Container implements MenuActionsHost {
     const hasContent = Boolean(text || intro?.image || intro?.sound);
     if (!hasContent) return;
 
-    const backgroundHint = this.level.id === 1;
+    const tutorial = this.level.id === 1;
+    const onBackground = tutorial && !intro?.image;
     if (intro?.sound) playSound(sfxPath(intro.sound));
 
     const overlay = new Container();
     overlay.eventMode = 'none';
 
-    if (backgroundHint) {
-      if (text) {
-        const label = kewlText({ text: kewlString(text), size: 24, align: 'center', anchorX: 0.5, anchorY: 0.5 });
-        label.position.set(DESIGN.width / 2, DESIGN.height / 3);
-        overlay.addChild(label);
-      }
-
-      this.bgLayer.addChild(overlay);
-    } else {
-      if (intro?.image) {
-        const tex = await loadTexture(intro.image);
-        const img = new Sprite(tex);
-        img.anchor.set(0.5);
-        img.position.set(DESIGN.width / 2, 120);
-        const maxW = 420;
-        if (img.width > maxW) img.scale.set(maxW / img.width);
-        overlay.addChild(img);
-      }
-
-      if (text) {
-        const label = kewlText({ text: kewlString(text), size: 16, align: 'center', anchorX: 0.5, anchorY: 0.5 });
-        label.position.set(DESIGN.width / 2, intro?.image ? 220 : 48);
-        overlay.addChild(label);
-      }
-
-      this.uiLayer.addChild(overlay);
+    if (text) {
+      const label = kewlText({
+        text: kewlString(text),
+        size: onBackground ? 24 : 16,
+        align: 'center',
+        anchorX: 0.5,
+        anchorY: 0.5,
+      });
+      const textY = onBackground ? DESIGN.height / 3 : 48;
+      label.position.set(DESIGN.width / 2, textY);
+      overlay.addChild(label);
     }
 
+    if (intro?.image) {
+      const tex = await loadTexture(intro.image);
+      const img = new Sprite(tex);
+      img.anchor.set(0.5);
+      const maxW = 420;
+      if (img.width > maxW) img.scale.set(maxW / img.width);
+      const imgY = text ? 220 : 120;
+      img.position.set(DESIGN.width / 2, imgY);
+      overlay.addChild(img);
+    }
+
+    (onBackground ? this.bgLayer : this.uiLayer).addChild(overlay);
     this.introOverlay = overlay;
 
     const ms = intro?.time ?? 3000;
