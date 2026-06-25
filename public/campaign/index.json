@@ -22,14 +22,14 @@
       "name": "Boss One",
       "mapX": 990,
       "mapY": 225,
-      "pathType": 2
+      "pathType": 3
     },
     {
       "file": "4.json",
       "name": "Overlord",
       "mapX": 1388,
       "mapY": 225,
-      "pathType": 3
+      "pathType": 2
     },
     {
       "file": "5.json",
@@ -43,14 +43,14 @@
       "name": "Boss Two",
       "mapX": 1706,
       "mapY": 577,
-      "pathType": 2
+      "pathType": 3
     },
     {
       "file": "7.json",
       "name": "Fish",
       "mapX": 1706,
       "mapY": 785,
-      "pathType": 3
+      "pathType": 2
     },
     {
       "file": "8.json",
@@ -64,14 +64,14 @@
       "name": "Boss Three",
       "mapX": 990,
       "mapY": 942,
-      "pathType": 2
+      "pathType": 3
     },
     {
       "file": "10.json",
       "name": "Viech Chronicles",
       "mapX": 600,
       "mapY": 942,
-      "pathType": 3
+      "pathType": 2
     },
     {
       "file": "11.json",
@@ -85,7 +85,7 @@
       "name": "Boss Four",
       "mapX": 990,
       "mapY": 582,
-      "pathType": 2
+      "pathType": 3
     }
   ]
 }
