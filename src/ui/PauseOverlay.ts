@@ -1,8 +1,10 @@
-import { Container } from 'pixi.js';
+import { Container, Graphics } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
 import { createFocusableButton } from '../input/FocusableButton';
 import type { UiAction } from '../input/UiMenuController';
 import { kewlBlockGap, kewlLineHeight, kewlText, UI_TITLE_Y } from '../ui/KewlFont';
+
+const PAUSE_DIM_ALPHA = 0.5;
 
 export class PauseOverlay extends Container {
   readonly menuActions: UiAction[] = [];
@@ -15,6 +17,11 @@ export class PauseOverlay extends Container {
   ) {
     super();
     this.eventMode = 'static';
+
+    const dim = new Graphics();
+    dim.rect(0, 0, DESIGN.width, DESIGN.height).fill({ color: 0x000000, alpha: PAUSE_DIM_ALPHA });
+    dim.eventMode = 'static';
+    this.addChild(dim);
 
     const centerX = DESIGN.width / 2;
     const title = kewlText({ text: 'Paused', size: 36, anchorX: 0.5 });

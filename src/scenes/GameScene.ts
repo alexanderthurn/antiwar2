@@ -59,8 +59,8 @@ const SHOW_JOIN_PANEL = false;
 const END_SCREEN_ANIM_S = 2.4;
 /** Max display scale when rocket damage exceeds the level base (2× damage → 1.5× size). */
 const PLAYER_ROCKET_DAMAGE_SCALE_MAX = 2;
-/** Seconds between player rocket shots while fire is held (lower = faster). */
-const PLAYER_FIRE_COOLDOWN_S = 0.5;
+/** Seconds between autofire shots while fire is held (clicks are not limited). */
+const PLAYER_AUTO_FIRE_COOLDOWN_S = 0.5;
 /** Damage multiplier for rockets fired with an active lock-on target. */
 const LOCK_ON_ROCKET_DAMAGE_FACTOR = 2.0;
 
@@ -115,6 +115,7 @@ export class GameScene extends Container implements MenuActionsHost {
   private fxLayer = new Container();
   private groundLayer = new Container();
   private groundEntityLayer = new Container();
+  private worldLayer = new Container();
   private uiLayer = new Container();
   private entities = new EntityController();
   private explosionManager = new ExplosionManager();
@@ -143,6 +144,8 @@ export class GameScene extends Container implements MenuActionsHost {
   private touchTowerLeftEnabled = true;
   private touchTowerRightEnabled = true;
   private touchFireActive = false;
+  private pointerFireEdgeLeft = false;
+  private pointerFireEdgeRight = false;
   private pauseBeforePhase: Phase = 'playing';
   private settingsUnsub: (() => void) | null = null;
 
@@ -150,7 +153,7 @@ export class GameScene extends Container implements MenuActionsHost {
   private pendingAirplaneSpawns = 0;
   private airplaneSpawnGeneration = 0;
   private roundBootstrapping = false;
-  private readonly rumbleFx = new RumbleController(this);
+  private readonly rumbleFx: RumbleController;
   private rumbleTestStep = 0;
   private endScreenFx: {
     overlay: Container;
@@ -174,7 +177,7 @@ export class GameScene extends Container implements MenuActionsHost {
     super();
     this.groundLayer.eventMode = 'none';
     this.groundEntityLayer.eventMode = 'none';
-    this.addChild(
+    this.worldLayer.addChild(
       this.bgLayer,
       this.weatherLayer,
       this.trailLayer,
@@ -183,8 +186,9 @@ export class GameScene extends Container implements MenuActionsHost {
       this.groundLayer,
       this.groundEntityLayer,
       this.nightVisionLayer,
-      this.uiLayer,
     );
+    this.addChild(this.worldLayer, this.uiLayer);
+    this.rumbleFx = new RumbleController(this.worldLayer);
     this.fxLayer.addChild(this.entityHpBars);
     this.entities.attachHomingLines(this.entityLayer);
     void Promise.all([this.explosionManager.load(), this.particleFx.load()]).then(() => {
@@ -765,7 +769,10 @@ export class GameScene extends Container implements MenuActionsHost {
     if (this.touchControls?.isOnButton(designX, designY)) return;
     this.touchFireActive = true;
     input.applyPointerMove(this.players, designX, designY);
-    this.syncTouchFire(input, designX);
+    const fire = this.resolveTouchFireTower(designX);
+    if (fire.left) this.pointerFireEdgeLeft = true;
+    if (fire.right) this.pointerFireEdgeRight = true;
+    this.setPointerFire(input, fire.left, fire.right);
   }
 
   handleTouchPointerMove(input: InputSystem, designX: number, designY: number): void {
@@ -842,6 +849,12 @@ export class GameScene extends Container implements MenuActionsHost {
     input.setPointerFire(this.players, left, right);
   }
 
+  /** One shot per mouse button press — not limited by autofire cooldown. */
+  notifyPointerFireDown(left: boolean, right: boolean): void {
+    if (left) this.pointerFireEdgeLeft = true;
+    if (right) this.pointerFireEdgeRight = true;
+  }
+
   getMenuActions(): UiAction[] {
     if (this.settingsOverlay) return this.settingsOverlay.getMenuActions();
     if (this.pauseOverlay) return this.pauseOverlay.menuActions;
@@ -895,11 +908,14 @@ export class GameScene extends Container implements MenuActionsHost {
       },
     );
     this.uiLayer.addChild(this.pauseOverlay);
+    if (this.shopOverlay) this.shopOverlay.eventMode = 'none';
+    this.menuSource = null;
+    this.menuActionsKey = '';
   }
 
   private openSettings(): void {
     if (this.settingsOverlay) return;
-    this.settingsOverlay = new SettingsOverlay(() => this.closeSettings(), { inGame: true });
+    this.settingsOverlay = new SettingsOverlay(() => this.closeSettings());
     this.uiLayer.addChild(this.settingsOverlay);
     this.menuSource = null;
     this.menuActionsKey = '';
@@ -959,6 +975,9 @@ export class GameScene extends Container implements MenuActionsHost {
       this.pauseOverlay = null;
       this.menuSource = null;
       this.menuActionsKey = '';
+    }
+    if (this.shopOverlay && this.pauseBeforePhase === 'shop') {
+      this.shopOverlay.eventMode = 'passive';
     }
     if (this.phase === 'paused') this.phase = this.pauseBeforePhase;
   }
@@ -1038,9 +1057,16 @@ export class GameScene extends Container implements MenuActionsHost {
       player.fireCooldown = Math.max(0, player.fireCooldown - dt);
       this.updateAimLock(player, dt);
       this.updateTurretAim(player);
-      this.tryFire(player, player.leftCannon, player.fireLeft);
-      this.tryFire(player, player.rightCannon, player.fireRight);
+      const isPointer = player.aimSource === 'pointer';
+      const clickLeft = isPointer && this.pointerFireEdgeLeft;
+      const clickRight = isPointer && this.pointerFireEdgeRight;
+      if (clickLeft) this.tryFireClick(player, player.leftCannon);
+      if (clickRight) this.tryFireClick(player, player.rightCannon);
+      if (player.fireLeft && !clickLeft) this.tryFireAuto(player, player.leftCannon);
+      if (player.fireRight && !clickRight) this.tryFireAuto(player, player.rightCannon);
     }
+    this.pointerFireEdgeLeft = false;
+    this.pointerFireEdgeRight = false;
 
     this.updateCivilians(dt);
     this.entities.update(
@@ -1142,12 +1168,16 @@ export class GameScene extends Container implements MenuActionsHost {
     cannon.rotation = angle;
   }
 
-  private tryFire(player: PlayerSlot, cannon: Sprite, firing: boolean): void {
-    if (!firing || player.fireCooldown > 0) return;
+  private tryFireClick(player: PlayerSlot, cannon: Sprite): void {
     if (player.rocketsInFlight >= player.rocketCap) return;
-
     this.spawnRocket(player, cannon);
-    player.fireCooldown = PLAYER_FIRE_COOLDOWN_S;
+  }
+
+  private tryFireAuto(player: PlayerSlot, cannon: Sprite): void {
+    if (player.fireCooldown > 0) return;
+    if (player.rocketsInFlight >= player.rocketCap) return;
+    this.spawnRocket(player, cannon);
+    player.fireCooldown = PLAYER_AUTO_FIRE_COOLDOWN_S;
   }
 
   private rocketDamageDisplayScale(damage: number, baseDamage: number): number {
@@ -1299,6 +1329,7 @@ export class GameScene extends Container implements MenuActionsHost {
   private openShop(_moneyEarned: number): void {
     const hasMoreRounds = this.roundIndex + 1 < this.level.rounds.length;
     this.phase = 'shop';
+    this.rumbleFx.reset();
     this.clearTransientGameUi();
     this.closeShop();
     this.shopOverlay = new ShopOverlay(

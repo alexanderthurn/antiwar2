@@ -322,6 +322,7 @@ export class App {
         if (this.mode !== 'game') return;
         if (e.button === 0) this.mouseButtons.left = true;
         if (e.button === 2) this.mouseButtons.right = true;
+        this.game?.notifyPointerFireDown(e.button === 0, e.button === 2);
         this.game?.setPointerFire(this.input, this.mouseButtons.left, this.mouseButtons.right);
       });
       window.addEventListener('mouseup', (e) => {

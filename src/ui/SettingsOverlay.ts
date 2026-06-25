@@ -1,4 +1,4 @@
-import { BitmapText, Container, Graphics } from 'pixi.js';
+import { BitmapText, Container } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
 import {
   settingsStore,
@@ -9,48 +9,29 @@ import { createFocusableButton } from '../input/FocusableButton';
 import type { MenuActionsHost } from '../input/MenuActionsHost';
 import type { UiAction } from '../input/UiMenuController';
 import { playMenuClick } from '../audio/UiSounds';
-import { kewlBlockGap, kewlLineHeight, kewlString, kewlText } from './KewlFont';
-import { createMenuBackground } from './MenuBackground';
+import { kewlBlockGap, kewlLineHeight, kewlString, kewlText, UI_TITLE_Y } from './KewlFont';
 
-const PANEL_W = 560;
 const ROW_FONT = 22;
-const ROW_H = kewlLineHeight(ROW_FONT) + kewlBlockGap(ROW_FONT);
-const ROW_GAP = kewlBlockGap(18);
 const BACK_FONT = 20;
-const IN_GAME_DIM_ALPHA = 0.3;
-const MENU_DIM_ALPHA = 0.45;
-
-export interface SettingsOverlayOptions {
-  /** Dim gameplay behind the panel instead of the main-menu wallpaper. */
-  inGame?: boolean;
-}
+const BTN_W = 420;
 
 export class SettingsOverlay extends Container implements MenuActionsHost {
   private menuActions: UiAction[] = [];
   private rowLabels = new Map<string, { prefix: string; text: BitmapText }>();
   private onBack: () => void;
-  private inGame: boolean;
   private unsub: (() => void) | null = null;
 
-  constructor(onBack: () => void, options: SettingsOverlayOptions = {}) {
+  constructor(onBack: () => void) {
     super();
     this.onBack = onBack;
-    this.inGame = options.inGame ?? false;
-    void this.build();
+    this.build();
   }
 
-  private async build(): Promise<void> {
-    if (!this.inGame) {
-      this.addChild(await createMenuBackground());
-    }
-
-    const dim = new Graphics();
-    dim.rect(0, 0, DESIGN.width, DESIGN.height).fill({
-      color: 0x000000,
-      alpha: this.inGame ? IN_GAME_DIM_ALPHA : MENU_DIM_ALPHA,
-    });
-    dim.eventMode = 'static';
-    this.addChild(dim);
+  private build(): void {
+    const centerX = DESIGN.width / 2;
+    const title = kewlText({ text: 'Options', size: 36, anchorX: 0.5 });
+    title.position.set(centerX, UI_TITLE_Y);
+    this.addChild(title);
 
     const rows = [
       {
@@ -81,31 +62,15 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
       },
     ] as const;
 
-    const padTop = 40;
-    const padBottom = 36;
-    const titleBlock = kewlLineHeight(36) + kewlBlockGap(36);
-    const backBlock = kewlLineHeight(BACK_FONT) + kewlBlockGap(BACK_FONT);
-    const rowsBlock = rows.length * ROW_H + (rows.length - 1) * ROW_GAP;
-    const panelH = padTop + titleBlock + rowsBlock + backBlock + padBottom;
-    const panelX = DESIGN.width / 2 - PANEL_W / 2;
-    const panelY = DESIGN.height / 2 - panelH / 2;
-    const centerX = DESIGN.width / 2;
+    const btnX = centerX - BTN_W / 2;
+    const rowStep = kewlLineHeight(ROW_FONT) + kewlBlockGap(ROW_FONT);
+    const backStep = kewlLineHeight(BACK_FONT) + kewlBlockGap(BACK_FONT);
+    const blockH = rows.length * rowStep + backStep;
+    let rowY = (DESIGN.height - blockH) / 2;
 
-    const panel = new Graphics();
-    panel.roundRect(panelX, panelY, PANEL_W, panelH, 12).fill({
-      color: 0x1a1a2e,
-      alpha: 0.97,
-    });
-    this.addChild(panel);
-
-    const title = kewlText({ text: 'Options', size: 36, anchorX: 0.5 });
-    title.position.set(centerX, panelY + padTop);
-    this.addChild(title);
-
-    let rowY = panelY + padTop + titleBlock;
     for (const row of rows) {
-      this.addRow(row.id, row.label, centerX, rowY, row.onPress);
-      rowY += ROW_H + ROW_GAP;
+      this.addRow(row.id, row.label, btnX, rowY, row.onPress);
+      rowY += rowStep;
     }
 
     const backW = 200;
@@ -113,7 +78,7 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
       id: 'settings-back',
       label: 'Back',
       x: centerX - backW / 2,
-      y: rowY + kewlBlockGap(ROW_FONT),
+      y: rowY,
       center: true,
       w: backW,
       fontSize: BACK_FONT,
@@ -143,17 +108,16 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
   private addRow(
     id: string,
     label: string,
-    centerX: number,
+    x: number,
     y: number,
     onPress: () => void,
   ): void {
-    const rowW = PANEL_W - 80;
     const { view, action } = createFocusableButton({
       id,
       label: `${label}: ...`,
-      x: centerX - rowW / 2,
+      x,
       y,
-      w: rowW,
+      w: BTN_W,
       center: true,
       fontSize: ROW_FONT,
       playClick: false,

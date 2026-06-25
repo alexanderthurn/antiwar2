@@ -1,4 +1,4 @@
-import { Container, type BitmapText } from 'pixi.js';
+import { Container, Rectangle, type BitmapText } from 'pixi.js';
 import type { UiAction, UiBounds } from './UiMenuController';
 import { MENU_POINTER_CURSOR } from '../ui/MenuPointer';
 import { playMenuClick } from '../audio/UiSounds';
@@ -89,10 +89,19 @@ export function createFocusableButton(opts: FocusableButtonOptions): { view: Con
 
   const hitW = opts.w ?? text.width + HIT_PAD_X * 2;
   const hitH = opts.h ?? lineH + HIT_PAD_Y;
+  btn.hitArea = new Rectangle(0, 0, hitW, hitH);
+
+  let menuFocused = false;
+  let pointerHovered = false;
+
+  const applyVisual = () => {
+    if (text.destroyed) return;
+    text.scale.set(menuFocused || pointerHovered ? FOCUS_SCALE : 1);
+  };
 
   const setFocused = (focused: boolean) => {
-    if (text.destroyed) return;
-    text.scale.set(focused ? FOCUS_SCALE : 1);
+    menuFocused = focused;
+    applyVisual();
   };
 
   const activate = () => {
@@ -101,6 +110,14 @@ export function createFocusableButton(opts: FocusableButtonOptions): { view: Con
     opts.onPress();
   };
 
+  btn.on('pointerover', () => {
+    pointerHovered = true;
+    applyVisual();
+  });
+  btn.on('pointerout', () => {
+    pointerHovered = false;
+    applyVisual();
+  });
   btn.on('pointertap', activate);
 
   const action: UiAction = {
