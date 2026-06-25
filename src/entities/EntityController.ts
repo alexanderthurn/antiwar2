@@ -428,6 +428,26 @@ export class EntityController {
     );
   }
 
+  /** Impact point when a rocket segment crosses the ground line. */
+  private projectileGroundImpact(
+    prevX: number,
+    prevY: number,
+    x: number,
+    y: number,
+  ): { x: number; y: number } | null {
+    const ground = DESIGN.groundY;
+    if (prevY < ground && y < ground) return null;
+
+    if (prevY < ground) {
+      const dy = y - prevY;
+      if (Math.abs(dy) < 1e-9) return { x, y: ground };
+      const t = (ground - prevY) / dy;
+      return { x: prevX + (x - prevX) * t, y: ground };
+    }
+
+    return { x, y: ground };
+  }
+
   private updateProjectiles(dt: number, cb: EntityControllerCallbacks): void {
     for (let i = this.entities.length - 1; i >= 0; i--) {
       const proj = this.entities[i]!;
@@ -463,6 +483,31 @@ export class EntityController {
         if (this.projectileHitsTarget(proj, prevX, prevY, cb)) {
           cb.onProjectileRemoved(proj.ownerSlot);
           this.queueDeath({ entity: proj, submunitions: false, callEntityDeath: false, despawn: true });
+          spent = true;
+          break;
+        }
+
+        const groundHit = this.projectileGroundImpact(prevX, prevY, proj.x, proj.y);
+        if (groundHit) {
+          proj.x = groundHit.x;
+          proj.y = groundHit.y;
+          proj.syncSprite();
+          cb.onProjectileRemoved(proj.ownerSlot);
+          const range = (proj.bombDef?.explosion.range ?? 1) * 40;
+          this.queueDeath({
+            entity: proj,
+            submunitions: false,
+            callEntityDeath: false,
+            despawn: true,
+            groundExplosion: {
+              x: groundHit.x,
+              y: DESIGN.groundY,
+              range,
+              damage: proj.damage,
+              type: proj.bombDef?.explosion.type ?? 1,
+              rumble: 'explosion',
+            },
+          });
           spent = true;
           break;
         }
