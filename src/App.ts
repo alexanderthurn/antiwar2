@@ -238,7 +238,6 @@ export class App {
     await preloadRound(pack, roundIndex);
 
     const game = new GameScene();
-    game.onReturnToMenu = () => this.showMainMenu(false);
     game.onReturnToCampaign = () => this.showCampaignView(false);
     game.onLevelWon = () => this.campaignProgress.completeLevel(levelIndex);
     game.onLevelComplete = () => this.showCampaignView(false);

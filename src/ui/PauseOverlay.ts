@@ -10,7 +10,7 @@ export class PauseOverlay extends Container {
   constructor(
     onResume: () => void,
     onSettings: () => void,
-    onMainMenu: () => void,
+    onExit: () => void,
   ) {
     super();
     this.eventMode = 'static';
@@ -27,7 +27,7 @@ export class PauseOverlay extends Container {
     const labels = [
       { id: 'pause-resume', label: 'Resume', onPress: onResume },
       { id: 'pause-settings', label: 'Settings', onPress: onSettings },
-      { id: 'pause-menu', label: 'Main menu', onPress: onMainMenu },
+      { id: 'pause-quit', label: 'Quit', onPress: onExit },
     ];
     const blockH = labels.length * btnStep - kewlBlockGap(btnSize);
     let btnY = (DESIGN.height - blockH) / 2;

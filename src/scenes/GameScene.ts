@@ -157,8 +157,6 @@ export class GameScene extends Container implements MenuActionsHost {
   private campaignLevelIndex = 0;
   private levelAudio!: LevelAudio;
 
-  /** Return to main menu (pause). */
-  onReturnToMenu?: () => void;
   /** Return to campaign map (pause / level complete). */
   onReturnToCampaign?: () => void;
   /** Level beaten — persist unlock before the end-screen animation. */
@@ -876,7 +874,7 @@ export class GameScene extends Container implements MenuActionsHost {
       () => this.openSettings(),
       () => {
         this.closePause();
-        this.onReturnToMenu?.();
+        this.onReturnToCampaign?.();
       },
     );
     this.uiLayer.addChild(this.pauseOverlay);
