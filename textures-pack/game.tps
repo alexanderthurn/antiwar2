@@ -531,21 +531,6 @@
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
-            <key type="filename">sprites/AIRPLANES/para_bomb.png</key>
-            <struct type="IndividualSpriteSettings">
-                <key>pivotPoint</key>
-                <point_f>0,0</point_f>
-                <key>spriteScale</key>
-                <double>1</double>
-                <key>scale9Enabled</key>
-                <false/>
-                <key>scale9Borders</key>
-                <rect>39,52,79,105</rect>
-                <key>scale9Paddings</key>
-                <rect>39,52,79,105</rect>
-                <key>scale9FromFile</key>
-                <false/>
-            </struct>
             <key type="filename">sprites/AIRPLANES/saegefisch.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
