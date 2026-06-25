@@ -97,6 +97,40 @@ function applyDrawStyle(entity: CombatEntity, def: AirplaneDef, motion: PatrolMo
   }
 }
 
+/** Apache artwork nose ~30° down; rockets fire along that axis, not sprite.rotation. */
+function heliWeaponAngle(dir: 1 | -1): number {
+  return Math.atan2(0.58, dir);
+}
+
+const HELI_BURST_SIZE = 2;
+const HELI_BURST_GAP = 0.1;
+const HELI_DIVE_FIRE_MARGIN = 50;
+
+/** Fire a short burst once the apache reaches the low point of its dive. */
+function fireHeliBottomBurst(
+  entity: CombatEntity,
+  motion: PatrolMotion,
+  def: AirplaneDef,
+  ctx: AIUpdateContext,
+  maxY: number,
+): void {
+  if (entity.y < maxY - HELI_DIVE_FIRE_MARGIN) return;
+
+  const angle = heliWeaponAngle(motion.dir);
+
+  if (motion.bombTimer === 0) {
+    motion.bombTimer = HELI_BURST_SIZE;
+    motion.phaseT = 0;
+  }
+
+  motion.phaseT -= ctx.dt;
+  if (motion.phaseT > 0) return;
+
+  tryDropDirectionalWeapon(entity, def, ctx.level, 0, ctx, angle);
+  motion.bombTimer -= 1;
+  motion.phaseT = motion.bombTimer > 0 ? HELI_BURST_GAP : 0;
+}
+
 function retargetAltitude(motion: PatrolMotion, def: AirplaneDef): void {
   const [minY, maxY] = def.aiParams;
   motion.targetY = minY + Math.random() * Math.max(1, maxY - minY);
@@ -219,13 +253,14 @@ function tryDropDirectionalWeapon(
   level: LevelPack,
   weaponIndex: number,
   ctx: AIUpdateContext,
+  fireAngle?: number,
 ): void {
   const name = def.weapons[weaponIndex];
   if (!name) return;
   const bombDef = level.bombs[name];
   if (!bombDef) return;
 
-  const angle = entity.sprite.rotation;
+  const angle = fireAngle ?? entity.sprite.rotation;
   const bulletSpeed = bombDef.speed * TICK_SCALE;
   const nose = 24;
   ctx.dropBomb(
@@ -245,10 +280,11 @@ function rollDirectionalWeaponDrop(
   def: AirplaneDef,
   dt: number,
   ctx: AIUpdateContext,
+  fireAngle?: number,
 ): void {
   const rand = def.aiParams[2] || 5;
   if (Math.random() >= dt / (rand / TICK_SCALE)) return;
-  tryDropDirectionalWeapon(entity, def, ctx.level, 0, ctx);
+  tryDropDirectionalWeapon(entity, def, ctx.level, 0, ctx, fireAngle);
 }
 
 function updateFighterMg(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
@@ -292,13 +328,19 @@ function updateHeliApache(entity: CombatEntity, motion: PatrolMotion, def: Airpl
   if (motion.phase === 0) {
     entity.x += motion.dir * speed * ctx.dt;
     entity.y += (minY + (maxY - minY) * 0.15 - entity.y) * Math.min(1, ctx.dt * 2);
-    if (entity.x > DESIGN.width * 0.25 && entity.x < DESIGN.width * 0.75) motion.phase = 1;
-    if (entity.x > DESIGN.width + 80 || entity.x < -80) motion.phase = 2;
+    if (entity.x > DESIGN.width * 0.25 && entity.x < DESIGN.width * 0.75) {
+      motion.phase = 1;
+      motion.bombTimer = 0;
+      motion.phaseT = 0;
+    }
   } else if (motion.phase === 1) {
-    entity.x += motion.dir * speed * 1.4 * ctx.dt;
-    entity.y += (maxY - entity.y) * Math.min(1, ctx.dt * 3);
-    rollWeaponDrop(entity, def, ctx.dt, ctx);
-    if (entity.y >= maxY - 20) motion.phase = 2;
+    entity.x += motion.dir * speed * 0.7 * ctx.dt;
+    entity.y += (maxY - entity.y) * Math.min(1, ctx.dt * 1.5);
+    fireHeliBottomBurst(entity, motion, def, ctx, maxY);
+    if (entity.y >= maxY - 20 && motion.bombTimer === 0 && entity.y >= maxY - HELI_DIVE_FIRE_MARGIN) {
+      motion.phase = 2;
+      motion.phaseT = 0;
+    }
   } else {
     entity.x += motion.dir * speed * 1.2 * ctx.dt;
     entity.y += (minY - entity.y) * Math.min(1, ctx.dt * 2.5);

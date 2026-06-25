@@ -144,8 +144,6 @@ export class GameScene extends Container implements MenuActionsHost {
   private pauseOverlay: PauseOverlay | null = null;
   private settingsOverlay: SettingsOverlay | null = null;
   private touchControls: TouchControls | null = null;
-  private touchTowerLeftEnabled = true;
-  private touchTowerRightEnabled = true;
   private touchFireActive = false;
   private pointerFireEdgeLeft = false;
   private pointerFireEdgeRight = false;
@@ -789,7 +787,7 @@ export class GameScene extends Container implements MenuActionsHost {
     if (this.touchControls?.isOnButton(designX, designY)) return;
     this.touchFireActive = true;
     input.applyTouchPointerMove(this.players, designX, designY);
-    const fire = this.resolveTouchFireTower(designX);
+    const fire = this.resolveTouchFireTower(this.pointerCrosshairX());
     if (fire.left) this.pointerFireEdgeLeft = true;
     if (fire.right) this.pointerFireEdgeRight = true;
     this.setPointerFire(input, fire.left, fire.right);
@@ -799,7 +797,7 @@ export class GameScene extends Container implements MenuActionsHost {
     if (this.phase !== 'playing') return;
     input.applyTouchPointerMove(this.players, designX, designY);
     if (!this.touchFireActive) return;
-    this.syncTouchFire(input, designX);
+    this.syncTouchFire(input);
   }
 
   handleTouchPointerUp(input: InputSystem): void {
@@ -809,14 +807,8 @@ export class GameScene extends Container implements MenuActionsHost {
 
   enableTouchControls(input: InputSystem): void {
     if (this.touchControls) return;
-    this.touchTowerLeftEnabled = true;
-    this.touchTowerRightEnabled = true;
     this.touchFireActive = false;
-    this.touchControls = new TouchControls(
-      (side) => this.toggleTouchTower(input, side),
-      () => this.openTouchSettings(input),
-    );
-    this.touchControls.setTowerEnabled(true, true);
+    this.touchControls = new TouchControls(() => this.openTouchSettings(input));
     this.uiLayer.addChild(this.touchControls);
   }
 
@@ -825,43 +817,17 @@ export class GameScene extends Container implements MenuActionsHost {
     this.setPointerFire(input, false, false);
   }
 
-  private toggleTouchTower(input: InputSystem, side: 'left' | 'right'): void {
-    if (side === 'left') {
-      if (this.touchTowerLeftEnabled) {
-        if (!this.touchTowerRightEnabled) {
-          this.touchTowerLeftEnabled = false;
-          this.touchTowerRightEnabled = true;
-        } else {
-          this.touchTowerLeftEnabled = false;
-        }
-      } else {
-        this.touchTowerLeftEnabled = true;
-      }
-    } else if (this.touchTowerRightEnabled) {
-      if (!this.touchTowerLeftEnabled) {
-        this.touchTowerRightEnabled = false;
-        this.touchTowerLeftEnabled = true;
-      } else {
-        this.touchTowerRightEnabled = false;
-      }
-    } else {
-      this.touchTowerRightEnabled = true;
-    }
-    this.touchControls?.setTowerEnabled(this.touchTowerLeftEnabled, this.touchTowerRightEnabled);
-    if (this.touchFireActive) this.syncTouchFire(input, input.cursor().x);
+  private pointerCrosshairX(): number {
+    return this.players.slot(0)?.crosshairX ?? DESIGN.width / 2;
   }
 
-  private resolveTouchFireTower(designX: number): { left: boolean; right: boolean } {
-    if (this.touchTowerLeftEnabled && this.touchTowerRightEnabled) {
-      if (designX < DESIGN.width / 2) return { left: true, right: false };
-      return { left: false, right: true };
-    }
-    if (this.touchTowerLeftEnabled) return { left: true, right: false };
+  private resolveTouchFireTower(crosshairX: number): { left: boolean; right: boolean } {
+    if (crosshairX < DESIGN.width / 2) return { left: true, right: false };
     return { left: false, right: true };
   }
 
-  private syncTouchFire(input: InputSystem, designX: number): void {
-    const fire = this.resolveTouchFireTower(designX);
+  private syncTouchFire(input: InputSystem): void {
+    const fire = this.resolveTouchFireTower(this.pointerCrosshairX());
     this.setPointerFire(input, fire.left, fire.right);
   }
 
