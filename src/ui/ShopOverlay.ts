@@ -16,17 +16,17 @@ const UPGRADE_LABELS: Record<UpgradeKey, string> = {
   rocket: 'Rocket slot',
   rocketSpeed: 'Rocket speed',
   rocketPower: 'Rocket power',
-  aim: 'Lock-on speed',
+  aim: 'Lock speed',
 };
 
 const UPGRADE_ORDER: UpgradeKey[] = [
-  'human',
-  'humanHp',
-  'humanMoney',
   'rocket',
   'rocketSpeed',
   'rocketPower',
   'aim',
+  'human',
+  'humanHp',
+  'humanMoney',
 ];
 
 const SHOP_ICON: Record<UpgradeKey, string> = {
@@ -142,15 +142,22 @@ export class ShopOverlay extends Container {
       iconTex.set(key, await loadTexture(SHOP_ICON[key]));
     }
 
-    const enabled = UPGRADE_ORDER.filter((key) => !pack.config.buttonsDisabled?.[key]);
-    const leftKeys = enabled.slice(0, 4);
-    const rightKeys = enabled.slice(4);
-
     const rowStep = SHOP_BTN_SIZE + kewlBlockGap(LABEL_SIZE);
     const contentTop = UI_TITLE_Y + kewlLineHeight(28) + kewlBlockGap(28) + SHOP_ITEMS_TOP_OFFSET;
+    const leftColumnCount = 4;
 
-    this.layoutColumn(leftKeys, LEFT_COL_X, contentTop, rowStep, session, baseTex, iconTex);
-    this.layoutColumn(rightKeys, RIGHT_COL_X, contentTop, rowStep, session, baseTex, iconTex);
+    for (let i = 0; i < UPGRADE_ORDER.length; i++) {
+      const key = UPGRADE_ORDER[i];
+      if (pack.config.buttonsDisabled?.[key]) continue;
+
+      const col = i < leftColumnCount ? LEFT_COL_X : RIGHT_COL_X;
+      const row = i < leftColumnCount ? i : i - leftColumnCount;
+      const y = contentTop + row * rowStep;
+
+      const shopRow = this.makeRow(key, session, baseTex, iconTex.get(key)!);
+      shopRow.row.position.set(col, y);
+      this.addChild(shopRow.row);
+    }
 
     const bottomY = DESIGN.height - SHOP_EDGE - SHOP_CONTINUE_SIZE;
     const goX = DESIGN.width - SHOP_EDGE - SHOP_CONTINUE_SIZE;
@@ -187,25 +194,6 @@ export class ShopOverlay extends Container {
     this.menuActions.push(cont.action);
 
     this.refresh(session);
-  }
-
-  private layoutColumn(
-    keys: UpgradeKey[],
-    leftX: number,
-    contentTop: number,
-    rowStep: number,
-    session: LevelSession,
-    baseTex: Texture,
-    iconTex: Map<UpgradeKey, Texture>,
-  ): void {
-    if (keys.length === 0) return;
-    let y = contentTop;
-    for (const key of keys) {
-      const row = this.makeRow(key, session, baseTex, iconTex.get(key)!);
-      row.row.position.set(leftX, y);
-      this.addChild(row.row);
-      y += rowStep;
-    }
   }
 
   private makeRow(
