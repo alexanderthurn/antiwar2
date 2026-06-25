@@ -2,9 +2,11 @@ import { Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
 import { loadTexture } from '../data/AssetLoader';
 import type { EffectQuality } from '../core/GraphicsQuality';
 
-const EXPLOSION_COLS = 4;
-const EXPLOSION_ROWS = 3;
-const EXPLOSION_FRAME_COUNT = EXPLOSION_COLS * EXPLOSION_ROWS;
+const NORMAL_EXPLOSION_COLS = 4;
+const NORMAL_EXPLOSION_ROWS = 3;
+
+/** Nuke sheet: 26 frames in 3 rows (10 + 10 + 6), left-to-right from top-left. */
+const NUKE_ROW_COLS = [10, 10, 6] as const;
 
 interface Spark {
   g: Graphics;
@@ -26,14 +28,14 @@ interface Burst {
   hasRing: boolean;
 }
 
-function sliceExplosionFrames(sheet: Texture): Texture[] {
-  const frameW = Math.floor(sheet.width / EXPLOSION_COLS);
-  const frameH = Math.floor(sheet.height / EXPLOSION_ROWS);
+function sliceNormalExplosionFrames(sheet: Texture): Texture[] {
+  const frameW = Math.floor(sheet.width / NORMAL_EXPLOSION_COLS);
+  const frameH = Math.floor(sheet.height / NORMAL_EXPLOSION_ROWS);
   const frames: Texture[] = [];
 
-  for (let i = 0; i < EXPLOSION_FRAME_COUNT; i++) {
-    const col = i % EXPLOSION_COLS;
-    const row = Math.floor(i / EXPLOSION_COLS);
+  for (let i = 0; i < NORMAL_EXPLOSION_COLS * NORMAL_EXPLOSION_ROWS; i++) {
+    const col = i % NORMAL_EXPLOSION_COLS;
+    const row = Math.floor(i / NORMAL_EXPLOSION_COLS);
     const rect = new Rectangle(col * frameW, row * frameH, frameW, frameH);
     frames.push(
       new Texture({
@@ -46,7 +48,29 @@ function sliceExplosionFrames(sheet: Texture): Texture[] {
   return frames;
 }
 
-/** Animated explosions — v1 sprite sheet is 4×3 frames, left-to-right, top-to-bottom. */
+function sliceNukeExplosionFrames(sheet: Texture): Texture[] {
+  const colsPerRow = NUKE_ROW_COLS[0];
+  const frameW = Math.floor(sheet.width / colsPerRow);
+  const frameH = Math.floor(sheet.height / NUKE_ROW_COLS.length);
+  const frames: Texture[] = [];
+
+  for (let row = 0; row < NUKE_ROW_COLS.length; row++) {
+    const cols = NUKE_ROW_COLS[row]!;
+    for (let col = 0; col < cols; col++) {
+      const rect = new Rectangle(col * frameW, row * frameH, frameW, frameH);
+      frames.push(
+        new Texture({
+          source: sheet.source,
+          frame: rect,
+          orig: rect,
+        }),
+      );
+    }
+  }
+  return frames;
+}
+
+/** Animated explosions — normal sheet is 4×3; nuke sheet is 26 frames (10+10+6). */
 export class ExplosionManager {
   private framesNormal: Texture[] = [];
   private framesNuke: Texture[] = [];
@@ -63,8 +87,8 @@ export class ExplosionManager {
     if (this.loaded) return;
     const normalSheet = await loadTexture('assets/gfx/explosion.png');
     const nukeSheet = await loadTexture('assets/gfx/explosion_nuke.png');
-    this.framesNormal = sliceExplosionFrames(normalSheet);
-    this.framesNuke = sliceExplosionFrames(nukeSheet);
+    this.framesNormal = sliceNormalExplosionFrames(normalSheet);
+    this.framesNuke = sliceNukeExplosionFrames(nukeSheet);
     this.loaded = true;
   }
 
@@ -81,7 +105,12 @@ export class ExplosionManager {
     const first = frames[0];
     if (!first) return;
 
-    const duration = type === 4 ? 0.72 : isNuke ? 0.84 : 0.6;
+    const duration =
+      type === 4
+        ? 0.72
+        : isNuke
+          ? 0.6 * (frames.length / this.framesNormal.length)
+          : 0.6;
     const baseScale = Math.max(0.5, Math.min(3.2, radius / 55));
     const tint =
       type === 2 ? 0x88ff44 : type === 4 ? 0xff6622 : type === 3 ? 0xffffff : 0xffffff;
@@ -165,10 +194,7 @@ export class ExplosionManager {
       const t = Math.min(1, b.age / b.duration);
       const fade = 1 - t ** 1.4;
 
-      const frameIdx = Math.min(
-        EXPLOSION_FRAME_COUNT - 1,
-        Math.floor(t * EXPLOSION_FRAME_COUNT),
-      );
+      const frameIdx = Math.min(b.frames.length - 1, Math.floor(t * b.frames.length));
       const frame = b.frames[frameIdx] ?? b.frames[0]!;
       b.sprite.texture = frame;
       if (b.hasGlow) {
