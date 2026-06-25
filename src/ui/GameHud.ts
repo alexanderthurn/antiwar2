@@ -5,9 +5,14 @@ import { kewlText } from './KewlFont';
 const PAD_X = 24;
 const PAD_Y = 16;
 const ROW_Y = PAD_Y + 14;
-const ROCKET_ICON_LEN = 28;
+export const ROCKET_ICON_LEN = 28;
 const ROCKET_GAP = 6;
 const HUD_FONT = 22;
+
+/** Uniform scale so in-flight rockets match the top-left ammo icons. */
+export function playerRocketIconScale(tex: Texture): number {
+  return ROCKET_ICON_LEN / Math.max(tex.width, 1);
+}
 
 function formatElapsed(sec: number): string {
   const total = Math.max(0, Math.floor(sec));
@@ -62,7 +67,7 @@ export class GameHud extends Container {
       const icon = new Sprite(this.rocketTex);
       icon.anchor.set(0.5);
       icon.rotation = -Math.PI / 2;
-      const scale = ROCKET_ICON_LEN / Math.max(icon.texture.width, 1);
+      const scale = playerRocketIconScale(icon.texture);
       icon.scale.set(scale);
       this.rocketSprites.push(icon);
       this.rockets.addChild(icon);

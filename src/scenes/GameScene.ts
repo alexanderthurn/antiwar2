@@ -29,7 +29,7 @@ import {
 } from '../systems/RumbleController';
 import { BossHpBar } from '../ui/BossHpBar';
 import { EntityHpBarOverlay } from '../ui/EntityHpBarOverlay';
-import { GameHud } from '../ui/GameHud';
+import { GameHud, playerRocketIconScale } from '../ui/GameHud';
 import { JoinPanel } from '../ui/JoinPanel';
 import { PauseOverlay } from '../ui/PauseOverlay';
 import { TouchControls } from '../ui/TouchControls';
@@ -56,8 +56,9 @@ const CIVILIAN_MAX_X = DESIGN.width - 120;
 
 /** Top-right player roster — disabled until the UI is redesigned. */
 const SHOW_JOIN_PANEL = false;
-const PLAYER_ROCKET_DISPLAY_SCALE = 1;
 const END_SCREEN_ANIM_S = 2.4;
+/** Max display scale when rocket damage exceeds the level base (2× damage → 1.5× size). */
+const PLAYER_ROCKET_DAMAGE_SCALE_MAX = 2;
 /** Seconds between player rocket shots while fire is held (lower = faster). */
 const PLAYER_FIRE_COOLDOWN_S = 0.5;
 /** Damage multiplier for rockets fired with an active lock-on target. */
@@ -1149,18 +1150,29 @@ export class GameScene extends Container implements MenuActionsHost {
     player.fireCooldown = PLAYER_FIRE_COOLDOWN_S;
   }
 
+  private rocketDamageDisplayScale(damage: number, baseDamage: number): number {
+    if (damage <= baseDamage) return 1;
+    const ratio = damage / baseDamage;
+    return Math.min(PLAYER_ROCKET_DAMAGE_SCALE_MAX, 1 + (ratio - 1) * 0.5);
+  }
+
   private spawnRocket(player: PlayerSlot, cannon: Sprite): void {
     const def = this.level.bombs.BOMB_PLAYER!;
+    const locked = this.isAimLocked(player);
+    const damage = locked ? this.guidedRocketDamage() : this.session.rocketPower;
+    const displayScale =
+      playerRocketIconScale(this.playerRocketTex)
+      * this.rocketDamageDisplayScale(damage, this.level.config.startRocketPower);
+
     const sprite = new Sprite(this.playerRocketTex);
     sprite.anchor.set(0.5);
-    sprite.scale.set(def.scale[0] * PLAYER_ROCKET_DISPLAY_SCALE, def.scale[1] * PLAYER_ROCKET_DISPLAY_SCALE);
+    sprite.scale.set(displayScale);
     const angle = Math.atan2(player.crosshairY - cannon.y, player.crosshairX - cannon.x);
     const muzzle = V1_SPRITES.cannonMuzzle;
     const sx = cannon.x + Math.cos(angle) * muzzle;
     const sy = cannon.y + Math.sin(angle) * muzzle;
     sprite.position.set(sx, sy);
 
-    const locked = this.isAimLocked(player);
     if (locked) sprite.tint = 0xff4444;
 
     const speed = this.session.rocketSpeed * TICK_SCALE;
@@ -1172,7 +1184,7 @@ export class GameScene extends Container implements MenuActionsHost {
         y: sy,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        damage: locked ? this.guidedRocketDamage() : this.session.rocketPower,
+        damage,
         ownerSlot: player.index,
         homingTarget: locked ? player.lockTarget : null,
         guidedShot: locked,
