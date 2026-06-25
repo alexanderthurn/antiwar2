@@ -62,6 +62,7 @@ interface AirplaneSpawn {
 }
 
 interface Civilian {
+  id: number;
   sprite: Sprite;
   x: number;
   hp: number;
@@ -80,6 +81,8 @@ export interface DevBootstrap {
 }
 
 export class GameScene extends Container implements MenuActionsHost {
+  private static nextCivilianId = 1;
+
   private level!: LevelPack;
   private round!: RoundDef;
   private roundIndex = 0;
@@ -554,6 +557,7 @@ export class GameScene extends Container implements MenuActionsHost {
     this.entityLayer.addChild(sprite);
 
     this.civilians.push({
+      id: GameScene.nextCivilianId++,
       sprite,
       x,
       hp: this.session.humanHp,
@@ -874,7 +878,12 @@ export class GameScene extends Container implements MenuActionsHost {
     this.particleFx.update(dt, this.particleBuckets());
     this.killStreaks.tick(dt);
     this.bossHpBar?.refresh();
-    this.entityHpBars.update(dt, this.entities.living(), input.aimPoints(this.players));
+    this.entityHpBars.update(
+      dt,
+      this.entities.living(),
+      this.civilians,
+      input.aimPoints(this.players),
+    );
 
     this.updateRumble(dt);
     this.weatherLayer.update(dt);
@@ -1060,6 +1069,7 @@ export class GameScene extends Container implements MenuActionsHost {
       if (c.hp <= 0) {
         this.killCivilian(c);
       } else if (wasAlive && damage > 0) {
+        this.entityHpBars.notifyCivilianHit(c);
         this.levelAudio.playCivilianHit();
       }
     }
