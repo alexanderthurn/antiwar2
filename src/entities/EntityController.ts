@@ -2,7 +2,7 @@ import { Graphics, Sprite, type Container } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
 import type { AirplaneDef, BombDef, LevelPack } from '../data/types';
 import { pointHitsSprite, rocketHitsSprite, rocketSweepStep, spritesOverlap } from '../systems/collision';
-import { createPatrolMotion, updateAirplaneAI, type AIUpdateContext } from './AISystem';
+import { createPatrolMotion, normalizeAI, updateAirplaneAI, type AIUpdateContext } from './AISystem';
 import { CombatEntity } from './CombatEntity';
 import {
   bombExplosionRadius,
@@ -36,7 +36,13 @@ export interface EntityControllerCallbacks {
     rumble: 'plane' | 'explosion' | 'none',
     hurtsCivilians?: boolean,
   ): void;
-  onDropBomb(parent: CombatEntity, bombDef: BombDef, x: number, y: number): void;
+  onDropBomb(
+    parent: CombatEntity,
+    bombDef: BombDef,
+    x: number,
+    y: number,
+    velocity?: { vx: number; vy: number },
+  ): void;
   onSkyBomb(bombDef: BombDef, x: number): void;
   onSpawnChildAirplane(typeName: string, x: number, y: number): void;
   onProjectileRemoved(ownerSlot: number): void;
@@ -156,7 +162,9 @@ export class EntityController {
     const sprite = new Sprite(tex);
     sprite.anchor.set(0.5);
     sprite.scale.set(def.scale[0], def.scale[1]);
-    if (x >= DESIGN.width / 2) sprite.scale.x = -Math.abs(sprite.scale.x);
+    if (x >= DESIGN.width / 2 && normalizeAI(def.ai) !== 'FIGHTERMG') {
+      sprite.scale.x = -Math.abs(sprite.scale.x);
+    }
     layer.addChild(sprite);
 
     const motion = createPatrolMotion(def, x, spawnIndex, isEndmaster);
@@ -167,6 +175,14 @@ export class EntityController {
       damage: 0,
       airplaneDef: def,
     });
+    if (normalizeAI(def.ai) === 'FIGHTERMG' && motion.kind === 'patrol') {
+      const lowY = def.aiParams[1] - 40;
+      const dx = motion.targetX - x;
+      const dy = lowY - y;
+      if (Math.hypot(dx, dy) > 1) {
+        entity.sprite.rotation = Math.atan2(dy, dx);
+      }
+    }
     if (def.stealthTicks && def.stealthTicks > 0) {
       entity.stealthPhaseTimer = def.stealthTicks;
       entity.stealthHidden = false;
@@ -216,6 +232,7 @@ export class EntityController {
     loadTex: (path: string) => Promise<import('pixi.js').Texture>,
     layer: { addChild(s: Sprite): void },
     submunitionDepth = 0,
+    velocity?: { vx: number; vy: number },
   ): Promise<CombatEntity> {
     const tex = await loadTex(def.image);
     const sprite = new Sprite(tex);
@@ -223,15 +240,20 @@ export class EntityController {
     sprite.scale.set(def.scale[0], def.scale[1]);
     layer.addChild(sprite);
 
+    const bulletSpeed = def.speed * TICK_SCALE;
     const entity = new CombatEntity(sprite, traitsForEnemyBomb(def), { kind: 'fall' }, {
       x,
       y,
-      vy: def.speed * TICK_SCALE,
+      vx: velocity?.vx ?? 0,
+      vy: velocity?.vy ?? bulletSpeed,
       hp: def.hp,
       damage: def.explosion.power,
       explosionRange: def.explosion.range * 40,
       bombDef: def,
     });
+    if (velocity) {
+      entity.sprite.rotation = Math.atan2(velocity.vy, velocity.vx);
+    }
     entity.submunitionDepth = submunitionDepth;
     this.entities.push(entity);
     return entity;
@@ -370,7 +392,8 @@ export class EntityController {
     const ctx: AIUpdateContext = {
       dt,
       level,
-      dropBomb: (parent, bombDef, x, y) => cb.onDropBomb(parent, bombDef, x, y),
+      dropBomb: (parent, bombDef, x, y, velocity) =>
+        cb.onDropBomb(parent, bombDef, x, y, velocity),
       spawnChild: (_parent, typeName, x, y) => cb.onSpawnChildAirplane(typeName, x, y),
       skyBomb: (bombDef, x) => cb.onSkyBomb(bombDef, x),
     };
@@ -416,13 +439,20 @@ export class EntityController {
         continue;
       }
 
+      const prevX = e.x;
       const prevY = e.y;
-      const dy = e.vy * dt;
-      const steps = Math.max(1, Math.ceil(Math.abs(dy) / 12));
+      const totalDx = e.vx * dt;
+      const totalDy = e.vy * dt;
+      const travel = Math.hypot(totalDx, totalDy);
+      const steps = Math.max(1, Math.ceil(travel / 12));
       let consumed = false;
 
       for (let s = 1; s <= steps; s++) {
-        e.y = prevY + dy * (s / steps);
+        e.x = prevX + totalDx * (s / steps);
+        e.y = prevY + totalDy * (s / steps);
+        if (travel > 0.5) {
+          e.sprite.rotation = Math.atan2(totalDy, totalDx);
+        }
         e.syncSprite();
 
         if (e.traits.hurtsHumansOnGround) {
@@ -436,6 +466,24 @@ export class EntityController {
       }
 
       if (consumed) continue;
+
+      if (e.traits.checkOutOfScreen) {
+        const margin = 80;
+        if (
+          e.x < -margin ||
+          e.x > DESIGN.width + margin ||
+          e.y < -margin ||
+          e.y > DESIGN.height + margin
+        ) {
+          this.queueDeath({
+            entity: e,
+            submunitions: false,
+            callEntityDeath: false,
+            despawn: true,
+          });
+          continue;
+        }
+      }
 
       if (e.y >= DESIGN.groundY) {
         const def = e.bombDef;

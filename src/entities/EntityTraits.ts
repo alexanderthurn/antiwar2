@@ -26,6 +26,7 @@ export interface PatrolMotion {
   kind: 'patrol';
   ai: string;
   dir: 1 | -1;
+  targetX: number;
   targetY: number;
   bombTimer: number;
   phase: number;

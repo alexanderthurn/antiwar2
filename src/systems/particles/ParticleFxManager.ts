@@ -36,6 +36,8 @@ export interface CivilianBloodOpts {
   damage: number;
   explosionType?: number;
   explosionRange?: number;
+  /** Non-lethal hit — lighter spray than a kill. */
+  wound?: boolean;
   /** Cheat / test tier (0–6) — bypasses global budget and uses dramatic per-tier counts. */
   intensityTier?: number;
   /** Random start position within this rectangle (e.g. human sprite bounds). */
@@ -449,7 +451,7 @@ export class ParticleFxManager {
     this.ringSmoke(x, y, radius, scale * mul, 0xf0f4ff, 12);
   }
 
-  /** Blood spray when a civilian dies — intensity scales with damage source and graphics quality. */
+  /** Blood spray when a civilian is hit or killed — intensity scales with damage source and graphics quality. */
   spawnCivilianBlood(x: number, y: number, opts: CivilianBloodOpts): void {
     const profile = QUALITY[this.quality];
     if (!profile || this.bloodFrames.length === 0) return;
@@ -457,7 +459,7 @@ export class ParticleFxManager {
     const strengthTier = this.bloodStrengthTier(opts);
     const count = this.bloodParticleCount(opts, profile);
     const allowOverflow = count > 24;
-    const extreme = strengthTier >= 4;
+    const extreme = !opts.wound && strengthTier >= 4;
     const speedMul = BLOOD_SPEED_BY_TIER[strengthTier] ?? 1;
     const spreadMul = BLOOD_SPREAD_BY_TIER[strengthTier] ?? 1;
     const gravity = BLOOD_GRAVITY_BY_TIER[strengthTier] ?? 290;
@@ -594,19 +596,24 @@ export class ParticleFxManager {
     if (opts.explosionType === 3) damage *= 1.5;
     else if (opts.explosionType === 4) damage *= 1.2;
 
-    if (damage >= 2000) return 6;
-    if (damage >= 800) return 5;
-    if (damage >= 250) return 4;
-    if (damage >= 100) return 3;
-    if (damage >= 50) return 2;
-    if (damage >= 20) return 1;
-    return 0;
+    let tier = 0;
+    if (damage >= 2000) tier = 6;
+    else if (damage >= 800) tier = 5;
+    else if (damage >= 250) tier = 4;
+    else if (damage >= 100) tier = 3;
+    else if (damage >= 50) tier = 2;
+    else if (damage >= 20) tier = 1;
+
+    return opts.wound ? Math.min(tier, 2) : tier;
   }
 
   private bloodParticleCount(opts: CivilianBloodOpts, profile: QualityProfile): number {
     const tier = this.bloodStrengthTier(opts);
     const counts = BLOOD_COUNT_BY_TIER[this.quality] ?? BLOOD_COUNT_BY_TIER.normal;
     const fromTier = counts[tier] ?? 5;
+    if (opts.wound) {
+      return Math.max(2, Math.round(fromTier * 0.35));
+    }
     if (opts.intensityTier != null || profile.budget >= 130) {
       return fromTier;
     }

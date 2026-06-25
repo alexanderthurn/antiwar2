@@ -672,10 +672,10 @@
       "weapons": [
         "BOMB_MG"
       ],
-      "ai": "FIGHTERSIMPLE",
+      "ai": "FIGHTERMG",
       "aiParams": [
-        0,
-        422,
+        50,
+        844,
         5
       ],
       "drawStyle": 1,

@@ -8,7 +8,13 @@ const TICK_SCALE = 60;
 export interface AIUpdateContext {
   dt: number;
   level: LevelPack;
-  dropBomb: (parent: CombatEntity, def: BombDef, x: number, y: number) => void;
+  dropBomb: (
+    parent: CombatEntity,
+    def: BombDef,
+    x: number,
+    y: number,
+    velocity?: { vx: number; vy: number },
+  ) => void;
   spawnChild: (parent: CombatEntity, typeName: string, x: number, y: number) => void;
   skyBomb: (def: BombDef, x: number) => void;
 }
@@ -132,6 +138,120 @@ function updateFighterSimple(entity: CombatEntity, motion: PatrolMotion, def: Ai
   maybeRetargetY(motion, def, ctx.dt, 0.8);
   rollWeaponDrop(entity, def, ctx.dt, ctx);
   applyDrawStyle(entity, def, motion);
+}
+
+function normalizeAngle(angle: number): number {
+  while (angle > Math.PI) angle -= Math.PI * 2;
+  while (angle < -Math.PI) angle += Math.PI * 2;
+  return angle;
+}
+
+function rotateToward(current: number, target: number, maxDelta: number): number {
+  current = normalizeAngle(current);
+  target = normalizeAngle(target);
+  let delta = target - current;
+  if (delta > Math.PI) delta -= Math.PI * 2;
+  if (delta < -Math.PI) delta += Math.PI * 2;
+  return current + Math.max(-maxDelta, Math.min(maxDelta, delta));
+}
+
+function pickFighterMgTargetX(currentX: number): number {
+  const margin = 160;
+  const minX = margin;
+  const maxX = DESIGN.width - margin;
+  let x = minX + Math.random() * (maxX - minX);
+  if (Math.abs(x - currentX) < 220) {
+    x = currentX < DESIGN.width / 2
+      ? maxX - Math.random() * 280
+      : minX + Math.random() * 280;
+  }
+  return x;
+}
+
+function steerToward(
+  entity: CombatEntity,
+  def: AirplaneDef,
+  targetX: number,
+  targetY: number,
+  speed: number,
+  dt: number,
+): boolean {
+  const dx = targetX - entity.x;
+  const dy = targetY - entity.y;
+  const dist = Math.hypot(dx, dy);
+  if (dist < 40) return true;
+
+  const move = Math.min(dist, speed * dt);
+  entity.x += (dx / dist) * move;
+  entity.y += (dy / dist) * move;
+
+  if (def.drawStyle === 1) {
+    const targetAngle = Math.atan2(dy, dx);
+    const turnRate = def.rotationSpeed * (Math.PI / 180) * TICK_SCALE;
+    entity.sprite.rotation = rotateToward(entity.sprite.rotation, targetAngle, turnRate * dt);
+  }
+  return false;
+}
+
+function tryDropDirectionalWeapon(
+  entity: CombatEntity,
+  def: AirplaneDef,
+  level: LevelPack,
+  weaponIndex: number,
+  ctx: AIUpdateContext,
+): void {
+  const name = def.weapons[weaponIndex];
+  if (!name) return;
+  const bombDef = level.bombs[name];
+  if (!bombDef) return;
+
+  const angle = entity.sprite.rotation;
+  const bulletSpeed = bombDef.speed * TICK_SCALE;
+  const nose = 24;
+  ctx.dropBomb(
+    entity,
+    bombDef,
+    entity.x + Math.cos(angle) * nose,
+    entity.y + Math.sin(angle) * nose,
+    {
+      vx: Math.cos(angle) * bulletSpeed,
+      vy: Math.sin(angle) * bulletSpeed,
+    },
+  );
+}
+
+function rollDirectionalWeaponDrop(
+  entity: CombatEntity,
+  def: AirplaneDef,
+  dt: number,
+  ctx: AIUpdateContext,
+): void {
+  const rand = def.aiParams[2] || 5;
+  if (Math.random() >= dt / (rand / TICK_SCALE)) return;
+  tryDropDirectionalWeapon(entity, def, ctx.level, 0, ctx);
+}
+
+function updateFighterMg(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
+  const [minY, maxY] = def.aiParams;
+  const highY = minY + 80;
+  const lowY = maxY - 40;
+  const speed = def.speed * TICK_SCALE * 1.15;
+
+  if (motion.phase === 0) {
+    if (steerToward(entity, def, motion.targetX, highY, speed, ctx.dt)) {
+      motion.phase = 1;
+      motion.targetX = pickFighterMgTargetX(entity.x);
+    }
+  } else if (motion.phase === 1) {
+    rollDirectionalWeaponDrop(entity, def, ctx.dt, ctx);
+    if (steerToward(entity, def, motion.targetX, lowY, speed * 1.1, ctx.dt)) {
+      motion.phase = 2;
+      motion.targetX = pickFighterMgTargetX(entity.x);
+    }
+  } else if (steerToward(entity, def, motion.targetX, highY, speed, ctx.dt)) {
+    motion.phase = 0;
+    motion.targetX = pickFighterMgTargetX(entity.x);
+  }
 }
 
 function updateHeliSimple(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
@@ -285,6 +405,9 @@ export function updateAirplaneAI(
     case 'FIGHTERSIMPLE':
       updateFighterSimple(entity, motion, def, ctx);
       break;
+    case 'FIGHTERMG':
+      updateFighterMg(entity, motion, def, ctx);
+      break;
     case 'HELISIMPLE':
       updateHeliSimple(entity, motion, def, ctx);
       break;
@@ -319,13 +442,19 @@ export function createPatrolMotion(
   isEndmaster: boolean,
 ): PatrolMotion {
   const [minY, maxY] = [def.aiParams[0], def.aiParams[1]];
+  const ai = normalizeAI(def.ai);
+  const targetX =
+    ai === 'FIGHTERMG'
+      ? x + (x < DESIGN.width / 2 ? 360 : -360)
+      : x;
   return {
     kind: 'patrol',
-    ai: normalizeAI(def.ai),
+    ai,
     dir: x < DESIGN.width / 2 ? 1 : -1,
+    targetX,
     targetY: minY + Math.random() * Math.max(1, maxY - minY),
     bombTimer: 0,
-    phase: 0,
+    phase: ai === 'FIGHTERMG' ? 1 : 0,
     phaseT: 0,
     altChanges: 0,
     spawnIndex,

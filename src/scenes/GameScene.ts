@@ -18,6 +18,7 @@ import {
 import { PlayerManager } from '../multiplayer/PlayerManager';
 import type { InputSystem } from '../input/InputSystem';
 import { PlayerSlot } from '../multiplayer/PlayerSlot';
+import { CloudLayer } from '../systems/CloudLayer';
 import { WeatherLayer } from '../systems/WeatherLayer';
 import { NightVisionLayer } from '../systems/NightVisionLayer';
 import { ExplosionManager } from '../systems/ExplosionManager';
@@ -109,6 +110,7 @@ export class GameScene extends Container implements MenuActionsHost {
   private sessionInitialized = false;
 
   private bgLayer = new Container();
+  private cloudLayer = new CloudLayer();
   private weatherLayer = new WeatherLayer();
   private trailLayer = new Container();
   private nightVisionLayer = new NightVisionLayer();
@@ -180,10 +182,12 @@ export class GameScene extends Container implements MenuActionsHost {
     this.groundEntityLayer.eventMode = 'none';
     this.worldLayer.addChild(
       this.bgLayer,
+      this.cloudLayer.backLayer,
       this.weatherLayer,
       this.trailLayer,
       this.entityLayer,
       this.fxLayer,
+      this.cloudLayer.frontLayer,
       this.groundLayer,
       this.groundEntityLayer,
       this.nightVisionLayer,
@@ -302,6 +306,7 @@ export class GameScene extends Container implements MenuActionsHost {
   }
 
   private applyRoundWeather(): void {
+    this.cloudLayer.setWeather(this.round.weather);
     this.weatherLayer.setWeather(this.round.weather);
   }
 
@@ -340,8 +345,22 @@ export class GameScene extends Container implements MenuActionsHost {
         rumble: 'plane' | 'explosion' | 'none',
         hurtsCivilians = true,
       ) => this.handleGroundExplosion(x, y, range, damage, explosionType, rumble, hurtsCivilians),
-      onDropBomb: (_parent: CombatEntity, bombDef: BombDef, x: number, y: number) => {
-        void this.entities.spawnFallingBomb(bombDef, x, y, (p) => this.tex(p), this.entityLayer);
+      onDropBomb: (
+        _parent: CombatEntity,
+        bombDef: BombDef,
+        x: number,
+        y: number,
+        velocity?: { vx: number; vy: number },
+      ) => {
+        void this.entities.spawnFallingBomb(
+          bombDef,
+          x,
+          y,
+          (p) => this.tex(p),
+          this.entityLayer,
+          0,
+          velocity,
+        );
       },
       onSkyBomb: (bombDef: BombDef, x: number) => {
         void this.entities.spawnFallingBomb(bombDef, x, -40, (p) => this.tex(p), this.entityLayer);
@@ -1035,6 +1054,7 @@ export class GameScene extends Container implements MenuActionsHost {
     );
 
     this.updateRumble(dt);
+    this.cloudLayer.update(dt);
     this.weatherLayer.update(dt);
     this.nightVisionLayer.update(
       this.round.weather[4] ?? 0,
@@ -1269,6 +1289,7 @@ export class GameScene extends Container implements MenuActionsHost {
     } else if (wasAlive) {
       this.entityHpBars.notifyCivilianHit(c);
       this.levelAudio.playCivilianHit();
+      this.spawnCivilianBloodFx(c, damage, source, true);
     }
   }
 
@@ -1305,6 +1326,22 @@ export class GameScene extends Container implements MenuActionsHost {
     };
   }
 
+  private spawnCivilianBloodFx(
+    c: Civilian,
+    damage: number,
+    source?: CivilianDamageSource,
+    wound = false,
+  ): void {
+    this.particleFx.spawnCivilianBlood(c.x, 0, {
+      damage,
+      explosionType: source?.explosionType,
+      explosionRange: source?.explosionRange,
+      spawnArea: this.civilianBloodSpawnArea(c),
+      hitFrom: source?.hitFrom,
+      wound,
+    });
+  }
+
   private killCivilian(
     c: Civilian,
     killingDamage = 0,
@@ -1312,13 +1349,7 @@ export class GameScene extends Container implements MenuActionsHost {
   ): void {
     c.alive = false;
     c.sprite.visible = false;
-    this.particleFx.spawnCivilianBlood(c.x, 0, {
-      damage: killingDamage,
-      explosionType: source?.explosionType,
-      explosionRange: source?.explosionRange,
-      spawnArea: this.civilianBloodSpawnArea(c),
-      hitFrom: source?.hitFrom,
-    });
+    this.spawnCivilianBloodFx(c, killingDamage, source);
     this.levelAudio.playCivilianDeath();
     this.session.resetHumanPrice();
     if (!this.civilians.some((h) => h.alive)) {
