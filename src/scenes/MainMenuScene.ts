@@ -13,7 +13,7 @@ import { kewlBlockGap, kewlLineHeight, kewlMeasuredSize, kewlTextLeftInset, UI_T
 
 const LOGO_PATH = 'assets/gfx/logo.png';
 const LOGO_HEIGHT = 200;
-const FOOTER_MARGIN = 0;
+const FOOTER_MARGIN = 21;
 const FOOTER_FONT_SIZE = 21;
 const CREDIT_URL = 'https://feuerware.com';
 
@@ -104,7 +104,7 @@ export class MainMenuScene extends Container implements MenuActionsHost {
       ),
     );
 
-    const creditText = 'Feuerware 2026';
+    const creditText = 'Feuerware';
     const creditW = kewlMeasuredSize(creditText, FOOTER_FONT_SIZE).width;
     this.addChild(
       this.makeFooterLink(
