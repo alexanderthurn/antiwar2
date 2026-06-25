@@ -7,12 +7,35 @@ import { sliceParticleSheet } from './sliceParticleSheet';
 
 const SHEET_COLS = 4;
 const SHEET_ROWS = 4;
+const BLOOD_FRAME_START = 0;
+const BLOOD_FRAME_COUNT = 4;
 const FIRE_FRAME_START = 0;
 const FIRE_FRAME_COUNT = 4;
 const CLOUD_FRAME_START = 4;
 const CLOUD_FRAME_COUNT = 8;
+const BLOOD_PARTICLE_SCALE = 2;
 
-type PoolId = 'trailSmoke' | 'fxSmoke' | 'fxFire';
+export interface CivilianBloodOpts {
+  damage: number;
+  explosionType?: number;
+  explosionRange?: number;
+  /** Cheat / test tier (0–6) — bypasses global budget and uses dramatic per-tier counts. */
+  intensityTier?: number;
+}
+
+/** Particle count per cheat tier — wide spread so each step is obvious. */
+const CHEAT_BLOOD_COUNTS: Record<EffectQuality, number[]> = {
+  low: [0, 0, 0, 0, 0, 0, 0],
+  normal: [5, 16, 38, 80, 140, 220, 320],
+  high: [8, 24, 58, 120, 210, 340, 480],
+  ultra: [10, 32, 78, 160, 280, 450, 650],
+};
+
+const CHEAT_BLOOD_SCALE_MUL = [1, 1.15, 1.35, 1.6, 2, 2.6, 3.4];
+const CHEAT_BLOOD_SPEED_MUL = [1, 1.2, 1.45, 1.75, 2.2, 2.9, 3.8];
+const CHEAT_BLOOD_SPREAD_MUL = [1, 1.2, 1.5, 1.9, 2.4, 3.2, 4.5];
+
+type PoolId = 'trailSmoke' | 'fxSmoke' | 'fxFire' | 'fxBlood';
 
 interface LiveParticle {
   pool: PoolId;
@@ -77,6 +100,7 @@ const POOL_BLEND: Record<PoolId, 'normal' | 'add'> = {
   trailSmoke: 'normal',
   fxSmoke: 'normal',
   fxFire: 'add',
+  fxBlood: 'normal',
 };
 
 interface EntityBuckets {
@@ -100,6 +124,7 @@ export class ParticleFxManager {
 
   private cloudFrames: Texture[] = [];
   private fireFrames: Texture[] = [];
+  private bloodFrames: Texture[] = [];
   private readonly trailEmitters = new Map<number, TrailEmitter>();
   private readonly groundFires: GroundFireEmitter[] = [];
   private trailLayer: Container | null = null;
@@ -108,7 +133,7 @@ export class ParticleFxManager {
   private quality: EffectQuality = 'normal';
 
   constructor() {
-    for (const id of ['trailSmoke', 'fxSmoke', 'fxFire'] as const) {
+    for (const id of ['trailSmoke', 'fxSmoke', 'fxFire', 'fxBlood'] as const) {
       const container = new ParticleContainer({
         dynamicProperties: {
           position: true,
@@ -133,6 +158,13 @@ export class ParticleFxManager {
   async load(): Promise<void> {
     if (this.loaded) return;
     const sheet = await loadTexture('assets/gfx/particle.png');
+    this.bloodFrames = sliceParticleSheet(
+      sheet,
+      SHEET_COLS,
+      SHEET_ROWS,
+      BLOOD_FRAME_START,
+      BLOOD_FRAME_COUNT,
+    );
     this.fireFrames = sliceParticleSheet(
       sheet,
       SHEET_COLS,
@@ -161,8 +193,10 @@ export class ParticleFxManager {
 
     const fxSmoke = this.pools.get('fxSmoke')!.container;
     const fxFire = this.pools.get('fxFire')!.container;
+    const fxBlood = this.pools.get('fxBlood')!.container;
     if (!fxSmoke.parent) this.fxRoot.addChild(fxSmoke);
     if (!fxFire.parent) this.fxRoot.addChild(fxFire);
+    if (!fxBlood.parent) this.fxRoot.addChild(fxBlood);
   }
 
   clear(): void {
@@ -173,6 +207,14 @@ export class ParticleFxManager {
     }
     this.trailEmitters.clear();
     this.groundFires.length = 0;
+  }
+
+  clearBlood(): void {
+    const pool = this.pools.get('fxBlood');
+    if (!pool) return;
+    for (const entry of pool.live) this.recycle(entry);
+    pool.live.length = 0;
+    pool.container.update();
   }
 
   update(dt: number, buckets: EntityBuckets): void {
@@ -325,6 +367,125 @@ export class ParticleFxManager {
 
     this.burstFire(x, y, scale * mul, 8);
     this.ringSmoke(x, y, radius, scale * mul, 0xf0f4ff, 12);
+  }
+
+  /** Blood spray when a civilian dies — intensity scales with damage source and graphics quality. */
+  spawnCivilianBlood(x: number, y: number, opts: CivilianBloodOpts): void {
+    const profile = QUALITY[this.quality];
+    if (!profile || this.bloodFrames.length === 0) return;
+
+    const cheatTier = opts.intensityTier;
+    const cheatMode = cheatTier != null;
+    const tierIndex = cheatMode ? Math.max(0, Math.min(6, cheatTier)) : 0;
+
+    const count = this.bloodParticleCount(opts, profile);
+    const allowOverflow = count > 24;
+    const extreme = cheatMode ? tierIndex >= 4 : count >= 60;
+    const scaleMul = cheatMode ? (CHEAT_BLOOD_SCALE_MUL[tierIndex] ?? 1) : 1;
+    const speedMul = cheatMode ? (CHEAT_BLOOD_SPEED_MUL[tierIndex] ?? 1) : 1;
+    const spreadMul = cheatMode ? (CHEAT_BLOOD_SPREAD_MUL[tierIndex] ?? 1) : 1;
+
+    for (let i = 0; i < count; i++) {
+      if (!cheatMode && !this.canSpawnBlood(allowOverflow, count)) break;
+
+      const angle = Math.random() * Math.PI * 2;
+      const speed =
+        ((extreme ? 70 : 40) +
+          Math.random() * (extreme ? 160 : 90) +
+          Math.min(opts.damage, 800) * 0.04) *
+        speedMul;
+      const upward = extreme ? 0.35 + Math.random() * 0.55 : 0.15 + Math.random() * 0.45;
+      const spreadX = (extreme ? 28 : 14) * spreadMul;
+      const spreadY = (extreme ? 20 : 10) * spreadMul;
+
+      this.pushBlood(
+        {
+          x: x + (Math.random() - 0.5) * spreadX,
+          y: y + (Math.random() - 0.5) * spreadY,
+          vx: Math.cos(angle) * speed * (1 - upward * 0.35),
+          vy: Math.sin(angle) * speed - (40 + Math.random() * (extreme ? 120 : 60)) * speedMul,
+          life: (extreme ? 0.55 : 0.35) + Math.random() * (extreme ? 0.7 : 0.45),
+          scale:
+            ((extreme ? 0.14 : 0.08) + Math.random() * (extreme ? 0.2 : 0.12)) *
+            BLOOD_PARTICLE_SCALE *
+            scaleMul,
+          grow: (extreme ? 0.04 : 0.02) * BLOOD_PARTICLE_SCALE * scaleMul,
+          tint: this.pickBloodTint(),
+          peakAlpha: 0.82 + Math.random() * 0.15,
+          gravity: (extreme ? 420 : 300) * (cheatMode ? 0.85 + tierIndex * 0.05 : 1),
+        },
+        cheatMode,
+      );
+    }
+
+    if (extreme) {
+      const extra = Math.round(count * (cheatMode ? 0.45 : 0.35));
+      for (let i = 0; i < extra; i++) {
+        if (!cheatMode && !this.canSpawnBlood(true, count)) break;
+        const angle = Math.random() * Math.PI * 2;
+        const dist = (8 + Math.random() * 48) * spreadMul;
+        this.pushBlood(
+          {
+            x: x + Math.cos(angle) * dist,
+            y: y + Math.sin(angle) * dist * 0.25,
+            vx: Math.cos(angle) * (20 + Math.random() * 50) * speedMul,
+            vy: (-10 - Math.random() * 40) * speedMul,
+            life: 0.25 + Math.random() * 0.35,
+            scale: (0.06 + Math.random() * 0.1) * BLOOD_PARTICLE_SCALE * scaleMul,
+            grow: 0.03 * BLOOD_PARTICLE_SCALE * scaleMul,
+            tint: this.pickBloodTint(),
+            peakAlpha: 0.75,
+            gravity: 360,
+          },
+          cheatMode,
+        );
+      }
+    }
+  }
+
+  private bloodParticleCount(opts: CivilianBloodOpts, profile: QualityProfile): number {
+    if (opts.intensityTier != null) {
+      const tier = Math.max(0, Math.min(6, opts.intensityTier));
+      return CHEAT_BLOOD_COUNTS[this.quality][tier] ?? CHEAT_BLOOD_COUNTS.normal[tier] ?? 5;
+    }
+
+    const { damage, explosionType = 0, explosionRange = 0 } = opts;
+    const qualityMul =
+      profile.budget >= 320 ? 2.6 : profile.budget >= 240 ? 1.85 : profile.budget >= 130 ? 1 : 0.6;
+
+    let base = 3;
+    if (damage >= 2000) base = 72;
+    else if (damage >= 800) base = 48;
+    else if (damage >= 300) base = 30;
+    else if (damage >= 120) base = 18;
+    else if (damage >= 50) base = 10;
+    else if (damage >= 20) base = 6;
+
+    if (explosionType === 3) base *= 2.8;
+    else if (explosionType === 4) base *= 2;
+    else if (explosionType === 2) base *= 1.4;
+
+    if (explosionRange >= 140) base *= 1.5;
+    else if (explosionRange >= 80) base *= 1.2;
+
+    return Math.max(2, Math.round(base * qualityMul));
+  }
+
+  private canSpawnBlood(allowOverflow: boolean, requested: number): boolean {
+    if (!allowOverflow) return this.hasBudget();
+
+    const profile = QUALITY[this.quality];
+    if (!profile) return false;
+
+    let total = 0;
+    for (const pool of this.pools.values()) total += pool.live.length;
+    const ceiling = profile.budget + Math.min(requested, Math.round(profile.budget * 0.85));
+    return total < ceiling;
+  }
+
+  private pickBloodTint(): number {
+    const tints = [0xff1a1a, 0xee1111, 0xcc0000, 0xff3333, 0xaa0000, 0xff4444];
+    return tints[Math.floor(Math.random() * tints.length)] ?? 0xee1111;
   }
 
   private syncTrailEmitters(
@@ -593,6 +754,26 @@ export class ParticleFxManager {
     }
   }
 
+  private pushBlood(
+    opts: {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      life: number;
+      scale: number;
+      grow: number;
+      tint: number;
+      peakAlpha: number;
+      gravity: number;
+    },
+    bypassBudget = false,
+  ): void {
+    const frame = this.pickBloodFrame();
+    if (!frame) return;
+    this.pushParticle('fxBlood', frame, opts, bypassBudget);
+  }
+
   private pushSmoke(
     poolId: 'trailSmoke' | 'fxSmoke',
     opts: {
@@ -648,8 +829,9 @@ export class ParticleFxManager {
       peakAlpha: number;
       gravity: number;
     },
+    bypassBudget = false,
   ): void {
-    if (!this.hasBudget()) return;
+    if (!bypassBudget && !this.hasBudget()) return;
 
     const particle = this.acquire(poolId, texture);
     particle.x = opts.x;
@@ -720,6 +902,11 @@ export class ParticleFxManager {
   private pickFireFrame(): Texture | null {
     if (this.fireFrames.length === 0) return null;
     return this.fireFrames[Math.floor(Math.random() * this.fireFrames.length)] ?? null;
+  }
+
+  private pickBloodFrame(): Texture | null {
+    if (this.bloodFrames.length === 0) return null;
+    return this.bloodFrames[Math.floor(Math.random() * this.bloodFrames.length)] ?? null;
   }
 
   private acquire(poolId: PoolId, texture: Texture): Particle {

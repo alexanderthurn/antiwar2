@@ -358,6 +358,12 @@ export class App {
         }
         return;
       }
+      if (e.key === '+' || e.key === '=') {
+        if (this.mode === 'game' && this.game) {
+          this.game.cheatKillCivilians();
+        }
+        return;
+      }
     });
   }
 }

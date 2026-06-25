@@ -388,7 +388,7 @@ export class GameScene extends Container implements MenuActionsHost {
     explosionType: number,
     rumble: 'plane' | 'explosion' | 'none',
   ): void {
-    this.damageCiviliansAt(x, GROUND_FEET_Y, range, damage);
+    this.damageCiviliansAt(x, GROUND_FEET_Y, range, damage, explosionType);
     this.explosionManager.spawn(x, y, explosionType, range);
     this.particleFx.spawnExplosion(x, y, explosionType, range);
     this.levelAudio.playExplosion(explosionType);
@@ -557,10 +557,10 @@ export class GameScene extends Container implements MenuActionsHost {
     }
   }
 
-  private async spawnOneCivilian(x: number): Promise<void> {
-    const dir: 1 | -1 = Math.random() < 0.5 ? -1 : 1;
+  private spawnCivilianAt(x: number, dir: 1 | -1 = Math.random() < 0.5 ? -1 : 1): void {
     const sprite = new Sprite(Texture.EMPTY);
     this.placeHuman(sprite, x, dir);
+    sprite.visible = true;
     this.entityLayer.addChild(sprite);
 
     this.civilians.push({
@@ -573,6 +573,40 @@ export class GameScene extends Container implements MenuActionsHost {
       alive: true,
       walkDist: 0,
     });
+  }
+
+  private async spawnOneCivilian(x: number): Promise<void> {
+    this.spawnCivilianAt(x);
+  }
+
+  private purgeDeadCivilians(): void {
+    for (let i = this.civilians.length - 1; i >= 0; i--) {
+      const c = this.civilians[i]!;
+      if (c.alive) continue;
+      c.sprite.destroy();
+      this.civilians.splice(i, 1);
+    }
+  }
+
+  private aliveCivilianCount(): number {
+    return this.civilians.filter((c) => c.alive).length;
+  }
+
+  private ensureCheatCivilians(target = 7): void {
+    this.purgeDeadCivilians();
+
+    for (const c of this.civilians) {
+      if (!c.alive) continue;
+      c.sprite.visible = true;
+      c.hp = c.maxHp;
+    }
+
+    const alive = this.aliveCivilianCount();
+    for (let i = alive; i < target; i++) {
+      const x = CIVILIAN_MIN_X + ((CIVILIAN_MAX_X - CIVILIAN_MIN_X) * (i + 0.5)) / target;
+      const dir: 1 | -1 = i % 2 === 0 ? 1 : -1;
+      this.spawnCivilianAt(x, dir);
+    }
   }
 
   private refreshCivilianHp(): void {
@@ -1070,32 +1104,53 @@ export class GameScene extends Container implements MenuActionsHost {
     };
   }
 
-  private applyCivilianDamage(c: Civilian, damage: number): void {
+  private applyCivilianDamage(
+    c: Civilian,
+    damage: number,
+    source?: { explosionType?: number; explosionRange?: number },
+  ): void {
     if (!c.alive || damage <= 0) return;
     const wasAlive = c.hp > 0;
     c.hp -= damage;
     if (c.hp <= 0) {
-      this.killCivilian(c);
+      this.killCivilian(c, damage, source);
     } else if (wasAlive) {
       this.entityHpBars.notifyCivilianHit(c);
       this.levelAudio.playCivilianHit();
     }
   }
 
-  private damageCiviliansAt(x: number, y: number, radius: number, damage: number): void {
+  private damageCiviliansAt(
+    x: number,
+    y: number,
+    radius: number,
+    damage: number,
+    explosionType = 0,
+  ): void {
     const r2 = radius * radius;
+    const source = { explosionType, explosionRange: radius };
     for (const c of this.civilians) {
       if (!c.alive) continue;
       const dx = c.x - x;
       const dy = (GROUND_FEET_Y - 20) - y;
       if (dx * dx + dy * dy > r2) continue;
-      this.applyCivilianDamage(c, damage);
+      this.applyCivilianDamage(c, damage, source);
     }
   }
 
-  private killCivilian(c: Civilian): void {
+  private killCivilian(
+    c: Civilian,
+    killingDamage = 0,
+    source?: { explosionType?: number; explosionRange?: number },
+  ): void {
     c.alive = false;
     c.sprite.visible = false;
+    const bloodY = GROUND_FEET_Y - c.sprite.height * 0.55;
+    this.particleFx.spawnCivilianBlood(c.x, bloodY, {
+      damage: killingDamage,
+      explosionType: source?.explosionType,
+      explosionRange: source?.explosionRange,
+    });
     this.levelAudio.playCivilianDeath();
     this.session.resetHumanPrice();
     if (!this.civilians.some((h) => h.alive)) {
@@ -1267,6 +1322,18 @@ export class GameScene extends Container implements MenuActionsHost {
     return this.phase === 'shop' || this.phase === 'levelComplete';
   }
 
+  private cheatCivilianDamageTier = 0;
+
+  private static readonly CHEAT_CIVILIAN_DAMAGE_TIERS = [
+    { damage: 10, explosionType: 0, explosionRange: 0 },
+    { damage: 50, explosionType: 0, explosionRange: 0 },
+    { damage: 100, explosionType: 1, explosionRange: 40 },
+    { damage: 250, explosionType: 1, explosionRange: 80 },
+    { damage: 800, explosionType: 1, explosionRange: 120 },
+    { damage: 2000, explosionType: 3, explosionRange: 160 },
+    { damage: 5000, explosionType: 3, explosionRange: 200 },
+  ] as const;
+
   isGameOver(): boolean {
     return this.phase === 'gameOver';
   }
@@ -1282,5 +1349,41 @@ export class GameScene extends Container implements MenuActionsHost {
       { loadTex: (p) => this.tex(p), layer: this.entityLayer },
       this.entityCallbacks(),
     );
+  }
+
+  cheatKillCivilians(): void {
+    if (this.phase !== 'playing') return;
+
+    this.purgeDeadCivilians();
+    if (this.aliveCivilianCount() < 7) {
+      this.ensureCheatCivilians(7);
+      return;
+    }
+
+    const tierIndex =
+      this.cheatCivilianDamageTier % GameScene.CHEAT_CIVILIAN_DAMAGE_TIERS.length;
+    const tier = GameScene.CHEAT_CIVILIAN_DAMAGE_TIERS[tierIndex]!;
+    this.cheatCivilianDamageTier += 1;
+
+    this.particleFx.clearBlood();
+
+    let killed = 0;
+    for (const c of this.civilians) {
+      if (!c.alive) continue;
+      c.alive = false;
+      c.sprite.visible = false;
+      const bloodY = GROUND_FEET_Y - c.sprite.height * 0.55;
+      this.particleFx.spawnCivilianBlood(c.x, bloodY, {
+        damage: tier.damage,
+        explosionType: tier.explosionType,
+        explosionRange: tier.explosionRange,
+        intensityTier: tierIndex,
+      });
+      killed += 1;
+    }
+
+    if (killed > 0) {
+      this.levelAudio.playCivilianDeath();
+    }
   }
 }
