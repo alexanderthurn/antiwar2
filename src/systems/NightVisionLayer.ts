@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, type Texture } from 'pixi.js';
+import { Container, Sprite, type Texture } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
 import { loadTexture } from '../data/AssetLoader';
 
@@ -8,7 +8,6 @@ const NIGHTSHOT_SIZE_SCALE = 2;
 
 /** v1 night vision — one full-viewport nightshot per crosshair; texture alpha clears the center. */
 export class NightVisionLayer extends Container {
-  private baseDim = new Graphics();
   private shots = new Container();
   private sprites: Sprite[] = [];
   private texture: Texture | null = null;
@@ -17,7 +16,7 @@ export class NightVisionLayer extends Container {
   constructor() {
     super();
     this.eventMode = 'none';
-    this.addChild(this.baseDim, this.shots);
+    this.addChild(this.shots);
     this.visible = false;
     void this.loadNightshot();
   }
@@ -42,32 +41,24 @@ export class NightVisionLayer extends Container {
   }
 
   update(darkness: number, aimPoints: { x: number; y: number }[]): void {
-    if (!this.ready || darkness <= 0) {
+    if (!this.ready || darkness <= 0 || aimPoints.length === 0) {
       this.visible = false;
-      this.baseDim.clear();
       for (const sprite of this.sprites) sprite.visible = false;
       return;
     }
 
     this.visible = true;
+    const alpha = Math.min(1, darkness);
 
-    if (darkness >= 0.4 && aimPoints.length > 0) {
-      this.baseDim.clear();
-      for (let i = 0; i < aimPoints.length; i++) {
-        const { x, y } = aimPoints[i]!;
-        const sprite = this.ensureSprite(i);
-        sprite.position.set(x, y);
-        sprite.alpha = 1;
-        sprite.visible = true;
-      }
-      for (let i = aimPoints.length; i < this.sprites.length; i++) {
-        this.sprites[i]!.visible = false;
-      }
-      return;
+    for (let i = 0; i < aimPoints.length; i++) {
+      const { x, y } = aimPoints[i]!;
+      const sprite = this.ensureSprite(i);
+      sprite.position.set(x, y);
+      sprite.alpha = alpha;
+      sprite.visible = true;
     }
-
-    for (const sprite of this.sprites) sprite.visible = false;
-    this.baseDim.clear();
-    this.baseDim.rect(0, 0, DESIGN.width, DESIGN.height).fill({ color: 0x000000, alpha: 1 });
+    for (let i = aimPoints.length; i < this.sprites.length; i++) {
+      this.sprites[i]!.visible = false;
+    }
   }
 }
