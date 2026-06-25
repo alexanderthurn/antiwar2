@@ -9,6 +9,9 @@ export const DESIGN = {
   groundY: 1080 - V1_GROUND_HEIGHT * (1080 / 768),
 } as const;
 
+/** Extra crosshair lift above the finger on touch, in physical centimeters. */
+export const TOUCH_AIM_EXTRA_CM = 1;
+
 /** Effects and physics stop at this Y (top of ground strip). */
 export const GROUND_SURFACE_Y = DESIGN.groundY;
 export const TOWER = {

@@ -1,4 +1,4 @@
-import { DESIGN } from '../core/DesignSpace';
+import { DESIGN, TOUCH_AIM_EXTRA_CM } from '../core/DesignSpace';
 import { screenToDesign, stickToDesign, type ViewportLayout } from '../core/Viewport';
 import { pollGamepads } from '../multiplayer/GamepadInput';
 import type { PlayerManager } from '../multiplayer/PlayerManager';
@@ -161,14 +161,15 @@ export class InputSystem {
     if (inGame) slot.setAim(x, y);
   }
 
-  /** Touch aim — crosshair sits above the finger by one ground-strip height. */
+  /** Touch aim — crosshair sits above the finger by ground height plus a physical cm offset. */
   applyTouchPointerMove(players: PlayerManager, stageX: number, stageY: number): void {
     if (!this.layout || this.mode !== 'combat') return;
     const slot = this.pointerSlot(players);
     if (!slot) return;
     const { x, y, inGame } = screenToDesign(stageX, stageY, this.layout);
     if (!inGame) return;
-    slot.setAim(x, Math.max(0, y - DESIGN.groundHeight));
+    const offsetY = DESIGN.groundHeight + this.layout.designPxPerCm * TOUCH_AIM_EXTRA_CM;
+    slot.setAim(x, Math.max(0, y - offsetY));
   }
 
   setPointerFire(players: PlayerManager, left: boolean, right: boolean): void {

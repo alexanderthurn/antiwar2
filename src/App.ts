@@ -7,7 +7,7 @@ import {
   syncDevUrl,
   type DevGameState,
 } from './core/DevDeepLink';
-import { computeLayout, clientToStage, type ViewportLayout } from './core/Viewport';
+import { computeLayout, clientToStage, enrichLayoutForDisplay, type ViewportLayout } from './core/Viewport';
 import { blurBackdropEnabled } from './core/GraphicsQuality';
 import { settingsStore } from './core/SettingsStore';
 import { watchViewportResize } from './core/ViewportResize';
@@ -38,7 +38,14 @@ type SceneMode = 'menu' | 'campaign' | 'game' | 'credits';
 export class App {
   private readonly gameRoot = new Container();
   private readonly viewportMask = new Graphics();
-  private layout: ViewportLayout = { scale: 1, offsetX: 0, offsetY: 0, gameWidth: 0, gameHeight: 0 };
+  private layout: ViewportLayout = {
+    scale: 1,
+    offsetX: 0,
+    offsetY: 0,
+    gameWidth: 0,
+    gameHeight: 0,
+    designPxPerCm: 0,
+  };
   private mode: SceneMode = 'menu';
   private campaignProgress = new CampaignProgress();
   private game: GameScene | null = null;
@@ -131,7 +138,11 @@ export class App {
       this.pixi.renderer.resize(width, height);
     }
 
-    this.layout = computeLayout(width, height);
+    this.layout = enrichLayoutForDisplay(
+      computeLayout(width, height),
+      this.pixi.canvas,
+      height,
+    );
     this.gameRoot.scale.set(this.layout.scale);
     this.gameRoot.position.set(this.layout.offsetX, this.layout.offsetY);
     this.blurBackdrop.sync(width, height);
