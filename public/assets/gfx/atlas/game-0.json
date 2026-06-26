@@ -80,6 +80,38 @@
 	"spriteSourceSize": {"x":2,"y":1,"w":506,"h":194},
 	"sourceSize": {"w":510,"h":195}
 },
+"AIRPLANES/dragi.png":
+{
+	"frame": {"x":1763,"y":369,"w":255,"h":254},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":0,"w":255,"h":254},
+	"sourceSize": {"w":256,"h":256}
+},
+"AIRPLANES/dragi2.png":
+{
+	"frame": {"x":1763,"y":195,"w":256,"h":172},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":256,"h":172},
+	"sourceSize": {"w":256,"h":172}
+},
+"AIRPLANES/dragi3.png":
+{
+	"frame": {"x":1623,"y":1230,"w":191,"h":237},
+	"rotated": true,
+	"trimmed": true,
+	"spriteSourceSize": {"x":9,"y":7,"w":191,"h":237},
+	"sourceSize": {"w":206,"h":256}
+},
+"AIRPLANES/dragi4.png":
+{
+	"frame": {"x":1849,"y":1466,"w":198,"h":181},
+	"rotated": true,
+	"trimmed": true,
+	"spriteSourceSize": {"x":18,"y":18,"w":198,"h":181},
+	"sourceSize": {"w":256,"h":206}
+},
 "AIRPLANES/endmaster_baron.png":
 {
 	"frame": {"x":1,"y":1261,"w":541,"h":240},
@@ -191,38 +223,6 @@
 	"trimmed": true,
 	"spriteSourceSize": {"x":13,"y":0,"w":188,"h":36},
 	"sourceSize": {"w":219,"h":41}
-},
-"AIRPLANES/schnappi.png":
-{
-	"frame": {"x":1763,"y":369,"w":255,"h":254},
-	"rotated": false,
-	"trimmed": true,
-	"spriteSourceSize": {"x":0,"y":0,"w":255,"h":254},
-	"sourceSize": {"w":256,"h":256}
-},
-"AIRPLANES/schnappi2.png":
-{
-	"frame": {"x":1763,"y":195,"w":256,"h":172},
-	"rotated": false,
-	"trimmed": false,
-	"spriteSourceSize": {"x":0,"y":0,"w":256,"h":172},
-	"sourceSize": {"w":256,"h":172}
-},
-"AIRPLANES/schnappi3.png":
-{
-	"frame": {"x":1623,"y":1230,"w":191,"h":237},
-	"rotated": true,
-	"trimmed": true,
-	"spriteSourceSize": {"x":9,"y":7,"w":191,"h":237},
-	"sourceSize": {"w":206,"h":256}
-},
-"AIRPLANES/schnappi4.png":
-{
-	"frame": {"x":1849,"y":1466,"w":198,"h":181},
-	"rotated": true,
-	"trimmed": true,
-	"spriteSourceSize": {"x":18,"y":18,"w":198,"h":181},
-	"sourceSize": {"w":256,"h":206}
 },
 "AIRPLANES/vc_1.PNG":
 {
@@ -670,6 +670,6 @@
 	"size": {"w":2038,"h":2040},
 	"scale": "1",
 	"related_multi_packs": [ "game-1.json" ],
-	"smartupdate": "$TexturePacker:SmartUpdate:002d92da77ea05faacfffc7681976216:48e250558005d16f4e9716c05045085e:f7031ad0edba38445f3f7cafed277efa$"
+	"smartupdate": "$TexturePacker:SmartUpdate:fecd96f73fbdd1390af71017f00b0879:a6539d5eb8a91bb8ef0d983e3e35dd54:f7031ad0edba38445f3f7cafed277efa$"
 }
 }

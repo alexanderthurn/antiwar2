@@ -5,7 +5,7 @@
     "name": "Dragi",
     "author": "Mangoo",
     "description": "Little crocodile wants revenge. Shoot it down!",
-    "thumbnail": "assets/gfx/thumbs/schnappi.png",
+    "thumbnail": "assets/gfx/thumbs/dragi.png",
     "difficulty": "easy"
   },
   "config": {
@@ -152,7 +152,7 @@
         300
       ],
       "drawStyle": 0,
-      "image": "assets/gfx/AIRPLANES/schnappi.png",
+      "image": "assets/gfx/AIRPLANES/dragi.png",
       "scale": [
         0.5,
         0.5
@@ -174,7 +174,7 @@
         50
       ],
       "drawStyle": 1,
-      "image": "assets/gfx/AIRPLANES/schnappi2.png",
+      "image": "assets/gfx/AIRPLANES/dragi2.png",
       "scale": [
         0.5,
         0.5
@@ -196,7 +196,7 @@
         20
       ],
       "drawStyle": 1,
-      "image": "assets/gfx/AIRPLANES/schnappi2.png",
+      "image": "assets/gfx/AIRPLANES/dragi3.png",
       "scale": [
         2,
         2

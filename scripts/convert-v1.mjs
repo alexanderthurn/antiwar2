@@ -70,6 +70,17 @@ function scaleCoord(x, y) {
   return [Math.round(x * X_SCALE), Math.round(y * Y_SCALE)];
 }
 
+function renamePlaneImageFile(filename) {
+  const base = filename.replace(/\\/g, '/').split('/').pop() ?? filename;
+  const map = {
+    'schnappi.png': 'dragi.png',
+    'schnappi2.png': 'dragi2.png',
+    'schnappi3.png': 'dragi3.png',
+    'schnappi4.png': 'dragi4.png',
+  };
+  return map[base.toLowerCase()] ?? base;
+}
+
 function gfxPath(p, kind = 'auto') {
   const n = p.replace(/\\/g, '/');
   if (n.startsWith('assets/')) return n;
@@ -77,7 +88,7 @@ function gfxPath(p, kind = 'auto') {
   if (n.startsWith('AIRPLANES/') || n.startsWith('airplanes/')) return `assets/gfx/${n}`;
   if (n.startsWith('BOMBS/') || n.startsWith('bombs/')) return `assets/gfx/${n}`;
   if (kind === 'bomb') return `assets/gfx/BOMBS/${n}`;
-  if (kind === 'plane') return `assets/gfx/AIRPLANES/${n}`;
+  if (kind === 'plane') return `assets/gfx/AIRPLANES/${renamePlaneImageFile(n)}`;
   if (n.endsWith('.png') || n.endsWith('.jpg') || n.endsWith('.PNG') || n.endsWith('.JPG')) {
     if (n.includes('/')) return `assets/gfx/${n}`;
     return `assets/gfx/backgrounds/${n}`;
@@ -300,7 +311,7 @@ function main() {
       name: 'Dragi',
       author: configFlat.AUTHOR || 'Mangoo',
       description: 'Little crocodile wants revenge. Shoot it down!',
-      thumbnail: gfxPath(configFlat.IMAGE || 'gfx/thumbs/schnappi.png'),
+      thumbnail: gfxPath(configFlat.IMAGE || 'gfx/thumbs/dragi.png'),
       difficulty: 'easy',
     },
     config: packConfig,

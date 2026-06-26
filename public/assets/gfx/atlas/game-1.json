@@ -248,6 +248,14 @@
 	"spriteSourceSize": {"x":0,"y":12,"w":189,"h":185},
 	"sourceSize": {"w":200,"h":200}
 },
+"thumbs/dragi.png":
+{
+	"frame": {"x":1,"y":1,"w":215,"h":211},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":10,"w":215,"h":211},
+	"sourceSize": {"w":225,"h":225}
+},
 "thumbs/fish.png":
 {
 	"frame": {"x":1,"y":607,"w":190,"h":190},
@@ -280,14 +288,6 @@
 	"spriteSourceSize": {"x":0,"y":4,"w":194,"h":194},
 	"sourceSize": {"w":200,"h":200}
 },
-"thumbs/schnappi.png":
-{
-	"frame": {"x":1,"y":1,"w":215,"h":211},
-	"rotated": false,
-	"trimmed": true,
-	"spriteSourceSize": {"x":0,"y":10,"w":215,"h":211},
-	"sourceSize": {"w":225,"h":225}
-},
 "thumbs/viech.png":
 {
 	"frame": {"x":202,"y":290,"w":176,"h":172},
@@ -312,6 +312,6 @@
 	"size": {"w":504,"h":1522},
 	"scale": "1",
 	"related_multi_packs": [ "game-0.json" ],
-	"smartupdate": "$TexturePacker:SmartUpdate:002d92da77ea05faacfffc7681976216:48e250558005d16f4e9716c05045085e:f7031ad0edba38445f3f7cafed277efa$"
+	"smartupdate": "$TexturePacker:SmartUpdate:fecd96f73fbdd1390af71017f00b0879:a6539d5eb8a91bb8ef0d983e3e35dd54:f7031ad0edba38445f3f7cafed277efa$"
 }
 }
