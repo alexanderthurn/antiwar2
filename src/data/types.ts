@@ -19,6 +19,17 @@ export interface BombDef {
   trail: number;
   checkOutOfScreen: boolean;
   onDeath?: { bomb: string; count: number };
+  /** v1 IS_FEEDER — civilian knockback on nearby blast. */
+  feeder?: number;
+}
+
+export interface StoryLimits {
+  maxTime?: number;
+  maxRoundTime?: number;
+  maxRockets?: number;
+  maxRoundRockets?: number;
+  maxHumanDeaths?: number;
+  minMoney?: number;
 }
 
 export interface AirplaneDef {
@@ -65,6 +76,7 @@ export interface RoundDef {
   maxAirplanes: number;
   endmaster: number;
   rumble?: number;
+  storyLimits?: Partial<StoryLimits>;
   spawns: SpawnDef[];
 }
 
@@ -83,6 +95,9 @@ export interface LevelConfig {
   humanHpRefresh: number;
   moneyFactor: number;
   crashingRockets?: number;
+  /** v1 BLOODY — blood FX intensity multiplier (default 1). */
+  bloody?: number;
+  storyLimits?: StoryLimits;
   assets: Record<string, string>;
   sounds?: Partial<LevelSoundsConfig>;
   buttonsDisabled?: Partial<Record<string, boolean>>;
@@ -109,7 +124,13 @@ export interface CampaignIndex {
   schemaVersion: number;
   campaignName: string;
   mapImage: string;
-  levels: Array<{ file: string; name: string; mapX: number; mapY: number; pathType: number }>;
+  levels: Array<{
+    file: string;
+    name: string;
+    mapX: number;
+    mapY: number;
+    pathType: number;
+  }>;
 }
 
 export async function loadLevelPack(file: string): Promise<LevelPack> {

@@ -1,6 +1,8 @@
 import { Container, Sprite, type Texture, BitmapText } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
 import { kewlText } from './KewlFont';
+import type { StoryLimits } from '../data/types';
+import { hasActiveStoryLimits } from '../data/RoundSettings';
 
 const PAD_X = 24;
 const PAD_Y = 16;
@@ -27,6 +29,7 @@ export class GameHud extends Container {
   private readonly rocketSprites: Sprite[] = [];
   private readonly timeText: BitmapText;
   private readonly moneyText: BitmapText;
+  private readonly limitsText: BitmapText;
 
   constructor(private readonly rocketTex: Texture) {
     super();
@@ -54,12 +57,50 @@ export class GameHud extends Container {
     });
     this.moneyText.position.set(DESIGN.width - PAD_X, ROW_Y);
     this.addChild(this.moneyText);
+
+    this.limitsText = kewlText({
+      text: '',
+      size: 18,
+      align: 'center',
+      anchorX: 0.5,
+      anchorY: 0.5,
+    });
+    this.limitsText.position.set(DESIGN.width / 2, ROW_Y + 28);
+    this.limitsText.visible = false;
+    this.addChild(this.limitsText);
   }
 
-  refresh(availableRockets: number, money: number, elapsedSec: number): void {
+  refresh(
+    availableRockets: number,
+    money: number,
+    elapsedSec: number,
+    limits?: StoryLimits,
+    limitState?: { roundRocketsFired: number; roundElapsedMs: number },
+  ): void {
     this.syncRockets(availableRockets);
     this.timeText.text = formatElapsed(elapsedSec);
     this.moneyText.text = `$${Math.floor(money)}`;
+    this.refreshLimits(limits, limitState);
+  }
+
+  private refreshLimits(
+    limits?: StoryLimits,
+    state?: { roundRocketsFired: number; roundElapsedMs: number },
+  ): void {
+    if (!limits || !state || !hasActiveStoryLimits(limits)) {
+      this.limitsText.visible = false;
+      return;
+    }
+    const parts: string[] = [];
+    if (limits.maxRoundRockets !== undefined && limits.maxRoundRockets >= 0) {
+      parts.push(`Rockets ${state.roundRocketsFired}/${limits.maxRoundRockets}`);
+    }
+    if (limits.maxRoundTime !== undefined && limits.maxRoundTime >= 0) {
+      const left = Math.max(0, limits.maxRoundTime - state.roundElapsedMs);
+      parts.push(`Time ${(left / 1000).toFixed(1)}s`);
+    }
+    this.limitsText.text = parts.join(' · ');
+    this.limitsText.visible = parts.length > 0;
   }
 
   private syncRockets(count: number): void {

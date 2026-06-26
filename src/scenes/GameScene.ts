@@ -5,13 +5,19 @@ import { DESIGN, V1_SPRITES, towerXForSlot } from '../core/DesignSpace';
 import { effectQualityForGraphics } from '../core/GraphicsQuality';
 import { settingsStore } from '../core/SettingsStore';
 import { LevelSession, UPGRADE_KEYS, type UpgradeKey } from '../core/LevelSession';
+import { computeLevelScore, highscoreStore } from '../core/HighscoreStore';
 import { BUY_MACRO_STEP_MS, BUY_MACROS } from '../core/BuyScript';
 import { DEV_DEEP_LINK_ENABLED, type DevGameState } from '../core/DevDeepLink';
 import { loadTexture, preloadRound } from '../data/AssetLoader';
-import { resolveRoundAudio, resolveRoundVisuals } from '../data/RoundSettings';
+import {
+  hasActiveStoryLimits,
+  resolveRoundAudio,
+  resolveRoundVisuals,
+  resolveStoryLimits,
+} from '../data/RoundSettings';
 import { loadCollisionShapes } from '../data/CollisionShapes';
 import { beginCollisionFrame } from '../systems/collision';
-import type { BombDef, LevelPack, RoundDef } from '../data/types';
+import type { BombDef, LevelPack, RoundDef, StoryLimits } from '../data/types';
 import { CombatEntity } from '../entities/CombatEntity';
 import { EntityController } from '../entities/EntityController';
 import {
@@ -67,6 +73,7 @@ const PLAYER_ROCKET_DAMAGE_SCALE_MAX = 2;
 /** Seconds between autofire shots while fire is held (clicks are not limited). */
 const PLAYER_AUTO_FIRE_COOLDOWN_S = 0.5;
 const PLAYER_TOUCH_AUTO_FIRE_COOLDOWN_S = PLAYER_AUTO_FIRE_COOLDOWN_S * 0.5;
+const AUTO_BUY_COOLDOWN_S = 10;
 /** Damage multiplier for rockets fired with an active lock-on target. */
 const LOCK_ON_ROCKET_DAMAGE_FACTOR = 2.0;
 
@@ -82,6 +89,7 @@ interface CivilianDamageSource {
   explosionType?: number;
   explosionRange?: number;
   hitFrom?: { x: number; y: number };
+  feeder?: number;
 }
 
 interface Civilian {
@@ -144,6 +152,12 @@ export class GameScene extends Container implements MenuActionsHost {
   private levelElapsedSec = 0;
   private shopOverlay: ShopOverlay | null = null;
   private buyMacroRunning = false;
+  private autoBuyCooldownLeft = 0;
+  private roundElapsedMs = 0;
+  private levelRocketsFired = 0;
+  private roundRocketsFired = 0;
+  private levelCivilianDeaths = 0;
+  private storyLimits: StoryLimits = {};
   private joinPanel: JoinPanel | null = null;
   private bossHpBar: BossHpBar | null = null;
   private pauseOverlay: PauseOverlay | null = null;
@@ -235,6 +249,8 @@ export class GameScene extends Container implements MenuActionsHost {
 
     this.clearCombat();
     this.levelElapsedSec = 0;
+    this.levelRocketsFired = 0;
+    this.levelCivilianDeaths = 0;
     this.playerRocketTex = await loadTexture(this.level.bombs.BOMB_PLAYER!.image);
     this.humanBaseTex = await loadTexture(pack.config.assets.human ?? 'assets/gfx/human.png');
 
@@ -274,6 +290,9 @@ export class GameScene extends Container implements MenuActionsHost {
       this.round = round;
       this.phase = 'playing';
       this.wonRound = false;
+      this.roundElapsedMs = 0;
+      this.roundRocketsFired = 0;
+      this.storyLimits = resolveStoryLimits(this.level, roundIndex);
       this.rumbleFx.reset();
       this.clearCombat();
       this.closeShop();
@@ -425,7 +444,13 @@ export class GameScene extends Container implements MenuActionsHost {
         if (!def) return;
         const civilian = this.civilians.find((c) => c.id === civilianId);
         if (!civilian?.alive) return;
-        this.applyCivilianDamage(civilian, def.damage, { hitFrom: { x: hitX, y: hitY } });
+        this.applyCivilianDamage(civilian, def.damage, {
+          hitFrom: { x: hitX, y: hitY },
+          feeder: def.feeder,
+        });
+        if (def.feeder && def.feeder > 0) {
+          this.applyFeederKnockback(civilian, hitX, def.feeder);
+        }
       },
     };
   }
@@ -984,6 +1009,14 @@ export class GameScene extends Container implements MenuActionsHost {
 
     if (this.phase === 'playing' || this.phase === 'shop') {
       this.levelElapsedSec += dt;
+      if (this.phase === 'shop') {
+        this.autoBuyCooldownLeft = Math.max(0, this.autoBuyCooldownLeft - dt);
+      }
+    }
+
+    if (this.phase === 'playing') {
+      this.roundElapsedMs += dt * 1000;
+      this.checkStoryLimits();
     }
 
     const menuPhase =
@@ -1057,10 +1090,10 @@ export class GameScene extends Container implements MenuActionsHost {
       const clickRight = isPointer && this.pointerFireEdgeRight;
       if (clickLeft) this.tryFireClick(player, player.leftCannon, 'left');
       if (clickRight) this.tryFireClick(player, player.rightCannon, 'right');
-      if (player.fireLeft && !clickLeft) {
+      if (player.fireLeft && !clickLeft && settingsStore.get().autofireEnabled) {
         this.tryFireAuto(player, player.leftCannon, 'left');
       }
-      if (player.fireRight && !clickRight) {
+      if (player.fireRight && !clickRight && settingsStore.get().autofireEnabled) {
         this.tryFireAuto(player, player.rightCannon, 'right');
       }
     }
@@ -1167,7 +1200,40 @@ export class GameScene extends Container implements MenuActionsHost {
     cannon.rotation = angle;
   }
 
+  private canFireRocket(): boolean {
+    const max = this.storyLimits.maxRoundRockets;
+    if (max !== undefined && max >= 0 && this.roundRocketsFired >= max) return false;
+    const levelMax = this.storyLimits.maxRockets;
+    if (levelMax !== undefined && levelMax >= 0 && this.levelRocketsFired >= levelMax) return false;
+    return true;
+  }
+
+  private checkStoryLimits(): void {
+    if (!hasActiveStoryLimits(this.storyLimits)) return;
+    const limits = this.storyLimits;
+    if (limits.maxRoundTime !== undefined && limits.maxRoundTime >= 0 && this.roundElapsedMs >= limits.maxRoundTime) {
+      this.failStoryLimit('Time up');
+      return;
+    }
+    if (limits.maxTime !== undefined && limits.maxTime >= 0 && this.levelElapsedSec * 1000 >= limits.maxTime) {
+      this.failStoryLimit('Time up');
+      return;
+    }
+    if (limits.minMoney !== undefined && limits.minMoney >= 0 && this.session.money < limits.minMoney) {
+      this.failStoryLimit('Out of money');
+    }
+  }
+
+  private failStoryLimit(reason: string): void {
+    if (this.phase !== 'playing') return;
+    this.phase = 'gameOver';
+    this.clearTransientGameUi();
+    this.levelAudio.playGameOver();
+    this.startEndScreenFx(reason, () => this.onReturnToCampaign?.());
+  }
+
   private tryFireClick(player: PlayerSlot, cannon: Sprite, side: 'left' | 'right'): void {
+    if (!this.canFireRocket()) return;
     if (player.rocketsInFlight >= player.rocketCap) return;
     this.spawnRocket(player, cannon);
     // Holding after the initial click should wait for the autofire interval, not fire again immediately.
@@ -1181,6 +1247,7 @@ export class GameScene extends Container implements MenuActionsHost {
   }
 
   private tryFireAuto(player: PlayerSlot, cannon: Sprite, side: 'left' | 'right'): void {
+    if (!this.canFireRocket()) return;
     const cooldown =
       side === 'left' ? player.autoFireCooldownLeft : player.autoFireCooldownRight;
     if (cooldown > 0) return;
@@ -1237,6 +1304,8 @@ export class GameScene extends Container implements MenuActionsHost {
     this.particleFx.spawnMuzzleFlash(sx, sy, angle, locked);
     this.levelAudio.playShoot();
     player.stats.rocketsFired += 1;
+    this.roundRocketsFired += 1;
+    this.levelRocketsFired += 1;
     player.rocketsInFlight += 1;
   }
 
@@ -1247,6 +1316,13 @@ export class GameScene extends Container implements MenuActionsHost {
       fallingBombs: this.entities.fallingBombs(),
       damagedAirplanes: this.entities.damagedAirplanes(),
     };
+  }
+
+  private applyFeederKnockback(c: Civilian, fromX: number, feeder: number): void {
+    const push = feeder * 12;
+    const dir = c.x >= fromX ? 1 : -1;
+    c.x = Math.max(CIVILIAN_MIN_X, Math.min(CIVILIAN_MAX_X, c.x + dir * push));
+    c.sprite.x = c.x;
   }
 
   private applyCivilianDamage(
@@ -1307,6 +1383,7 @@ export class GameScene extends Container implements MenuActionsHost {
   ): void {
     this.particleFx.spawnCivilianBlood(c.x, 0, {
       damage,
+      bloody: this.level.config.bloody ?? 1,
       explosionType: source?.explosionType,
       explosionRange: source?.explosionRange,
       spawnArea: this.civilianBloodSpawnArea(c),
@@ -1324,6 +1401,12 @@ export class GameScene extends Container implements MenuActionsHost {
     c.sprite.visible = false;
     this.spawnCivilianBloodFx(c, killingDamage, source);
     this.levelAudio.playCivilianDeath();
+    this.levelCivilianDeaths += 1;
+    const maxDeaths = this.storyLimits.maxHumanDeaths;
+    if (maxDeaths !== undefined && maxDeaths >= 0 && this.levelCivilianDeaths > maxDeaths) {
+      this.failStoryLimit('Too many casualties');
+      return;
+    }
     this.session.resetHumanPrice();
     if (!this.civilians.some((h) => h.alive)) {
       this.phase = 'gameOver';
@@ -1367,6 +1450,7 @@ export class GameScene extends Container implements MenuActionsHost {
       this.roundIndex + 1,
       this.level.rounds.length,
       hasMoreRounds,
+      () => this.autoBuyCooldownLeft <= 0,
     );
     this.uiLayer.addChild(this.shopOverlay);
     this.updateHud();
@@ -1406,13 +1490,18 @@ export class GameScene extends Container implements MenuActionsHost {
   }
 
   private autoBuyUpgrades(): void {
+    if (this.autoBuyCooldownLeft > 0) return;
     let purchased = false;
     while (true) {
       const key = this.findCheapestBuyableUpgrade();
       if (!key) break;
       if (this.buyUpgrade(key, false)) purchased = true;
     }
-    if (purchased) this.levelAudio.playPay();
+    if (purchased) {
+      this.levelAudio.playPay();
+      this.autoBuyCooldownLeft = AUTO_BUY_COOLDOWN_S;
+      this.shopOverlay?.refresh(this.session);
+    }
   }
 
   /** v1 buyscript.txt keys 1–9 — shop phase only. */
@@ -1484,6 +1573,8 @@ export class GameScene extends Container implements MenuActionsHost {
     }
     this.onLevelWon?.();
     this.phase = 'levelComplete';
+    const score = computeLevelScore(this.session.money);
+    highscoreStore.tryRecord(this.level.id, score);
     this.closeShop();
     this.clearTransientGameUi();
     this.levelAudio.playLevelWin();
@@ -1572,6 +1663,8 @@ export class GameScene extends Container implements MenuActionsHost {
       this.availableRockets(),
       this.session.money,
       this.levelElapsedSec,
+      this.storyLimits,
+      { roundRocketsFired: this.roundRocketsFired, roundElapsedMs: this.roundElapsedMs },
     );
   }
 

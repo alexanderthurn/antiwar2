@@ -2,12 +2,15 @@ const STORAGE_KEY = 'antiwar2_campaign';
 
 interface SavedCampaign {
   unlockedIndex: number;
+  campaignComplete: boolean;
 }
 
 /** Campaign unlock state — persisted in localStorage across sessions. */
 export class CampaignProgress {
   /** Highest level index the player may start (0-based). */
   unlockedIndex = 0;
+  /** Beat Boss Four (level 13) — unlocks Hardcore in options. */
+  campaignComplete = false;
   /** Level index currently being played. */
   playingIndex = 0;
 
@@ -17,6 +20,7 @@ export class CampaignProgress {
 
   reset(): void {
     this.unlockedIndex = 0;
+    this.campaignComplete = false;
     this.playingIndex = 0;
     this.save();
   }
@@ -31,6 +35,7 @@ export class CampaignProgress {
 
   completeLevel(levelIndex: number): void {
     this.unlockedIndex = Math.max(this.unlockedIndex, levelIndex + 1);
+    if (levelIndex >= 12) this.campaignComplete = true;
     this.save();
   }
 
@@ -44,6 +49,7 @@ export class CampaignProgress {
 
   unlockAll(maxUnlockedIndex: number): void {
     this.unlockedIndex = Math.max(0, maxUnlockedIndex);
+    this.campaignComplete = true;
     this.save();
   }
 
@@ -59,6 +65,7 @@ export class CampaignProgress {
       if (typeof parsed.unlockedIndex === 'number' && parsed.unlockedIndex >= 0) {
         this.unlockedIndex = Math.floor(parsed.unlockedIndex);
       }
+      if (parsed.campaignComplete === true) this.campaignComplete = true;
     } catch {
       // ignore corrupt save
     }
@@ -66,7 +73,10 @@ export class CampaignProgress {
 
   private save(): void {
     try {
-      const data: SavedCampaign = { unlockedIndex: this.unlockedIndex };
+      const data: SavedCampaign = {
+        unlockedIndex: this.unlockedIndex,
+        campaignComplete: this.campaignComplete,
+      };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {
       // ignore quota / private browsing

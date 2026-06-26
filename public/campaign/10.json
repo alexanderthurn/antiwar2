@@ -22,6 +22,7 @@
     "humanHpRefresh": 0.2,
     "moneyFactor": 1,
     "crashingRockets": 2,
+    "bloody": 5,
     "buttonsDisabled": {
       "human": false,
       "humanHp": false,

@@ -1,9 +1,18 @@
 import { DESIGN } from '../core/DesignSpace';
+import { combatSpeedMultiplier } from '../core/ProfileStore';
 import type { AirplaneDef, BombDef, LevelPack } from '../data/types';
 import type { CombatEntity } from './CombatEntity';
 import type { PatrolMotion } from './EntityTraits';
 
 const TICK_SCALE = 60;
+
+function planeSpeed(def: AirplaneDef): number {
+  return def.speed * combatSpeedMultiplier();
+}
+
+function bombSpeed(def: BombDef): number {
+  return def.speed * combatSpeedMultiplier();
+}
 
 export interface AIUpdateContext {
   dt: number;
@@ -137,7 +146,7 @@ function retargetAltitude(motion: PatrolMotion, def: AirplaneDef): void {
 }
 
 function updateBomberSimple(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
-  const speed = def.speed * TICK_SCALE;
+  const speed = planeSpeed(def);
   const prevDir = motion.dir;
   patrolEdges(motion, entity, speed, ctx.dt);
   if (motion.dir !== prevDir) retargetAltitude(motion, def);
@@ -147,7 +156,7 @@ function updateBomberSimple(entity: CombatEntity, motion: PatrolMotion, def: Air
 }
 
 function updateBomberRandom(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
-  const speed = def.speed * TICK_SCALE;
+  const speed = planeSpeed(def);
   patrolEdges(motion, entity, speed, ctx.dt);
   driftY(motion, entity, ctx.dt);
   if (motion.altChanges < 3) maybeRetargetY(motion, def, ctx.dt, 0.5);
@@ -156,7 +165,7 @@ function updateBomberRandom(entity: CombatEntity, motion: PatrolMotion, def: Air
 }
 
 function updateBomberHard(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
-  const speed = def.speed * TICK_SCALE;
+  const speed = planeSpeed(def);
   patrolEdges(motion, entity, speed, ctx.dt);
   driftY(motion, entity, ctx.dt, 1.5);
   maybeRetargetY(motion, def, ctx.dt, 0.2);
@@ -174,7 +183,7 @@ function updateBomberHard(entity: CombatEntity, motion: PatrolMotion, def: Airpl
 }
 
 function updateFighterSimple(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
-  const speed = def.speed * TICK_SCALE * 1.15;
+  const speed = planeSpeed(def) * 1.15;
   patrolEdges(motion, entity, speed, ctx.dt);
   driftY(motion, entity, ctx.dt, 4);
   maybeRetargetY(motion, def, ctx.dt, 0.8);
@@ -261,7 +270,7 @@ function tryDropDirectionalWeapon(
   if (!bombDef) return;
 
   const angle = fireAngle ?? entity.sprite.rotation;
-  const bulletSpeed = bombDef.speed * TICK_SCALE;
+  const bulletSpeed = bombSpeed(bombDef);
   const nose = 24;
   ctx.dropBomb(
     entity,
@@ -289,7 +298,7 @@ function rollDirectionalWeaponDrop(
 
 function updateFighterMg(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
   const band = aiYBand(def);
-  const speed = def.speed * TICK_SCALE * 1.15;
+  const speed = planeSpeed(def) * 1.15;
 
   if (motion.phase === 0) {
     if (steerFighterToward(entity, def, motion.targetX, motion.targetY, speed, ctx.dt)) {
@@ -312,7 +321,7 @@ function updateFighterMg(entity: CombatEntity, motion: PatrolMotion, def: Airpla
 }
 
 function updateHeliSimple(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
-  const speed = def.speed * TICK_SCALE * 0.85;
+  const speed = planeSpeed(def) * 0.85;
   patrolEdges(motion, entity, speed, ctx.dt);
   motion.phaseT += ctx.dt;
   entity.y += Math.sin(motion.phaseT * 3) * 18 * ctx.dt;
@@ -323,7 +332,7 @@ function updateHeliSimple(entity: CombatEntity, motion: PatrolMotion, def: Airpl
 
 function updateHeliApache(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
   const [minY, maxY] = def.aiParams;
-  const speed = def.speed * TICK_SCALE;
+  const speed = planeSpeed(def);
 
   if (motion.phase === 0) {
     entity.x += motion.dir * speed * ctx.dt;
@@ -355,7 +364,7 @@ function updateHeliApache(entity: CombatEntity, motion: PatrolMotion, def: Airpl
 
 function updateFighterLizzard(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
   const [minY, maxY] = def.aiParams;
-  const speed = def.speed * TICK_SCALE;
+  const speed = planeSpeed(def);
 
   if (motion.phase === 0) {
     entity.x += motion.dir * speed * ctx.dt;
@@ -382,7 +391,7 @@ function updateFighterLizzard(entity: CombatEntity, motion: PatrolMotion, def: A
 }
 
 function updateCarrier(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
-  const speed = def.speed * TICK_SCALE * 0.7;
+  const speed = planeSpeed(def) * 0.7;
   patrolEdges(motion, entity, speed, ctx.dt);
   driftY(motion, entity, ctx.dt, 0.8);
   maybeRetargetY(motion, def, ctx.dt, 0.15);
@@ -402,7 +411,7 @@ function updateParachute(entity: CombatEntity, motion: PatrolMotion, def: Airpla
   const [startX, endX] = def.aiParams;
   const targetX = motion.dir > 0 ? endX : startX;
   const dx = targetX - entity.x;
-  const speed = def.speed * TICK_SCALE;
+  const speed = planeSpeed(def);
   entity.x += Math.sign(dx) * speed * ctx.dt;
   entity.y += (DESIGN.groundY - 80 - entity.y) * Math.min(1, ctx.dt * 1.5);
   if (Math.abs(dx) < 20 || entity.y >= DESIGN.groundY - 90) {
@@ -414,7 +423,7 @@ function updateParachute(entity: CombatEntity, motion: PatrolMotion, def: Airpla
 }
 
 function updateBoss(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
-  const speed = def.speed * TICK_SCALE;
+  const speed = planeSpeed(def);
   patrolEdges(motion, entity, speed * 0.9, ctx.dt);
   driftY(motion, entity, ctx.dt, 1.2);
   maybeRetargetY(motion, def, ctx.dt, 0.25);

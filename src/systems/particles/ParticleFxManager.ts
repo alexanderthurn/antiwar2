@@ -44,6 +44,8 @@ export interface CivilianBloodOpts {
   spawnArea?: BloodSpawnArea;
   /** Impact origin — blood sprays away from this point. */
   hitFrom?: { x: number; y: number };
+  /** v1 BLOODY level multiplier. */
+  bloody?: number;
 }
 
 interface BloodHitBias {
@@ -607,17 +609,23 @@ export class ParticleFxManager {
     return opts.wound ? Math.min(tier, 2) : tier;
   }
 
+  private bloodyScale(opts: CivilianBloodOpts): number {
+    const b = opts.bloody ?? 1;
+    return Math.max(0.5, Math.min(10, b));
+  }
+
   private bloodParticleCount(opts: CivilianBloodOpts, profile: QualityProfile): number {
     const tier = this.bloodStrengthTier(opts);
     const counts = BLOOD_COUNT_BY_TIER[this.quality] ?? BLOOD_COUNT_BY_TIER.normal;
     const fromTier = counts[tier] ?? 5;
+    const scaled = Math.round(fromTier * this.bloodyScale(opts));
     if (opts.wound) {
-      return Math.max(2, Math.round(fromTier * 0.35));
+      return Math.max(2, Math.round(scaled * 0.35));
     }
     if (opts.intensityTier != null || profile.budget >= 130) {
-      return fromTier;
+      return scaled;
     }
-    return Math.max(2, Math.round(fromTier * 0.6));
+    return Math.max(2, Math.round(scaled * 0.6));
   }
 
   private canSpawnBlood(allowOverflow: boolean, requested: number): boolean {

@@ -38,11 +38,13 @@ Theme matches **v1 Antiwar**. No save game — fresh run each session.
 
 ## Remaining
 
-Nothing blocking a playthrough. Optional later: per-level music from level JSON.
+See **[v1-parity-plan.md](./v1-parity-plan.md)** for the active backlog (Fish story limits, Schnappi bonus level, hardcore/scores, BLOODY/feeder, autobuy/autofire).
+
+Recently completed: per-round visuals/audio, buy macros (keys 1–9), `public/campaign/format.md`.
 
 ## Explicitly out of scope (v1 release)
 
-Hardcore mode, arcade pack, 4K asset tier, campaign save, online/highscore, buy macros (1–9), autobuy/autofire.
+Starcraft campaign (copyright), online highscore PHP backend, per-level buyscript names, `START_LEVEL` skip, `NONE` backgrounds.
 
 ---
 

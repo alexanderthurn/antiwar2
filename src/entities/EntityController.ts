@@ -1,6 +1,7 @@
 import { Graphics, Sprite, type Container } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
 import type { AirplaneDef, BombDef, LevelPack } from '../data/types';
+import { combatSpeedMultiplier } from '../core/ProfileStore';
 import {
   boxesOverlap,
   getBroadPhaseBounds,
@@ -252,7 +253,7 @@ export class EntityController {
     bindSpriteCollisionPath(sprite, def.image, def.scale);
     layer.addChild(sprite);
 
-    const bulletSpeed = def.speed * TICK_SCALE;
+    const bulletSpeed = def.speed * TICK_SCALE * combatSpeedMultiplier();
     const entity = new CombatEntity(sprite, traitsForEnemyBomb(def), { kind: 'fall' }, {
       x,
       y,

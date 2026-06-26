@@ -22,6 +22,7 @@
     "humanHpRefresh": 1,
     "moneyFactor": 1,
     "crashingRockets": 0,
+    "bloody": 5,
     "buttonsDisabled": {
       "human": true,
       "humanHp": true,
@@ -189,6 +190,10 @@
       "maxAirplanes": 0,
       "endmaster": -1,
       "rumble": 2,
+      "storyLimits": {
+        "maxRoundRockets": 1,
+        "maxRoundTime": 20000
+      },
       "spawns": [
         {
           "kind": "airplane",
@@ -211,6 +216,10 @@
       "maxAirplanes": 0,
       "endmaster": -1,
       "rumble": 2,
+      "storyLimits": {
+        "maxRoundRockets": 2,
+        "maxRoundTime": 20000
+      },
       "spawns": [
         {
           "kind": "airplane",
@@ -240,6 +249,10 @@
       "maxAirplanes": 0,
       "endmaster": -1,
       "rumble": 2,
+      "storyLimits": {
+        "maxRoundRockets": 1,
+        "maxRoundTime": 20000
+      },
       "spawns": [
         {
           "kind": "airplane",
@@ -262,6 +275,10 @@
       "maxAirplanes": 0,
       "endmaster": -1,
       "rumble": 2,
+      "storyLimits": {
+        "maxRoundRockets": 2,
+        "maxRoundTime": 20000
+      },
       "spawns": [
         {
           "kind": "airplane",
@@ -291,6 +308,10 @@
       "maxAirplanes": 0,
       "endmaster": -1,
       "rumble": 2,
+      "storyLimits": {
+        "maxRoundRockets": 1,
+        "maxRoundTime": 20000
+      },
       "spawns": [
         {
           "kind": "airplane",

@@ -1,5 +1,6 @@
 import { Container, Graphics, Sprite } from 'pixi.js';
 import type { CampaignProgress } from '../core/CampaignProgress';
+import { highscoreStore } from '../core/HighscoreStore';
 import { DESIGN } from '../core/DesignSpace';
 import { createFocusableButton } from '../input/FocusableButton';
 import type { MenuActionsHost } from '../input/MenuActionsHost';
@@ -102,6 +103,7 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
     const entry = index.levels[levelIndex]!;
     const unlocked = progress.isUnlocked(levelIndex);
     const completed = progress.isCompleted(levelIndex);
+    const best = highscoreStore.get(this.levelPacks[levelIndex]?.id ?? levelIndex + 1);
 
     const node = new Container();
     node.position.set(entry.mapX, entry.mapY);
@@ -122,6 +124,12 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
     });
     levelNum.position.set(MAP_LEVEL_LABEL_OFFSET.x, MAP_LEVEL_LABEL_OFFSET.y);
     node.addChild(levelNum);
+
+    if (best && unlocked) {
+      const scoreLabel = kewlTextAtCenter({ text: String(best.score), size: 14 });
+      scoreLabel.position.set(MAP_LEVEL_LABEL_OFFSET.x, MAP_LEVEL_LABEL_OFFSET.y + 22);
+      node.addChild(scoreLabel);
+    }
 
     if (unlocked) {
       const pack = this.levelPacks[levelIndex]!;
