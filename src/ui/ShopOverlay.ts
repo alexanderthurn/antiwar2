@@ -66,6 +66,7 @@ export class ShopOverlay extends Container {
   readonly menuActions: UiAction[] = [];
 
   private moneyText!: BitmapText;
+  private waveText!: BitmapText;
   private priceLabels = new Map<UpgradeKey, BitmapText>();
   private shopRows = new Map<UpgradeKey, ShopRow>();
   private lockedTex!: Texture;
@@ -83,14 +84,16 @@ export class ShopOverlay extends Container {
     onAutoBuy: () => void,
     onContinue: () => void,
     canBuy: (key: UpgradeKey) => boolean,
-    _hasMoreRounds: boolean,
+    roundNumber: number,
+    roundTotal: number,
+    hasMoreRounds: boolean,
   ) {
     super();
     this.onBuy = onBuy;
     this.onAutoBuy = onAutoBuy;
     this.onContinue = onContinue;
     this.canBuy = canBuy;
-    void this.build(pack, session);
+    void this.build(pack, session, roundNumber, roundTotal, hasMoreRounds);
   }
 
   refresh(session: LevelSession): void {
@@ -121,7 +124,13 @@ export class ShopOverlay extends Container {
     }
   }
 
-  private async build(pack: LevelPack, session: LevelSession): Promise<void> {
+  private async build(
+    pack: LevelPack,
+    session: LevelSession,
+    roundNumber: number,
+    roundTotal: number,
+    hasMoreRounds: boolean,
+  ): Promise<void> {
     this.lockedTex = await loadTexture(SHOP_LOCKED);
 
     const dim = new Graphics();
@@ -134,6 +143,16 @@ export class ShopOverlay extends Container {
     this.moneyText.position.set(centerX, UI_TITLE_Y);
     this.addChild(this.moneyText);
 
+    const waveLabel = hasMoreRounds
+      ? `Wave ${roundNumber} of ${roundTotal} cleared — continue for next wave`
+      : `Final wave (${roundNumber} of ${roundTotal}) — finish level when ready`;
+    this.waveText = kewlText({ text: waveLabel, size: 20, anchorX: 0.5 });
+    this.waveText.position.set(
+      centerX,
+      UI_TITLE_Y + kewlLineHeight(28) + kewlBlockGap(20),
+    );
+    this.addChild(this.waveText);
+
     const baseTex = await loadTexture(SHOP_BASE);
     const goTex = await loadTexture(SHOP_GO);
     const autoTex = await loadTexture(SHOP_AUTO);
@@ -143,7 +162,13 @@ export class ShopOverlay extends Container {
     }
 
     const rowStep = SHOP_BTN_SIZE + kewlBlockGap(LABEL_SIZE);
-    const contentTop = UI_TITLE_Y + kewlLineHeight(28) + kewlBlockGap(28) + SHOP_ITEMS_TOP_OFFSET;
+    const contentTop =
+      UI_TITLE_Y
+      + kewlLineHeight(28)
+      + kewlBlockGap(28)
+      + kewlLineHeight(20)
+      + kewlBlockGap(20)
+      + SHOP_ITEMS_TOP_OFFSET;
     const leftColumnCount = 4;
 
     for (let i = 0; i < UPGRADE_ORDER.length; i++) {

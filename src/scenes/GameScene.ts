@@ -1,5 +1,5 @@
 import { BitmapText, Container, Graphics, Rectangle, Sprite, Texture, type Texture as Tex } from 'pixi.js';
-import { playSound, sfxPath } from '../audio/SoundManager';
+import { playKillStreakSound, playSound, sfxPath } from '../audio/SoundManager';
 import { createLevelAudio, type LevelAudio } from '../audio/LevelSounds';
 import { DESIGN, V1_SPRITES, towerXForSlot } from '../core/DesignSpace';
 import { effectQualityForGraphics } from '../core/GraphicsQuality';
@@ -407,7 +407,7 @@ export class GameScene extends Container implements MenuActionsHost {
           ps.stats.kills += 1;
           if (guided) ps.stats.lockOnKills += 1;
           const streak = this.killStreaks.registerKill(ownerSlot);
-          if (streak) playSound(sfxPath(streak.sound));
+          if (streak) playKillStreakSound(sfxPath(streak.sound));
         } else if (target.motion.kind === 'fall') {
           ps.stats.bombsDestroyed += 1;
         }
@@ -1345,6 +1345,7 @@ export class GameScene extends Container implements MenuActionsHost {
     const hasMoreRounds = this.roundIndex + 1 < this.level.rounds.length;
     this.phase = 'shop';
     this.rumbleFx.reset();
+    this.clearCombat();
     this.clearTransientGameUi();
     this.closeShop();
     this.shopOverlay = new ShopOverlay(
@@ -1354,6 +1355,8 @@ export class GameScene extends Container implements MenuActionsHost {
       () => this.autoBuyUpgrades(),
       () => void this.continueFromShop(hasMoreRounds),
       (key) => this.canBuyShopUpgrade(key),
+      this.roundIndex + 1,
+      this.level.rounds.length,
       hasMoreRounds,
     );
     this.uiLayer.addChild(this.shopOverlay);
@@ -1516,6 +1519,11 @@ export class GameScene extends Container implements MenuActionsHost {
     if (!this.gameHud) return;
     this.gameHud.visible =
       this.phase === 'playing' || this.phase === 'shop' || this.phase === 'paused';
+
+    const showCombatCrosshair = this.phase === 'playing' || this.phase === 'paused';
+    for (const slot of this.players.slots) {
+      slot.crosshair.visible = slot.active && showCombatCrosshair;
+    }
   }
 
   private updateHud(): void {

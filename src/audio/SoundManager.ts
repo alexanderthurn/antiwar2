@@ -5,6 +5,7 @@ import { publicUrl } from '../core/PublicPath';
 export const AUDIO_ENABLED = true;
 
 const cache = new Map<string, HTMLAudioElement>();
+let killStreakAudio: HTMLAudioElement | null = null;
 let music: HTMLAudioElement | null = null;
 /** Resolved URL of the track that should be playing for the current scene (kept while muted). */
 let activeMusicSrc: string | null = null;
@@ -40,6 +41,36 @@ export function playSound(path: string, volume = 0.7): void {
   const audio = base.cloneNode() as HTMLAudioElement;
   audio.volume = vol;
   void audio.play().catch(() => {});
+}
+
+function stopKillStreakAudio(): void {
+  if (!killStreakAudio) return;
+  killStreakAudio.pause();
+  killStreakAudio.currentTime = 0;
+  killStreakAudio = null;
+}
+
+/** Play kill-streak VO — only one at a time; a new streak stops the previous clip. */
+export function playKillStreakSound(path: string, volume = 0.7): void {
+  if (!AUDIO_ENABLED) return;
+  const vol = sfxVolume(volume);
+  if (vol <= 0) return;
+  stopKillStreakAudio();
+  const src = resolvePath(path);
+  let base = cache.get(src);
+  if (!base) {
+    base = new Audio(src);
+    cache.set(src, base);
+  }
+  const audio = base.cloneNode() as HTMLAudioElement;
+  audio.volume = vol;
+  killStreakAudio = audio;
+  audio.addEventListener('ended', () => {
+    if (killStreakAudio === audio) killStreakAudio = null;
+  }, { once: true });
+  void audio.play().catch(() => {
+    if (killStreakAudio === audio) killStreakAudio = null;
+  });
 }
 
 export function playMusic(path: string): void {
