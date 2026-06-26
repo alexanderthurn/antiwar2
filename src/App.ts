@@ -7,7 +7,13 @@ import {
   syncDevUrl,
   type DevGameState,
 } from './core/DevDeepLink';
-import { computeLayout, clientToStage, enrichLayoutForDisplay, type ViewportLayout } from './core/Viewport';
+import {
+  computeLayout,
+  clientToStage,
+  enrichLayoutForDisplay,
+  screenToDesign,
+  type ViewportLayout,
+} from './core/Viewport';
 import { blurBackdropEnabled } from './core/GraphicsQuality';
 import { settingsStore } from './core/SettingsStore';
 import { watchViewportResize } from './core/ViewportResize';
@@ -23,7 +29,6 @@ import { LetterboxOverlay } from './ui/LetterboxOverlay';
 import { BlurBackdrop } from './ui/BlurBackdrop';
 import { DebugOverlay } from './ui/DebugOverlay';
 import { isDebugMode } from './core/DebugMode';
-import { MENU_POINTER_CURSOR } from './ui/MenuPointer';
 import { CampaignViewScene } from './scenes/CampaignViewScene';
 import { CreditsScene } from './scenes/CreditsScene';
 import { GameScene, type DevBootstrap } from './scenes/GameScene';
@@ -59,6 +64,9 @@ export class App {
   private debugOverlay: DebugOverlay | null = null;
   private menuActionsKey = '';
 
+  private stagePointerPos = { x: 0, y: 0 };
+  private pointerOverGame = true;
+
   private mouseButtons = { left: false, right: false };
   /** Only one touch finger drives aim/fire; ignores extra touches that confuse input. */
   private activeTouchPointerId: number | null = null;
@@ -83,7 +91,7 @@ export class App {
     this.gameRoot.mask = this.viewportMask;
     this.gameRoot.addChild(this.viewportMask);
     pixi.stage.addChild(this.letterbox);
-    this.gameRoot.addChild(this.menuCursor);
+    pixi.stage.addChild(this.menuCursor);
     this.touchUi = wantsTouchUi();
     this.pixi.ticker.add(this.tick);
     this.bindInput();
@@ -174,19 +182,46 @@ export class App {
     return clientToStage(clientX, clientY, this.pixi.canvas, width, height);
   }
 
+  private designToStage(x: number, y: number): { x: number; y: number } {
+    return {
+      x: this.layout.offsetX + x * this.layout.scale,
+      y: this.layout.offsetY + y * this.layout.scale,
+    };
+  }
+
   private syncMenuCursor(): void {
     const menuVisible =
       this.mode !== 'game' ||
       (this.game !== null && this.input.modeActive() === 'menu');
     const pointerDriven = this.input.isMenuPointerDriven();
-    this.pixi.canvas.style.cursor = menuVisible && pointerDriven ? MENU_POINTER_CURSOR : 'none';
 
-    if (!menuVisible || pointerDriven) {
+    if (menuVisible && pointerDriven) {
+      this.pixi.canvas.style.cursor = 'none';
+      this.menuCursor.sync(
+        this.stagePointerPos.x,
+        this.stagePointerPos.y,
+        true,
+        'pointer',
+      );
+      return;
+    }
+
+    if (menuVisible) {
+      this.pixi.canvas.style.cursor = 'none';
+      const { x, y } = this.input.cursor();
+      const stage = this.designToStage(x, y);
+      this.menuCursor.sync(stage.x, stage.y, true, 'gamepad');
+      return;
+    }
+
+    if (!this.pointerOverGame) {
+      this.pixi.canvas.style.cursor = 'default';
       this.menuCursor.sync(0, 0, false);
       return;
     }
-    const { x, y } = this.input.cursor();
-    this.menuCursor.sync(x, y, true);
+
+    this.pixi.canvas.style.cursor = 'none';
+    this.menuCursor.sync(0, 0, false);
   }
 
   private setScene(scene: Container): void {
@@ -194,7 +229,6 @@ export class App {
     this.gameRoot.addChild(scene);
     this.gameRoot.addChild(this.viewportMask);
     this.gameRoot.mask = this.viewportMask;
-    this.gameRoot.addChild(this.menuCursor);
     this.menuController.clear();
     this.menuActionsKey = '';
   }
@@ -332,6 +366,11 @@ export class App {
       }
 
       const { x, y } = this.stagePointer(e.clientX, e.clientY);
+      this.stagePointerPos.x = x;
+      this.stagePointerPos.y = y;
+      if (this.layout) {
+        this.pointerOverGame = screenToDesign(x, y, this.layout).inGame;
+      }
       this.input.onPointerDown(x, y);
       if (this.mode !== 'game') return;
       if (this.touchUi) this.game?.handleTouchPointerDown(this.input, x, y);
@@ -342,6 +381,11 @@ export class App {
       suppressTouchDefault(e);
 
       const { x, y } = this.stagePointer(e.clientX, e.clientY);
+      this.stagePointerPos.x = x;
+      this.stagePointerPos.y = y;
+      if (this.layout) {
+        this.pointerOverGame = screenToDesign(x, y, this.layout).inGame;
+      }
       this.input.onPointerMove(x, y);
       if (this.mode === 'game' && this.game) {
         if (this.touchUi) this.game.handleTouchPointerMove(this.input, x, y);

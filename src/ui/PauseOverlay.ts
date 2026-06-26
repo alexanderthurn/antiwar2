@@ -4,7 +4,7 @@ import { createFocusableButton } from '../input/FocusableButton';
 import type { UiAction } from '../input/UiMenuController';
 import { kewlBlockGap, kewlLineHeight, kewlText, UI_TITLE_Y } from '../ui/KewlFont';
 
-const PAUSE_DIM_ALPHA = 0.5;
+const PAUSE_DIM_ALPHA = 0.8;
 
 export class PauseOverlay extends Container {
   readonly menuActions: UiAction[] = [];

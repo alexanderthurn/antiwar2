@@ -1397,11 +1397,13 @@ export class GameScene extends Container implements MenuActionsHost {
   }
 
   private autoBuyUpgrades(): void {
+    let purchased = false;
     while (true) {
       const key = this.findCheapestBuyableUpgrade();
       if (!key) break;
-      this.buyUpgrade(key);
+      if (this.buyUpgrade(key, false)) purchased = true;
     }
+    if (purchased) this.levelAudio.playPay();
   }
 
   private closeShop(): void {
@@ -1413,17 +1415,17 @@ export class GameScene extends Container implements MenuActionsHost {
     }
   }
 
-  private buyUpgrade(key: UpgradeKey): void {
+  private buyUpgrade(key: UpgradeKey, playSound = true): boolean {
     if (key === 'human' && this.civilians.filter((c) => c.alive).length >= this.level.config.maxHumans) {
-      this.levelAudio.playNoMoney();
-      return;
+      if (playSound) this.levelAudio.playNoMoney();
+      return false;
     }
     if (!this.session.tryBuy(key, this.level)) {
-      this.levelAudio.playNoMoney();
-      return;
+      if (playSound) this.levelAudio.playNoMoney();
+      return false;
     }
 
-    this.levelAudio.playPay();
+    if (playSound) this.levelAudio.playPay();
 
     if (key === 'human') {
       void this.spawnOneCivilian(
@@ -1436,6 +1438,7 @@ export class GameScene extends Container implements MenuActionsHost {
     this.shopOverlay?.refresh(this.session);
     this.updateHud();
     this.notifyRoundStarted();
+    return true;
   }
 
   private async continueFromShop(hasMoreRounds: boolean): Promise<void> {
