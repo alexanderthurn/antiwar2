@@ -720,8 +720,9 @@ export class EntityController {
       if (!boxesOverlap(swept, getBroadPhaseBounds(target.sprite, targetPad))) continue;
       if (!rocketHitsSprite(proj.sprite, target.sprite, prevX, prevY)) continue;
 
+      const hpBefore = target.hp;
       target.hp -= proj.damage;
-      const killed = target.hp <= 0;
+      const killed = hpBefore > 0 && target.hp <= 0;
       if (target.traits.countsForRoundWin) target.rocketHitCount += 1;
       cb.onProjectileHit(
         proj.ownerSlot,
@@ -735,29 +736,27 @@ export class EntityController {
       );
       if (killed) {
         const isPlane = target.traits.countsForRoundWin;
-        if (isPlane && target.crashing) {
+        const shouldCrash =
+          isPlane &&
+          this.crashingRockets > 0 &&
+          target.rocketHitCount >= this.crashingRockets;
+        if (shouldCrash) {
+          this.startPlaneCrash(target);
+        } else {
           this.queueDeath({
             entity: target,
-            submunitions: false,
+            submunitions: target.motion.kind === 'fall',
             callEntityDeath: true,
-            despawn: true,
+            despawn: !isPlane,
           });
-        } else {
-          const shouldCrash =
-            isPlane &&
-            this.crashingRockets > 0 &&
-            target.rocketHitCount >= this.crashingRockets;
-          if (shouldCrash) {
-            this.startPlaneCrash(target);
-          } else {
-            this.queueDeath({
-              entity: target,
-              submunitions: target.motion.kind === 'fall',
-              callEntityDeath: true,
-              despawn: !isPlane,
-            });
-          }
         }
+      } else if (target.traits.countsForRoundWin && target.crashing) {
+        this.queueDeath({
+          entity: target,
+          submunitions: false,
+          callEntityDeath: true,
+          despawn: true,
+        });
       }
       return true;
     }
