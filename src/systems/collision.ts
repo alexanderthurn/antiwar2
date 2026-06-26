@@ -1,8 +1,14 @@
 import type { Sprite } from 'pixi.js';
 import { getCollisionShape } from '../data/CollisionShapes';
 
-type Box = { minX: number; minY: number; maxX: number; maxY: number };
+export type Box = { minX: number; minY: number; maxX: number; maxY: number };
 type Point2 = [number, number];
+
+/** Narrow-phase data (world polygons / OBB). Built only after broad-phase passes. */
+export interface CollisionBody {
+  polygons: Point2[][];
+  obb: Point2[];
+}
 
 /** Max distance a rocket travels per collision sub-step (design px). */
 const MIN_SWEEP_STEP = 2;
@@ -10,9 +16,142 @@ const MAX_SWEEP_STEP = 6;
 
 const spriteImagePath = new WeakMap<Sprite, string>();
 
-/** Link a sprite to its campaign image path for PhysicsEditor shape lookup. */
-export function bindSpriteCollisionPath(sprite: Sprite, imagePath: string): void {
+/** Precomputed at bind: conservative radius in design px (rotation-invariant broad phase). */
+interface BroadPhaseMeta {
+  broadRadius: number;
+}
+
+const broadPhaseMeta = new WeakMap<Sprite, BroadPhaseMeta>();
+
+interface BodyCacheEntry {
+  frame: number;
+  signature: string;
+  body: CollisionBody;
+}
+
+let collisionFrame = 0;
+const bodyCache = new WeakMap<Sprite, BodyCacheEntry>();
+
+/** Call once per simulation step before collision queries (clears per-frame narrow-phase cache). */
+export function beginCollisionFrame(): void {
+  collisionFrame++;
+}
+
+function maxScaleFromDef(scale?: [number, number]): number {
+  if (!scale) return 1;
+  return Math.max(Math.abs(scale[0]), Math.abs(scale[1]));
+}
+
+/** Furthest source-pixel distance from anchor — rotation-invariant broad-phase radius at maxScale. */
+function broadRadiusForShape(
+  origW: number,
+  origH: number,
+  imagePath: string,
+  anchorX: number,
+  anchorY: number,
+  maxScale: number,
+): number {
+  const pivotX = anchorX * origW;
+  const pivotY = anchorY * origH;
+  const shape = getCollisionShape(imagePath);
+
+  if (shape?.length) {
+    let maxR = 0;
+    for (const poly of shape) {
+      for (const v of poly) {
+        maxR = Math.max(maxR, Math.hypot(v.x - pivotX, v.y - pivotY));
+      }
+    }
+    return maxR * maxScale;
+  }
+
+  const hw = origW * Math.max(anchorX, 1 - anchorX);
+  const hh = origH * Math.max(anchorY, 1 - anchorY);
+  return Math.hypot(hw, hh) * maxScale;
+}
+
+/**
+ * Link sprite to collision data. Broad-phase radius is fixed at bind using campaign
+ * scale (use the largest scale the sprite will ever use).
+ */
+export function bindSpriteCollisionPath(
+  sprite: Sprite,
+  imagePath: string,
+  scale?: [number, number],
+): void {
   spriteImagePath.set(sprite, imagePath);
+  const origW = sprite.texture.orig.width;
+  const origH = sprite.texture.orig.height;
+  const maxScale = maxScaleFromDef(scale);
+  broadPhaseMeta.set(sprite, {
+    broadRadius: broadRadiusForShape(
+      origW,
+      origH,
+      imagePath,
+      sprite.anchor.x,
+      sprite.anchor.y,
+      maxScale,
+    ),
+  });
+}
+
+function fallbackBroadRadius(sprite: Sprite): number {
+  const w = sprite.width;
+  const h = sprite.height;
+  if (w <= 0 || h <= 0) return 1;
+  return Math.hypot(w * 0.5, h * 0.5);
+}
+
+/** World-space AABB for broad phase — position only, size from bind-time radius. */
+export function getBroadPhaseBounds(sprite: Sprite, pad = 0): Box {
+  const meta = broadPhaseMeta.get(sprite);
+  const r = (meta?.broadRadius ?? fallbackBroadRadius(sprite)) + pad;
+  return {
+    minX: sprite.x - r,
+    minY: sprite.y - r,
+    maxX: sprite.x + r,
+    maxY: sprite.y + r,
+  };
+}
+
+export function expandBox(box: Box, pad: number): Box {
+  if (pad <= 0) return box;
+  return {
+    minX: box.minX - pad,
+    minY: box.minY - pad,
+    maxX: box.maxX + pad,
+    maxY: box.maxY + pad,
+  };
+}
+
+export function boxesOverlap(a: Box, b: Box): boolean {
+  return a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY;
+}
+
+export function pointInBox(x: number, y: number, box: Box): boolean {
+  return x >= box.minX && x <= box.maxX && y >= box.minY && y <= box.maxY;
+}
+
+/** Axis-aligned bounds of a rocket path segment (broad phase for projectile vs target). */
+export function projectileSweptBounds(
+  sprite: Sprite,
+  prevX: number,
+  prevY: number,
+  curX = sprite.x,
+  curY = sprite.y,
+): Box {
+  const meta = broadPhaseMeta.get(sprite);
+  const rocketPad = meta?.broadRadius ?? fallbackBroadRadius(sprite);
+  return {
+    minX: Math.min(prevX, curX) - rocketPad,
+    minY: Math.min(prevY, curY) - rocketPad,
+    maxX: Math.max(prevX, curX) + rocketPad,
+    maxY: Math.max(prevY, curY) + rocketPad,
+  };
+}
+
+function spriteSignature(sprite: Sprite): string {
+  return `${sprite.x}|${sprite.y}|${sprite.rotation}|${sprite.scale.x}|${sprite.scale.y}`;
 }
 
 /** Oriented sprite corners in parent/design space (anchor + rotation + flip). */
@@ -64,7 +203,7 @@ function sourceVertexToWorld(sprite: Sprite, vx: number, vy: number): Point2 {
   return [cx + lx * cos - ly * sin, cy + lx * sin + ly * cos];
 }
 
-function worldPolygons(sprite: Sprite): Point2[][] {
+function buildWorldPolygons(sprite: Sprite): Point2[][] {
   const path = spriteImagePath.get(sprite);
   if (!path) return [];
   const shape = getCollisionShape(path);
@@ -72,43 +211,21 @@ function worldPolygons(sprite: Sprite): Point2[][] {
   return shape.map((poly) => poly.map((v) => sourceVertexToWorld(sprite, v.x, v.y)));
 }
 
-function boxFromCorners(corners: Point2[], pad = 0): Box {
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const [x, y] of corners) {
-    minX = Math.min(minX, x);
-    minY = Math.min(minY, y);
-    maxX = Math.max(maxX, x);
-    maxY = Math.max(maxY, y);
-  }
-  return {
-    minX: minX - pad,
-    minY: minY - pad,
-    maxX: maxX + pad,
-    maxY: maxY + pad,
-  };
+function buildCollisionBody(sprite: Sprite): CollisionBody {
+  const polygons = buildWorldPolygons(sprite);
+  const obb = spriteCorners(sprite);
+  return { polygons, obb };
 }
 
-function spriteBox(sprite: Sprite, pad = 0): Box {
-  const polys = worldPolygons(sprite);
-  if (polys.length) {
-    return boxFromCorners(polys.flat(), pad);
+export function getCollisionBody(sprite: Sprite): CollisionBody {
+  const signature = spriteSignature(sprite);
+  const cached = bodyCache.get(sprite);
+  if (cached && cached.frame === collisionFrame && cached.signature === signature) {
+    return cached.body;
   }
-  const corners = spriteCorners(sprite);
-  if (!corners.length) {
-    return { minX: sprite.x - pad, minY: sprite.y - pad, maxX: sprite.x + pad, maxY: sprite.y + pad };
-  }
-  return boxFromCorners(corners, pad);
-}
-
-function pointInBox(x: number, y: number, box: Box): boolean {
-  return x >= box.minX && x <= box.maxX && y >= box.minY && y <= box.maxY;
-}
-
-function aabbOverlap(a: Box, b: Box): boolean {
-  return a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY;
+  const body = buildCollisionBody(sprite);
+  bodyCache.set(sprite, { frame: collisionFrame, signature, body });
+  return body;
 }
 
 function projectCorners(corners: Point2[], ax: number, ay: number): [number, number] {
@@ -183,9 +300,6 @@ function minDistToPolygon(px: number, py: number, poly: Point2[]): number {
 }
 
 function polygonsOverlap(a: Point2[][], b: Point2[][]): boolean {
-  const aFlat = a.flat();
-  const bFlat = b.flat();
-  if (!aabbOverlap(boxFromCorners(aFlat), boxFromCorners(bFlat))) return false;
   for (const ap of a) {
     for (const bp of b) {
       if (satOverlap(ap, bp)) return true;
@@ -194,91 +308,62 @@ function polygonsOverlap(a: Point2[][], b: Point2[][]): boolean {
   return false;
 }
 
-function obbOverlap(a: Sprite, b: Sprite): boolean {
-  const aPolys = worldPolygons(a);
-  const bPolys = worldPolygons(b);
+function bodiesNarrowOverlap(a: CollisionBody, b: CollisionBody): boolean {
+  if (a.polygons.length || b.polygons.length) {
+    if (a.polygons.length && b.polygons.length) return polygonsOverlap(a.polygons, b.polygons);
 
-  if (aPolys.length || bPolys.length) {
-    const aCorners = aPolys.length ? aPolys.flat() : spriteCorners(a);
-    const bCorners = bPolys.length ? bPolys.flat() : spriteCorners(b);
-    if (aCorners.length < 3 || bCorners.length < 3) return false;
-    if (!aabbOverlap(boxFromCorners(aCorners), boxFromCorners(bCorners))) return false;
-
-    if (aPolys.length && bPolys.length) return polygonsOverlap(aPolys, bPolys);
-
-    const aTests = aPolys.length ? aPolys : [spriteCorners(a)];
-    const bTests = bPolys.length ? bPolys : [spriteCorners(b)];
+    const aTests = a.polygons.length ? a.polygons : [a.obb];
+    const bTests = b.polygons.length ? b.polygons : [b.obb];
     for (const ap of aTests) {
+      if (ap.length < 3) continue;
       for (const bp of bTests) {
+        if (bp.length < 3) continue;
         if (satOverlap(ap, bp)) return true;
       }
     }
     return false;
   }
 
-  const ac = spriteCorners(a);
-  const bc = spriteCorners(b);
-  if (ac.length < 4 || bc.length < 4) return false;
-  if (!aabbOverlap(boxFromCorners(ac), boxFromCorners(bc))) return false;
-  return satOverlap(ac, bc);
-}
-
-/** Exact segment vs axis-aligned box (slab method). */
-function segmentIntersectsBox(x0: number, y0: number, x1: number, y1: number, box: Box): boolean {
-  if (pointInBox(x0, y0, box) || pointInBox(x1, y1, box)) return true;
-
-  const dx = x1 - x0;
-  const dy = y1 - y0;
-  let t0 = 0;
-  let t1 = 1;
-
-  const axes = [
-    { p: x0, dp: dx, min: box.minX, max: box.maxX },
-    { p: y0, dp: dy, min: box.minY, max: box.maxY },
-  ];
-
-  for (const { p, dp, min, max } of axes) {
-    if (Math.abs(dp) < 1e-9) {
-      if (p < min || p > max) return false;
-      continue;
-    }
-    let tNear = (min - p) / dp;
-    let tFar = (max - p) / dp;
-    if (tNear > tFar) [tNear, tFar] = [tFar, tNear];
-    t0 = Math.max(t0, tNear);
-    t1 = Math.min(t1, tFar);
-    if (t0 > t1) return false;
-  }
-  return true;
+  if (a.obb.length < 4 || b.obb.length < 4) return false;
+  return satOverlap(a.obb, b.obb);
 }
 
 /** How far to step along a rocket path per sample (half the shorter sprite side). */
 export function rocketSweepStep(rocket: Sprite): number {
+  const meta = broadPhaseMeta.get(rocket);
+  if (meta) return Math.max(MIN_SWEEP_STEP, Math.min(MAX_SWEEP_STEP, meta.broadRadius * 0.5));
   const w = rocket.width;
   const h = rocket.height;
   const minDim = w > 0 && h > 0 ? Math.min(w, h) : 6;
   return Math.max(MIN_SWEEP_STEP, Math.min(MAX_SWEEP_STEP, minDim * 0.5));
 }
 
-/** Whether a design-space point lies inside a sprite's padded hit box. */
-export function pointHitsSprite(sprite: Sprite, x: number, y: number, pad = 10): boolean {
-  const polys = worldPolygons(sprite);
-  if (polys.length) {
-    const box = boxFromCorners(polys.flat(), pad);
-    if (!pointInBox(x, y, box)) return false;
-    for (const poly of polys) {
+function pointHitsBody(body: CollisionBody, x: number, y: number, pad = 10): boolean {
+  if (body.polygons.length) {
+    for (const poly of body.polygons) {
       if (pointInPolygon(x, y, poly)) return true;
       if (pad > 0 && minDistToPolygon(x, y, poly) <= pad) return true;
     }
     return false;
   }
-  return pointInBox(x, y, spriteBox(sprite, pad));
+
+  if (body.obb.length >= 4) {
+    return pointInPolygon(x, y, body.obb);
+  }
+  return false;
+}
+
+/** Whether a design-space point lies inside a sprite's padded hit box. */
+export function pointHitsSprite(sprite: Sprite, x: number, y: number, pad = 10): boolean {
+  if (!pointInBox(x, y, getBroadPhaseBounds(sprite, pad))) return false;
+  return pointHitsBody(getCollisionBody(sprite), x, y, pad);
 }
 
 /** Rotated sprite rects overlap in design space. */
 export function spritesOverlap(a: Sprite, b: Sprite, padA = 0, padB = 0): boolean {
-  if (padA === 0 && padB === 0) return obbOverlap(a, b);
-  return aabbOverlap(spriteBox(a, padA), spriteBox(b, padB));
+  if (!boxesOverlap(getBroadPhaseBounds(a, padA), getBroadPhaseBounds(b, padB))) return false;
+  if (padA === 0 && padB === 0) return bodiesNarrowOverlap(getCollisionBody(a), getCollisionBody(b));
+  return true;
 }
 
 function rocketAt(rocket: Sprite, x: number, y: number, saved: { x: number; y: number }): void {
@@ -293,13 +378,13 @@ function restoreRocket(rocket: Sprite, saved: { x: number; y: number }): void {
 
 function rocketOverlapsTargetAt(
   rocket: Sprite,
-  target: Sprite,
   x: number,
   y: number,
   saved: { x: number; y: number },
+  targetBody: CollisionBody,
 ): boolean {
   rocketAt(rocket, x, y, saved);
-  const hit = obbOverlap(rocket, target);
+  const hit = bodiesNarrowOverlap(getCollisionBody(rocket), targetBody);
   restoreRocket(rocket, saved);
   return hit;
 }
@@ -321,21 +406,16 @@ export function rocketHitsSprite(
   const travel = Math.hypot(dx, dy);
   const saved = { x: curX, y: curY };
 
-  const targetBox = spriteBox(target, 16);
-  const rocketPad = Math.max(rocket.width, rocket.height) * 0.5;
-  const sweptBox: Box = {
-    minX: Math.min(prevX, curX) - rocketPad,
-    minY: Math.min(prevY, curY) - rocketPad,
-    maxX: Math.max(prevX, curX) + rocketPad,
-    maxY: Math.max(prevY, curY) + rocketPad,
-  };
+  const targetBox = getBroadPhaseBounds(target, 16);
+  const sweptBox = projectileSweptBounds(rocket, prevX, prevY, curX, curY);
 
-  if (!aabbOverlap(sweptBox, targetBox)) {
+  if (!boxesOverlap(sweptBox, targetBox)) {
     return false;
   }
 
-  if (rocketOverlapsTargetAt(rocket, target, curX, curY, saved)) return true;
-  if (segmentIntersectsBox(prevX, prevY, curX, curY, targetBox)) return true;
+  const targetBody = getCollisionBody(target);
+
+  if (rocketOverlapsTargetAt(rocket, curX, curY, saved, targetBody)) return true;
 
   const step = rocketSweepStep(rocket);
   const samples = Math.max(1, Math.ceil(travel / step));
@@ -343,7 +423,7 @@ export function rocketHitsSprite(
     const t = samples === 0 ? 1 : i / samples;
     const x = prevX + dx * t;
     const y = prevY + dy * t;
-    if (rocketOverlapsTargetAt(rocket, target, x, y, saved)) return true;
+    if (rocketOverlapsTargetAt(rocket, x, y, saved, targetBody)) return true;
   }
 
   return false;

@@ -1,6 +1,6 @@
 import { Container, Graphics, type Sprite } from 'pixi.js';
 import type { CombatEntity } from '../entities/CombatEntity';
-import { pointHitsSprite } from '../systems/collision';
+import { getBroadPhaseBounds, pointHitsSprite } from '../systems/collision';
 
 const HIT_FLASH_SEC = 0.5;
 const HOVER_PAD = 28;
@@ -63,8 +63,14 @@ export class EntityHpBarOverlay extends Container {
       if (!entity.alive || !entity.traits.hittableByPlayer || entity.maxHp <= 0) continue;
 
       const hitFlash = this.entityHitTimers.get(entity.id) ?? 0;
-      const hovered = aimPoints.some(({ x, y }) =>
-        pointHitsSprite(entity.sprite, x, y, HOVER_PAD),
+      const hoverBox = getBroadPhaseBounds(entity.sprite, HOVER_PAD);
+      const hovered = aimPoints.some(
+        ({ x, y }) =>
+          x >= hoverBox.minX
+          && x <= hoverBox.maxX
+          && y >= hoverBox.minY
+          && y <= hoverBox.maxY
+          && pointHitsSprite(entity.sprite, x, y, HOVER_PAD),
       );
       if (hitFlash <= 0 && !hovered) continue;
 
@@ -75,8 +81,14 @@ export class EntityHpBarOverlay extends Container {
       if (!civilian.alive || civilian.maxHp <= 0) continue;
 
       const hitFlash = this.civilianHitTimers.get(civilian.id) ?? 0;
-      const hovered = aimPoints.some(({ x, y }) =>
-        pointHitsSprite(civilian.sprite, x, y, HOVER_PAD),
+      const hoverBox = getBroadPhaseBounds(civilian.sprite, HOVER_PAD);
+      const hovered = aimPoints.some(
+        ({ x, y }) =>
+          x >= hoverBox.minX
+          && x <= hoverBox.maxX
+          && y >= hoverBox.minY
+          && y <= hoverBox.maxY
+          && pointHitsSprite(civilian.sprite, x, y, HOVER_PAD),
       );
       if (hitFlash <= 0 && !hovered) continue;
 
@@ -99,22 +111,18 @@ export class EntityHpBarOverlay extends Container {
 
   private drawBar(sprite: Sprite, hp: number, maxHp: number, hitFlash: number): void {
     const ratio = Math.max(0, Math.min(1, hp / maxHp));
-    const w = Math.max(1, sprite.width);
-    const h = 6;
-    const gap = 4;
-    const x = sprite.x - w / 2;
+    const barW = 40;
+    const barH = 5;
     const topY = sprite.y - sprite.height * sprite.anchor.y;
     const bottomY = sprite.y + sprite.height * (1 - sprite.anchor.y);
-    const aboveY = topY - h - gap;
-    const y = topY < BAR_FLIP_TOP_Y ? bottomY + gap : aboveY;
-    const pulse = hitFlash > 0 ? 0.65 + 0.35 * Math.min(1, hitFlash / 0.25) : 1;
+    const above = topY >= BAR_FLIP_TOP_Y;
+    const barY = above ? topY - barH - 4 : bottomY + 4;
+    const barX = sprite.x - barW / 2;
+    const alpha = hitFlash > 0 ? 0.5 + 0.5 * (hitFlash / HIT_FLASH_SEC) : 0.85;
 
-    this.gfx.roundRect(x, y, w, h, 2).fill({ color: 0x000000, alpha: 0.6 * pulse });
-    this.gfx.roundRect(x, y, w, h, 2).stroke({ color: 0xffffff, width: 1, alpha: 0.35 * pulse });
+    this.gfx.rect(barX, barY, barW, barH).fill({ color: 0x222222, alpha: alpha * 0.8 });
     if (ratio > 0) {
-      this.gfx
-        .roundRect(x + 1, y + 1, Math.max(1, (w - 2) * ratio), h - 2, 1)
-        .fill({ color: hpColor(ratio), alpha: 0.95 * pulse });
+      this.gfx.rect(barX, barY, barW * ratio, barH).fill({ color: hpColor(ratio), alpha });
     }
   }
 }

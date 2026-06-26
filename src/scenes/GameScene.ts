@@ -8,6 +8,7 @@ import { LevelSession, UPGRADE_KEYS, type UpgradeKey } from '../core/LevelSessio
 import { DEV_DEEP_LINK_ENABLED, type DevGameState } from '../core/DevDeepLink';
 import { loadTexture, preloadRound } from '../data/AssetLoader';
 import { loadCollisionShapes } from '../data/CollisionShapes';
+import { beginCollisionFrame } from '../systems/collision';
 import type { BombDef, LevelPack, RoundDef } from '../data/types';
 import { CombatEntity } from '../entities/CombatEntity';
 import { EntityController } from '../entities/EntityController';
@@ -1002,6 +1003,8 @@ export class GameScene extends Container implements MenuActionsHost {
     this.menuActionsKey = '';
 
     if (this.phase === 'gameOver' || this.phase === 'levelComplete') return;
+
+    beginCollisionFrame();
 
     this.explosionManager.update(dt);
     this.particleFx.update(dt, this.particleBuckets());

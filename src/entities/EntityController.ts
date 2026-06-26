@@ -1,7 +1,16 @@
 import { Graphics, Sprite, type Container } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
 import type { AirplaneDef, BombDef, LevelPack } from '../data/types';
-import { pointHitsSprite, rocketHitsSprite, rocketSweepStep, spritesOverlap, bindSpriteCollisionPath } from '../systems/collision';
+import {
+  boxesOverlap,
+  getBroadPhaseBounds,
+  pointHitsSprite,
+  projectileSweptBounds,
+  rocketHitsSprite,
+  rocketSweepStep,
+  spritesOverlap,
+  bindSpriteCollisionPath,
+} from '../systems/collision';
 import { createPatrolMotion, updateAirplaneAI, type AIUpdateContext } from './AISystem';
 import { CombatEntity } from './CombatEntity';
 import {
@@ -133,10 +142,13 @@ export class EntityController {
   }
 
   findLockTargetAt(x: number, y: number): CombatEntity | null {
+    const pad = 10;
     for (let i = this.entities.length - 1; i >= 0; i--) {
       const e = this.entities[i]!;
       if (!e.alive || !e.traits.lockOnTarget || e.stealthHidden || e.crashing) continue;
-      if (pointHitsSprite(e.sprite, x, y)) return e;
+      const body = getBroadPhaseBounds(e.sprite, pad);
+      if (!boxesOverlap(body, { minX: x, maxX: x, minY: y, maxY: y })) continue;
+      if (pointHitsSprite(e.sprite, x, y, pad)) return e;
     }
     return null;
   }
@@ -162,7 +174,7 @@ export class EntityController {
     const sprite = new Sprite(tex);
     sprite.anchor.set(0.5);
     sprite.scale.set(def.scale[0], def.scale[1]);
-    bindSpriteCollisionPath(sprite, def.image);
+    bindSpriteCollisionPath(sprite, def.image, def.scale);
     if (def.drawStyle === 1) {
       sprite.scale.x = Math.abs(sprite.scale.x);
     } else if (x >= DESIGN.width / 2) {
@@ -206,7 +218,7 @@ export class EntityController {
     layer: { addChild(s: Sprite): void },
   ): CombatEntity {
     layer.addChild(sprite);
-    bindSpriteCollisionPath(sprite, def.image);
+    bindSpriteCollisionPath(sprite, def.image, def.scale);
     const entity = new CombatEntity(sprite, traitsForPlayerProjectile(def), { kind: 'projectile' }, {
       x: stats.x,
       y: stats.y,
@@ -237,7 +249,7 @@ export class EntityController {
     const sprite = new Sprite(tex);
     sprite.anchor.set(0.5);
     sprite.scale.set(def.scale[0], def.scale[1]);
-    bindSpriteCollisionPath(sprite, def.image);
+    bindSpriteCollisionPath(sprite, def.image, def.scale);
     layer.addChild(sprite);
 
     const bulletSpeed = def.speed * TICK_SCALE;
@@ -697,10 +709,15 @@ export class EntityController {
     prevY: number,
     cb: EntityControllerCallbacks,
   ): boolean {
+    const swept = projectileSweptBounds(proj.sprite, prevX, prevY);
+    const targetPad = 16;
+
     for (const target of this.entities) {
       if (!target.alive || target === proj || !target.traits.hittableByPlayer) continue;
       if (target.crashing && !target.traits.countsForRoundWin) continue;
       if (!target.crashing && target.stealthHidden && !target.traits.countsForRoundWin) continue;
+
+      if (!boxesOverlap(swept, getBroadPhaseBounds(target.sprite, targetPad))) continue;
       if (!rocketHitsSprite(proj.sprite, target.sprite, prevX, prevY)) continue;
 
       target.hp -= proj.damage;
