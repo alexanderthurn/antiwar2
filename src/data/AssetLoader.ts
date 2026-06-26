@@ -1,5 +1,10 @@
 import { Assets, type Spritesheet, Texture } from 'pixi.js';
 import { publicUrl } from '../core/PublicPath';
+import {
+  isLooseSpriteDevEnabled,
+  looseSpriteCacheToken,
+  looseSpriteDevUrl,
+} from './spriteDev';
 import type { LevelPack, RoundDef } from './types';
 
 const ATLAS_DIR = 'assets/gfx/atlas';
@@ -104,9 +109,39 @@ function lookupAtlasFrame(path: string): Texture | undefined {
   return undefined;
 }
 
+async function loadLooseDevTexture(normalized: string): Promise<Texture | null> {
+  if (!isLooseSpriteDevEnabled()) return null;
+
+  const devSrc = looseSpriteDevUrl(normalized);
+  if (!devSrc) return null;
+
+  try {
+    const response = await fetch(devSrc, { method: 'HEAD' });
+    if (!response.ok) return null;
+  } catch {
+    return null;
+  }
+
+  const epoch = looseSpriteCacheToken();
+  const cacheKey = `dev-loose:${normalized}:${epoch}`;
+  const cached = textureCache.get(cacheKey);
+  if (cached) return cached;
+
+  await Assets.load({ alias: cacheKey, src: `${devSrc}?v=${epoch}` });
+  const texture = Assets.get<Texture>(cacheKey);
+  textureCache.set(cacheKey, texture);
+  return texture;
+}
+
 /** Load image and return a ready texture (Pixi v8 requires Assets.load). */
 export async function loadTexture(path: string): Promise<Texture> {
   const normalized = normalizePath(path);
+
+  if (!isStandalone(normalized)) {
+    const loose = await loadLooseDevTexture(normalized);
+    if (loose) return loose;
+  }
+
   const src = publicUrl(path);
   const cached = textureCache.get(src);
   if (cached) return cached;

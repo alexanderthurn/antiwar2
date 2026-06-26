@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "art": "VITE_LOOSE_SPRITES=true vite",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },

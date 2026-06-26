@@ -2,6 +2,29 @@
 
 Loose gameplay/UI sprites live here. **Do not** put them in `public/` — pack them into `public/assets/gfx/atlas/` instead.
 
+## Designer art mode (no atlas repack)
+
+For live sprite iteration, run:
+
+```bash
+npm run art
+```
+
+This loads sprites **directly from `textures-pack/sprites/`** instead of the packed atlas. Your designer can:
+
+1. Edit or replace a PNG in `textures-pack/sprites/` (e.g. `AIRPLANES/bomber.png`)
+2. Save the file
+3. The browser reloads automatically and shows the new art
+
+Normal `npm run dev` always uses the packed atlas — same as production.
+
+| Command | Sprites from |
+|---------|----------------|
+| `npm run dev` | `public/assets/gfx/atlas/` (packed) |
+| `npm run art` | `textures-pack/sprites/` (loose, live reload) |
+
+Production builds always use the packed atlas.
+
 ## What stays outside the atlas
 
 These remain as individual files in `public/assets/gfx/`:
@@ -19,7 +42,7 @@ These remain as individual files in `public/assets/gfx/`:
 | `hand-cursor.png` | CSS `cursor: url(...)` — must be a real file URL |
 | `nightshot.png` | Large night-vision overlay — kept as a single full texture |
 
-Everything else under `sprites/` should be packed.
+Everything else under `sprites/` should be packed for release.
 
 ## TexturePacker settings
 
@@ -54,10 +77,21 @@ If you disable multipack, a single `game.json` + `game.png` also works.
 
 ## Workflow
 
-1. Edit sprites in `textures-pack/sprites/`
-2. Publish from TexturePacker (Cmd+P / Publish sprite sheet)
-3. Commit the updated files in `public/assets/gfx/atlas/`
-4. Reload the game — no code or JSON changes needed
+### Day-to-day (designer)
+
+1. Run `npm run art`
+2. Edit sprites in `textures-pack/sprites/`
+3. Save — browser auto-reloads
+
+### Day-to-day (code / gameplay)
+
+1. Run `npm run dev` (uses packed atlas)
+
+### Release
+
+1. Publish from TexturePacker (Cmd+P / Publish sprite sheet)
+2. Commit the updated files in `public/assets/gfx/atlas/`
+3. Build / ship — production uses the atlas
 
 ## Folder layout
 
