@@ -78,6 +78,7 @@
     },
     "sounds": {
       "music": "boss.ogg",
+      "musicVolume": 0.8,
       "winner": "ultimate_winner.ogg",
       "win": "ultimate_winner.ogg"
     }

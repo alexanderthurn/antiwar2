@@ -78,6 +78,7 @@
     },
     "sounds": {
       "music": "boss.ogg",
+      "musicVolume": 0.8,
       "shoot": "piu.ogg"
     }
   },

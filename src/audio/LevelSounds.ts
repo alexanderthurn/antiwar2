@@ -1,4 +1,4 @@
-import { playMusic, playSound, sfxPath } from './SoundManager';
+import { playMusic, playSound, setLevelMusicVolume, sfxPath, syncMusicFromSettings } from './SoundManager';
 
 export interface LevelSoundsConfig {
   explosion: string[];
@@ -10,6 +10,8 @@ export interface LevelSoundsConfig {
   winner: string;
   win: string;
   music: string;
+  /** Level multiplier on top of the user music volume (v1 MUSIC_VOLUME / CHANGE_VOLUME). */
+  musicVolume?: number;
   pay: string;
   noMoney: string;
   gameOver: string;
@@ -25,6 +27,7 @@ export const DEFAULT_LEVEL_SOUNDS: LevelSoundsConfig = {
   winner: 'winner.ogg',
   win: 'win.ogg',
   music: 'game.ogg',
+  musicVolume: 1,
   pay: 'pay.ogg',
   noMoney: 'nomoney.ogg',
   gameOver: 'error.ogg',
@@ -44,9 +47,27 @@ function pickRandom(paths: string[]): string {
 }
 
 export class LevelAudio {
-  constructor(private readonly sounds: LevelSoundsConfig) {}
+  private sounds: LevelSoundsConfig;
+  private musicTrack = '';
+
+  constructor(initial?: Partial<LevelSoundsConfig>) {
+    this.sounds = resolveLevelSounds(initial);
+  }
+
+  /** Apply sticky round audio (music track, level volume, SFX bank). */
+  applyRound(sounds: LevelSoundsConfig, musicVolume = 1): void {
+    const musicChanged = this.sounds.music !== sounds.music;
+    this.sounds = sounds;
+    setLevelMusicVolume(musicVolume);
+    if (musicChanged || !this.musicTrack) {
+      this.playMusic();
+      return;
+    }
+    syncMusicFromSettings();
+  }
 
   playMusic(): void {
+    this.musicTrack = this.sounds.music;
     playMusic(sfxPath(this.sounds.music));
   }
 

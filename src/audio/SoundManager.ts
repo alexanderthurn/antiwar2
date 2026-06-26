@@ -10,6 +10,13 @@ let music: HTMLAudioElement | null = null;
 /** Resolved URL of the track that should be playing for the current scene (kept while muted). */
 let activeMusicSrc: string | null = null;
 let musicElementSrc: string | null = null;
+/** Per-level music gain (v1 MUSIC_VOLUME / CHANGE_VOLUME), multiplied with user setting. */
+let levelMusicVolume = 1;
+
+export function setLevelMusicVolume(volume: number): void {
+  levelMusicVolume = Math.max(0, volume);
+  applyMusicPlayback();
+}
 
 function resolvePath(path: string): string {
   return publicUrl(path);
@@ -24,7 +31,7 @@ function sfxVolume(requested: number): number {
 function musicVolume(): number {
   const s = settingsStore.get();
   if (!s.musicEnabled) return 0;
-  return s.musicVolume;
+  return s.musicVolume * levelMusicVolume;
 }
 
 /** Play a one-shot sound from assets/sfx (or any public path). */
@@ -85,6 +92,7 @@ export function stopMusic(): void {
   music = null;
   activeMusicSrc = null;
   musicElementSrc = null;
+  levelMusicVolume = 1;
 }
 
 function applyMusicPlayback(): void {

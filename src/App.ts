@@ -1,5 +1,6 @@
 import { Application, Container, Graphics } from 'pixi.js';
 import { CampaignProgress } from './core/CampaignProgress';
+import { shopDigitFromKeyboard } from './core/BuyScript';
 import { DESIGN } from './core/DesignSpace';
 import {
   clearDevUrl,
@@ -473,6 +474,10 @@ export class App {
           this.game.cheatTestRumble();
         }
         return;
+      }
+      const shopDigit = shopDigitFromKeyboard(e);
+      if (shopDigit !== null && this.mode === 'game' && this.game) {
+        this.game.runBuyMacro(shopDigit);
       }
     });
   }

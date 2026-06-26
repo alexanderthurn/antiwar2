@@ -5,7 +5,8 @@ import {
   looseSpriteCacheToken,
   looseSpriteDevUrl,
 } from './spriteDev';
-import type { LevelPack, RoundDef } from './types';
+import { resolveRoundVisuals } from './RoundSettings';
+import type { LevelPack } from './types';
 
 const ATLAS_DIR = 'assets/gfx/atlas';
 const ATLAS_ENTRY_JSON = [`${ATLAS_DIR}/game-0.json`, `${ATLAS_DIR}/game.json`];
@@ -164,7 +165,10 @@ export async function loadTexture(path: string): Promise<Texture> {
   return texture;
 }
 
-export function collectAssetPaths(pack: LevelPack, round: RoundDef): string[] {
+export function collectAssetPaths(pack: LevelPack, roundIndex: number): string[] {
+  const round = pack.rounds[roundIndex];
+  if (!round) throw new Error(`Round ${roundIndex} missing`);
+
   const paths = new Set<string>();
   if (round.intro?.image) paths.add(round.intro.image);
 
@@ -172,6 +176,10 @@ export function collectAssetPaths(pack: LevelPack, round: RoundDef): string[] {
   for (const p of Object.values(cfg)) {
     if (p) paths.add(p);
   }
+
+  const { background, ground } = resolveRoundVisuals(pack, roundIndex);
+  paths.add(background);
+  paths.add(ground);
 
   for (const def of Object.values(pack.bombs)) paths.add(def.image);
   for (const spawn of round.spawns) {
@@ -186,5 +194,5 @@ export async function preloadRound(pack: LevelPack, roundIndex: number): Promise
   const round = pack.rounds[roundIndex];
   if (!round) throw new Error(`Round ${roundIndex} missing`);
   await loadSpriteAtlas();
-  await Promise.all(collectAssetPaths(pack, round).map(loadTexture));
+  await Promise.all(collectAssetPaths(pack, roundIndex).map(loadTexture));
 }

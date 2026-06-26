@@ -749,6 +749,7 @@
   "rounds": [
     {
       "name": "TUTORIAL",
+      "background": "assets/gfx/backgrounds/mangoo.jpg",
       "weather": [
         0,
         0,
@@ -906,6 +907,7 @@
     },
     {
       "name": "MISSION",
+      "background": "assets/gfx/backgrounds/desert.jpg",
       "weather": [
         0,
         0,

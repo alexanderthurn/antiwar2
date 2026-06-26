@@ -5,8 +5,10 @@ import { DESIGN, V1_SPRITES, towerXForSlot } from '../core/DesignSpace';
 import { effectQualityForGraphics } from '../core/GraphicsQuality';
 import { settingsStore } from '../core/SettingsStore';
 import { LevelSession, UPGRADE_KEYS, type UpgradeKey } from '../core/LevelSession';
+import { BUY_MACRO_STEP_MS, BUY_MACROS } from '../core/BuyScript';
 import { DEV_DEEP_LINK_ENABLED, type DevGameState } from '../core/DevDeepLink';
 import { loadTexture, preloadRound } from '../data/AssetLoader';
+import { resolveRoundAudio, resolveRoundVisuals } from '../data/RoundSettings';
 import { loadCollisionShapes } from '../data/CollisionShapes';
 import { beginCollisionFrame } from '../systems/collision';
 import type { BombDef, LevelPack, RoundDef } from '../data/types';
@@ -141,6 +143,7 @@ export class GameScene extends Container implements MenuActionsHost {
   private gameHud: GameHud | null = null;
   private levelElapsedSec = 0;
   private shopOverlay: ShopOverlay | null = null;
+  private buyMacroRunning = false;
   private joinPanel: JoinPanel | null = null;
   private bossHpBar: BossHpBar | null = null;
   private pauseOverlay: PauseOverlay | null = null;
@@ -255,8 +258,7 @@ export class GameScene extends Container implements MenuActionsHost {
     this.uiLayer.addChild(this.gameHud);
     this.syncHudVisibility();
     this.updateHud();
-    this.levelAudio = createLevelAudio(pack.config.sounds);
-    this.levelAudio.playMusic();
+    this.levelAudio = createLevelAudio();
     const startRoundIndex = devBootstrap?.roundIndex ?? roundIndex;
     const skipIntro = devBootstrap?.skipIntro ?? false;
     await this.startRound(startRoundIndex, skipIntro);
@@ -281,6 +283,7 @@ export class GameScene extends Container implements MenuActionsHost {
       this.killStreaks.resetAll();
       await preloadRound(this.level, roundIndex);
       await this.buildBackground();
+      this.applyRoundAudio();
       this.applyRoundWeather();
       await this.spawnAirplanes();
       if (roundIndex > 0) this.levelAudio.playNewRound();
@@ -312,6 +315,11 @@ export class GameScene extends Container implements MenuActionsHost {
   private applyRoundWeather(): void {
     this.cloudLayer.setWeather(this.round.weather);
     this.weatherLayer.setWeather(this.round.weather);
+  }
+
+  private applyRoundAudio(): void {
+    const { sounds, musicVolume } = resolveRoundAudio(this.level, this.roundIndex);
+    this.levelAudio.applyRound(sounds, musicVolume);
   }
 
   private wonRound = false;
@@ -542,16 +550,17 @@ export class GameScene extends Container implements MenuActionsHost {
   }
 
   private async buildBackground(): Promise<void> {
+    const { background, ground: groundPath } = resolveRoundVisuals(this.level, this.roundIndex);
+
     this.bgLayer.removeChildren();
-    const assets = this.level.config.assets;
-    const bgTex = await loadTexture(assets.background ?? 'assets/gfx/backgrounds/mangoo.jpg');
+    const bgTex = await loadTexture(background);
     const bg = new Sprite(bgTex);
     bg.width = DESIGN.width;
     bg.height = DESIGN.height;
     this.bgLayer.addChild(bg);
 
     this.groundLayer.removeChildren();
-    const groundTex = await loadTexture(assets.ground ?? 'assets/gfx/backgrounds/ground.png');
+    const groundTex = await loadTexture(groundPath);
     const ground = new Sprite(groundTex);
     ground.width = DESIGN.width;
     ground.height = DESIGN.groundHeight;
@@ -1404,6 +1413,33 @@ export class GameScene extends Container implements MenuActionsHost {
       if (this.buyUpgrade(key, false)) purchased = true;
     }
     if (purchased) this.levelAudio.playPay();
+  }
+
+  /** v1 buyscript.txt keys 1–9 — shop phase only. */
+  runBuyMacro(digit: number): void {
+    if (this.phase !== 'shop' || this.buyMacroRunning) return;
+    const sequence = BUY_MACROS[digit];
+    if (!sequence?.length) return;
+    void this.executeBuyMacro(sequence);
+  }
+
+  private async executeBuyMacro(sequence: readonly UpgradeKey[]): Promise<void> {
+    this.buyMacroRunning = true;
+    try {
+      let purchased = false;
+      for (let i = 0; i < sequence.length; i++) {
+        if (i > 0) {
+          await new Promise<void>((resolve) => {
+            window.setTimeout(resolve, BUY_MACRO_STEP_MS * i);
+          });
+        }
+        if (this.phase !== 'shop') return;
+        if (this.buyUpgrade(sequence[i]!, false)) purchased = true;
+      }
+      if (purchased) this.levelAudio.playPay();
+    } finally {
+      this.buyMacroRunning = false;
+    }
   }
 
   private closeShop(): void {

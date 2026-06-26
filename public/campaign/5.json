@@ -74,7 +74,7 @@
       "crosshair": "assets/gfx/crosshair2.png",
       "human": "assets/gfx/human.png",
       "ground": "assets/gfx/backgrounds/ground.png",
-      "background": "assets/gfx/backgrounds/desert.jpg"
+      "background": "assets/gfx/backgrounds/mangoo2.jpg"
     }
   },
   "bombs": {
@@ -978,6 +978,7 @@
   "rounds": [
     {
       "name": "TUTORIAL",
+      "background": "assets/gfx/backgrounds/mangoo2.jpg",
       "weather": [
         0,
         0,
@@ -1171,6 +1172,7 @@
     },
     {
       "name": "MISSION",
+      "background": "assets/gfx/backgrounds/desert.jpg",
       "weather": [
         0,
         0,

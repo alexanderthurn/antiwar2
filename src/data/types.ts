@@ -50,6 +50,16 @@ export interface SpawnDef {
 export interface RoundDef {
   name: string;
   weather: number[];
+  /** Overrides config.assets.background for this round and all later rounds. */
+  background?: string;
+  /** Overrides config.assets.ground for this round and all later rounds. */
+  ground?: string;
+  /** Overrides music track for this round and all later rounds (v1 CHANGE_MUSIC). */
+  music?: string;
+  /** Level music gain for this round and all later rounds (v1 CHANGE_VOLUME). */
+  musicVolume?: number;
+  /** Partial SFX bank overrides — sticky merge (explosion, newRound, shoot, …). */
+  sounds?: Partial<LevelSoundsConfig>;
   intro?: { text?: string; image?: string; time?: number; sound?: string };
   winSound?: string;
   maxAirplanes: number;

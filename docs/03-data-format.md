@@ -11,6 +11,7 @@ All coordinates are in **design space** (1920×1080), letterboxed to the browser
 ```
 public/campaign/
   index.json      # Campaign order and display names
+  format.md       # Per-round overrides (background, music, SFX) — quick reference
   1.json          # Tutorial
   2.json          # mangoo_easy
   ...
@@ -296,8 +297,11 @@ Each entry = one v1 `[ROUND_NAME]` section. **Array order = play order.** Sectio
 | Field | v1 key | Default | Description |
 |-------|--------|---------|-------------|
 | `weather` | `WEATHER` | `[0,0,0,0,0]` | `[rain, clouds, snow, wind, darkness]` |
-| `background` | `CHANGE_BACKGROUND` / `BACKGROUND` | — | JPG/PNG path; `"NONE"` = solid color |
+| `background` | `CHANGE_BACKGROUND` / `BACKGROUND` | — | JPG/PNG path |
 | `ground` | `CHANGE_GROUND` | `ground.png` | Ground strip image |
+| `music` | `CHANGE_MUSIC` | — | Track under `assets/sfx/` |
+| `musicVolume` | `CHANGE_VOLUME` | — | Level music gain (sticky) |
+| `sounds` | — | — | Partial SFX bank override (sticky) |
 | `intro.time` | `INTRO_TIME` | 0 | Frames/ticks (~300 ≈ few seconds at 60fps) |
 | `maxAirplanes` | `MAX_AIRPLANES` | 0 | 0 = spawn all; N = concurrent limit + queue |
 | `endmaster` | `ENDMASTER` | -1 | Spawn index for boss HP bar (≥0) |

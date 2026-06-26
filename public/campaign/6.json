@@ -77,7 +77,8 @@
       "background": "assets/gfx/backgrounds/whitehouse.jpg"
     },
     "sounds": {
-      "music": "boss.ogg"
+      "music": "boss.ogg",
+      "musicVolume": 0.8
     }
   },
   "bombs": {
