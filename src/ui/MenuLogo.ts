@@ -5,12 +5,14 @@ import { MENU_POINTER_CURSOR } from './MenuPointer';
 const SHAKE_DECAY = 5;
 const SHAKE_MAX = 18;
 const SHAKE_PER_CLICK = 2;
+const HOVER_SHAKE = 0.5;
 
-/** Animated logo — gentle sine bob/sway; tap to ramp up a silly shake. */
+/** Animated logo — gentle sine bob/sway; hover for a light shake, tap to ramp it up. */
 export class MenuLogo extends Container {
   private readonly sprite: Sprite;
   private time = 0;
   private shakeLevel = 0;
+  private hovered = false;
   private readonly baseX: number;
   private readonly baseY: number;
 
@@ -35,6 +37,12 @@ export class MenuLogo extends Container {
       width + pad * 2,
       targetHeight + pad * 2,
     );
+    this.on('pointerover', () => {
+      this.hovered = true;
+    });
+    this.on('pointerout', () => {
+      this.hovered = false;
+    });
     this.on('pointertap', () => {
       playMenuClick();
       this.shakeLevel = Math.min(this.shakeLevel + SHAKE_PER_CLICK, SHAKE_MAX);
@@ -51,7 +59,7 @@ export class MenuLogo extends Container {
     const swayX = Math.sin(this.time * 1.2) * 4;
     const rot = Math.sin(this.time * 0.9) * 0.02;
 
-    const s = this.shakeLevel;
+    const s = this.hovered ? Math.max(this.shakeLevel, HOVER_SHAKE) : this.shakeLevel;
     const freq = 28 + s * 10;
     const shakeX =
       Math.sin(this.time * freq) * s * 2.8 +
