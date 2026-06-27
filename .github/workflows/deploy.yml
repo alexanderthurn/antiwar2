@@ -1,0 +1,123 @@
+name: Deploy
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  push:
+    branches: ['**']
+  delete:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.event_name != 'delete'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 1
+
+  deploy-pages:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  deploy-feuerware:
+    needs: build
+    if: github.event_name != 'delete'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Set target folder
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "folder=production" >> $GITHUB_OUTPUT
+          else
+            echo "folder=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy to FTP
+        run: |
+          sudo apt-get update && sudo apt-get install -y lftp
+
+          lftp -u "${{ secrets.FTP_USERNAME }}","${{ secrets.FTP_PASSWORD }}" "${{ secrets.FTP_SERVER }}" <<EOF
+          set ftp:ssl-allow no
+          set ftp:passive-mode true
+          set net:timeout 30
+          set net:max-retries 3
+          mkdir -p "/${{ steps.target.outputs.folder }}"
+
+          mirror -R "./dist/" "/${{ steps.target.outputs.folder }}" \
+            --delete \
+            --parallel=10 \
+            --exclude-glob .htaccess \
+            --exclude-glob .htpasswd \
+            --exclude-glob "stats/" \
+            --verbose
+          quit
+          EOF
+
+  cleanup-feuerware:
+    if: |
+      github.event_name == 'delete' &&
+      github.event.ref_type == 'branch' &&
+      github.event.ref != 'main' &&
+      github.event.ref != 'master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove branch folder from FTP
+        run: |
+          sudo apt-get update && sudo apt-get install -y lftp
+
+          lftp -u "${{ secrets.FTP_USERNAME }}","${{ secrets.FTP_PASSWORD }}" "${{ secrets.FTP_SERVER }}" <<EOF
+          set ftp:ssl-allow no
+          set ftp:passive-mode true
+          rm -rf "/${{ github.event.ref }}"
+          quit
+          EOF
