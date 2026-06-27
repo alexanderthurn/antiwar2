@@ -11,18 +11,23 @@ See also `registry.json` and each `<campaignId>/index.json` for map placement. F
 ## File layout
 
 ```
-public/campaign/
+public/assets/campaign/
   registry.json          # menu: [{ "id": "aw", "menuTitle": "..." }, …]
   format.md              # this file
+  hub/
+    index.json           # top-level campaign picker map
+    map.png
   aw/
     index.json           # map + level list for Antiwar 1
+    map.png, thumbs/, backgrounds/, …
     1.json …             # level packs
   aw2/
     index.json
+    map.png
     1.json …
 ```
 
-Level URLs at runtime: `campaign/<id>/N.json` (loaded via `loadLevelPack(campaignId, file)`).
+Level URLs at runtime: `assets/campaign/<id>/N.json` (loaded via `loadLevelPack(campaignId, file)`).
 
 ---
 
@@ -34,8 +39,8 @@ Shared for the whole level unless a round overrides them.
 
 | Field | Default | Description |
 |-------|---------|-------------|
-| `background` | `assets/gfx/backgrounds/mangoo.jpg` | Sky / backdrop image |
-| `ground` | `assets/gfx/backgrounds/ground.png` | Ground strip at bottom |
+| `background` | `assets/campaign/aw/backgrounds/mangoo.jpg` | Sky / backdrop image |
+| `ground` | `assets/campaign/aw/backgrounds/ground.png` | Ground strip at bottom |
 | `tower`, `cannon`, `crosshair`, `human` | — | Gameplay sprites |
 
 ### Audio — `config.sounds`
@@ -65,8 +70,8 @@ These fields use **sticky** semantics (same as v1 `CHANGE_*`): when set on a rou
 
 | JSON field | v1 key | Example |
 |------------|--------|---------|
-| `background` | `CHANGE_BACKGROUND`, `BACKGROUND` | `"assets/gfx/backgrounds/desert.jpg"` |
-| `ground` | `CHANGE_GROUND` | `"assets/gfx/backgrounds/ground2.png"` |
+| `background` | `CHANGE_BACKGROUND`, `BACKGROUND` | `"assets/campaign/aw/backgrounds/desert.jpg"` |
+| `ground` | `CHANGE_GROUND` | `"assets/campaign/aw/backgrounds/ground2.png"` |
 | `music` | `CHANGE_MUSIC` | `"boss.ogg"` |
 | `musicVolume` | `CHANGE_VOLUME` | `0.8` |
 | `sounds` | — | `{ "newRound": "custom_gong.ogg" }` |
@@ -108,19 +113,19 @@ Omit fields on rounds that should keep the previous value — keeps JSON small.
 {
   "config": {
     "assets": {
-      "background": "assets/gfx/backgrounds/mangoo.jpg",
-      "ground": "assets/gfx/backgrounds/ground.png"
+      "background": "assets/campaign/aw/backgrounds/mangoo.jpg",
+      "ground": "assets/campaign/aw/backgrounds/ground.png"
     }
   },
   "rounds": [
     {
       "name": "TUTORIAL",
-      "background": "assets/gfx/backgrounds/mangoo.jpg",
+      "background": "assets/campaign/aw/backgrounds/mangoo.jpg",
       "spawns": []
     },
     {
       "name": "MISSION",
-      "background": "assets/gfx/backgrounds/desert.jpg",
+      "background": "assets/campaign/aw/backgrounds/desert.jpg",
       "spawns": [{ "kind": "airplane", "type": "BOMBER_HARD", "x": 188, "y": -141, "angle": 0 }]
     }
   ]
@@ -177,7 +182,7 @@ Omit fields on rounds that should keep the previous value — keeps JSON small.
 
 ## Path conventions
 
-- Backgrounds / ground: `assets/gfx/backgrounds/<file>`
+- Backgrounds / ground: `assets/campaign/<id>/backgrounds/<file>` (AW levels often use `assets/campaign/aw/backgrounds/…`)
 - Music & SFX in `config.sounds` and round `music`: relative to `assets/sfx/` (e.g. `"boss.ogg"` → `assets/sfx/boss.ogg`)
 - Sprites: `assets/gfx/...` as elsewhere in the pack
 

@@ -5,7 +5,7 @@
     "name": "Fish",
     "author": "Mangoo",
     "description": "Deadly fishes reached your coast. You have only one shot to shoot one fish. So be careful.",
-    "thumbnail": "assets/gfx/thumbs/fish.png"
+    "thumbnail": "assets/campaign/aw/thumbs/fish.png"
   },
   "config": {
     "startMoney": 500,
@@ -73,9 +73,9 @@
       "tower": "assets/gfx/tower.png",
       "cannon": "assets/gfx/cannon.png",
       "crosshair": "assets/gfx/crosshair1.png",
-      "human": "assets/gfx/human.png",
-      "ground": "assets/gfx/backgrounds/ground.png",
-      "background": "assets/gfx/backgrounds/water.jpg"
+      "human": "assets/campaign/aw/human.png",
+      "ground": "assets/campaign/aw/backgrounds/ground.png",
+      "background": "assets/campaign/aw/backgrounds/water.jpg"
     }
   },
   "bombs": {

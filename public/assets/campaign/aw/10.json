@@ -5,7 +5,7 @@
     "name": "Viech Chronicles",
     "author": "Feuerware",
     "description": "These are the Chronicles of the Viech. The greatest warrior of our time!",
-    "thumbnail": "assets/gfx/thumbs/viech.png"
+    "thumbnail": "assets/campaign/aw/thumbs/viech.png"
   },
   "config": {
     "startMoney": 10000,
@@ -73,9 +73,9 @@
       "tower": "assets/gfx/tower.png",
       "cannon": "assets/gfx/cannon.png",
       "crosshair": "assets/gfx/crosshair1.png",
-      "human": "assets/gfx/human.png",
-      "ground": "assets/gfx/backgrounds/ground.png",
-      "background": "assets/gfx/backgrounds/viech.png"
+      "human": "assets/campaign/aw/human.png",
+      "ground": "assets/campaign/aw/backgrounds/ground.png",
+      "background": "assets/campaign/aw/backgrounds/viech.png"
     }
   },
   "bombs": {
@@ -470,7 +470,7 @@
       ],
       "intro": {
         "text": "Viech Attacks!",
-        "image": "assets/gfx/viech/viech_lvl1.png",
+        "image": "assets/campaign/aw/viech/viech_lvl1.png",
         "time": 5000,
         "sound": "oerks.ogg"
       }
@@ -575,7 +575,7 @@
       ],
       "intro": {
         "text": "Here comes Fred",
-        "image": "assets/gfx/viech/viech_lvl2.png",
+        "image": "assets/campaign/aw/viech/viech_lvl2.png",
         "time": 5000,
         "sound": "oe.ogg"
       }
@@ -694,7 +694,7 @@
       ],
       "intro": {
         "text": "Nuclear Winter",
-        "image": "assets/gfx/viech/viech_lvl3.png",
+        "image": "assets/campaign/aw/viech/viech_lvl3.png",
         "time": 5000,
         "sound": "oerks.ogg"
       }
@@ -1275,7 +1275,7 @@
       ],
       "intro": {
         "text": "No Blood for Oe",
-        "image": "assets/gfx/viech/viech_lvl4.png",
+        "image": "assets/campaign/aw/viech/viech_lvl4.png",
         "time": 5000,
         "sound": "pay.ogg"
       }
@@ -1576,7 +1576,7 @@
       ],
       "intro": {
         "text": "Hidden and dangerous",
-        "image": "assets/gfx/viech/viech_lvl5.png",
+        "image": "assets/campaign/aw/viech/viech_lvl5.png",
         "time": 5000,
         "sound": "gong.ogg"
       }
@@ -2444,7 +2444,7 @@
       ],
       "intro": {
         "text": "Survive this!",
-        "image": "assets/gfx/viech/viech_lvl6.png",
+        "image": "assets/campaign/aw/viech/viech_lvl6.png",
         "time": 5000,
         "sound": "oerks.ogg"
       }

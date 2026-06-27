@@ -8,7 +8,7 @@ Browser remake of **Antiwar v1.5** (Vite + TypeScript + Pixi.js).
 
 **[public/web/level-authoring.md](../public/web/level-authoring.md)** — English successor to v1 `levels_selbermachen.txt`. How to create a **new campaign**, add levels, define bombs/planes, and use `aiConfig`. Served at `/web/level-authoring.md` in dev and production builds.
 
-Round sticky overrides: [public/campaign/format.md](../public/campaign/format.md).
+Round sticky overrides: [public/assets/campaign/format.md](../public/assets/campaign/format.md).
 
 ## Reference
 
@@ -27,5 +27,5 @@ Round sticky overrides: [public/campaign/format.md](../public/campaign/format.md
 ## Conventions
 
 - Game coordinates: **1920×1080 design space**, letterboxed to the window.
-- Campaign levels: `public/campaign/aw/1.json` … `aw/13.json`, plus `aw2/` for new content.
+- Campaign levels: `public/assets/campaign/aw/1.json` … `aw/13.json`, plus `aw2/` for new content.
 - When in doubt, match v1 behavior in `old/data/` and `old/readme.txt`.

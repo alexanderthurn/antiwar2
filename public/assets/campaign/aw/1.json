@@ -5,7 +5,7 @@
     "name": "Training",
     "author": "Feuerware",
     "description": "How to play Antiwar",
-    "thumbnail": "assets/gfx/thumbs/desert.png"
+    "thumbnail": "assets/campaign/aw/thumbs/desert.png"
   },
   "config": {
     "startMoney": 1000,
@@ -64,9 +64,9 @@
       "tower": "assets/gfx/tower.png",
       "cannon": "assets/gfx/cannon.png",
       "crosshair": "assets/gfx/crosshair1.png",
-      "human": "assets/gfx/human.png",
-      "ground": "assets/gfx/backgrounds/ground.png",
-      "background": "assets/gfx/backgrounds/mangoo.jpg"
+      "human": "assets/campaign/aw/human.png",
+      "ground": "assets/campaign/aw/backgrounds/ground.png",
+      "background": "assets/campaign/aw/backgrounds/mangoo.jpg"
     }
   },
   "bombs": {

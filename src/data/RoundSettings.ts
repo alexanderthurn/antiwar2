@@ -2,8 +2,8 @@ import type { LevelSoundsConfig } from '../audio/LevelSounds';
 import { resolveLevelSounds } from '../audio/LevelSounds';
 import type { LevelPack, StoryLimits } from './types';
 
-const DEFAULT_BACKGROUND = 'assets/gfx/backgrounds/mangoo.jpg';
-const DEFAULT_GROUND = 'assets/gfx/backgrounds/ground.png';
+const DEFAULT_BACKGROUND = 'assets/campaign/aw/backgrounds/mangoo.jpg';
+const DEFAULT_GROUND = 'assets/campaign/aw/backgrounds/ground.png';
 
 export interface RoundVisuals {
   background: string;

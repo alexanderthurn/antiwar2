@@ -26,16 +26,16 @@ Create your own campaigns, levels, enemy planes, and weapons. This is the Englis
 
 ## 1. v1 → Antiwar 2
 
-In v1, one campaign was a **folder** with four text files. In Antiwar 2, campaigns live under `public/campaign/<id>/` and each level is a single JSON file.
+In v1, one campaign was a **folder** with four text files. In Antiwar 2, campaigns live under `public/assets/campaign/<id>/` and each level is a single JSON file.
 
 | v1 (`data/mypack/`) | Antiwar 2 |
 |---------------------|-----------|
-| Entire `data/mypack/` folder | `public/campaign/<id>/` folder |
+| Entire `data/mypack/` folder | `public/assets/campaign/<id>/` folder |
 | `config.txt` | `N.json` → `config` (+ `meta` for title/author/thumbnail) |
 | `levels.txt` | `N.json` → `rounds[]` |
 | `bombs.txt` | `N.json` → `bombs` |
 | `airplanes.txt` | `N.json` → `airplanes` |
-| Campaign list (manual) | `public/campaign/registry.json` |
+| Campaign list (manual) | `public/assets/campaign/registry.json` |
 | Level order on map | `<id>/index.json` |
 | `KI_PARAM_A/B/C` | `aiConfig.flightBand`, `dropIntervalSec`, or `glideTarget` |
 | `SPEED: 2` (per frame @ 60 Hz) | `"speed": 120` (px/s) |
@@ -54,13 +54,13 @@ Choose a short, unique id (letters/numbers, no spaces). Examples: `aw`, `aw2`, `
 
 This id is used in:
 
-- Folder name: `public/campaign/desert/`
+- Folder name: `public/assets/campaign/desert/`
 - Save games: `desert_` (normal), `desert_h` (hardcore)
-- Loader paths: `campaign/desert/1.json`
+- Loader paths: `assets/campaign/desert/1.json`
 
 ### Step 2 — Register on the main menu
 
-Edit `public/campaign/registry.json`:
+Edit `public/assets/campaign/registry.json`:
 
 ```json
 {
@@ -80,12 +80,12 @@ Restart or reload the game — the new button appears. Selecting it opens that c
 ### Step 3 — Create the campaign folder
 
 ```
-public/campaign/desert/
+public/assets/campaign/desert/
   index.json    ← map + level list (required)
   1.json        ← first level pack
 ```
 
-Copy `public/campaign/aw2/` as a template if you want a minimal starting point.
+Copy `public/assets/campaign/aw2/` as a template if you want a minimal starting point.
 
 ### Step 4 — Write `index.json`
 
@@ -96,7 +96,7 @@ Defines the **campaign map**: display name, background image, and where each lev
   "schemaVersion": 1,
   "id": "desert",
   "campaignName": "Desert Storm",
-  "mapImage": "assets/gfx/aw.png",
+  "mapImage": "assets/campaign/aw/map.png",
   "levels": [
     {
       "file": "1.json",
@@ -149,7 +149,7 @@ Each `N.json` is self-contained: economy, bombs, airplanes, and all rounds for t
     "name": "First Strike",
     "author": "Your Name",
     "description": "One line shown on the level preview card",
-    "thumbnail": "assets/gfx/thumbs/desert.png",
+    "thumbnail": "assets/campaign/aw/thumbs/desert.png",
     "difficulty": "easy"
   },
   "config": { },
@@ -176,7 +176,7 @@ Each `N.json` is self-contained: economy, bombs, airplanes, and all rounds for t
 
 ### Step 6 — Add graphics & audio (optional)
 
-Put new images under `public/assets/gfx/` and sounds under `public/assets/sfx/`. Reference them with full paths in `config.assets` and `config.sounds`, or per-round overrides (see [`format.md`](../campaign/format.md)).
+Put new images under `public/assets/gfx/` and sounds under `public/assets/sfx/`. Reference them with full paths in `config.assets` and `config.sounds`, or per-round overrides (see [`format.md`](../assets/campaign/format.md)).
 
 ### Step 7 — Test
 
@@ -202,10 +202,10 @@ Then add the level to `desert/index.json` and register `desert` in `registry.jso
 
 When the campaign **already exists** (e.g. adding level `2.json` to `aw2`):
 
-1. Copy a nearby level pack: `public/campaign/aw2/1.json` → `2.json`.
+1. Copy a nearby level pack: `public/assets/campaign/aw2/1.json` → `2.json`.
 2. Change `"id": 2` and `meta` (name, description, thumbnail).
 3. Edit `rounds`, `airplanes`, `bombs` as needed.
-4. Append to `public/campaign/aw2/index.json`:
+4. Append to `public/assets/campaign/aw2/index.json`:
 
 ```json
 {
@@ -224,7 +224,7 @@ You do **not** need to touch `registry.json` when adding levels to an existing c
 ### Folder layout (reference)
 
 ```
-public/campaign/
+public/assets/campaign/
   registry.json          # main menu campaigns
   format.md              # round override quick reference
   aw/
@@ -245,7 +245,7 @@ registry.json       → main menu
   └─ rounds[]       → stages in play order
 ```
 
-Round-specific overrides (background, music, intro) are documented in [`format.md`](../campaign/format.md).
+Round-specific overrides (background, music, intro) are documented in [`format.md`](../assets/campaign/format.md).
 
 ---
 ## 4. Level config (`config`)
@@ -337,9 +337,9 @@ Disable shop buttons:
   "tower": "assets/gfx/tower.png",
   "cannon": "assets/gfx/cannon.png",
   "crosshair": "assets/gfx/crosshair1.png",
-  "human": "assets/gfx/human.png",
-  "background": "assets/gfx/backgrounds/mangoo.jpg",
-  "ground": "assets/gfx/backgrounds/ground.png"
+  "human": "assets/campaign/aw/human.png",
+  "background": "assets/campaign/aw/backgrounds/mangoo.jpg",
+  "ground": "assets/campaign/aw/backgrounds/ground.png"
 },
 "sounds": {
   "music": "game.ogg",
@@ -427,7 +427,7 @@ These apply to **this round and all later rounds** until changed again:
 - `music`, `musicVolume`
 - `sounds` — partial SFX patch
 
-See [`format.md`](../campaign/format.md) for examples.
+See [`format.md`](../assets/campaign/format.md) for examples.
 
 ---
 
@@ -646,7 +646,7 @@ Each frame the engine rolls: `random() < dt / dropIntervalSec`. So `10` ≈ one 
 
 ### Minimal new level (existing campaign)
 
-1. Copy a pack in `public/campaign/<id>/`.
+1. Copy a pack in `public/assets/campaign/<id>/`.
 2. Add an entry to `<id>/index.json` with `file`, `name`, `mapX`, `mapY`, `pathType`.
 3. Tweak `rounds[].spawns` and `maxAirplanes`.
 4. Adjust `airplanes.*.aiConfig.dropIntervalSec` for pressure.

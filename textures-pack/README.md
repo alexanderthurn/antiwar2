@@ -31,18 +31,18 @@ These remain as individual files in `public/assets/gfx/`:
 
 | Path | Reason |
 |------|--------|
-| `backgrounds/` | Full-screen JPG/PNG backdrops |
-| `tutorial/` | Full-screen tutorial images |
-| `human.png` | Walk-cycle sheet (custom frame slicing in code) |
-| `explosion.png`, `explosion_nuke.png` | Animated FX sheets (custom slicing) |
-| `particle.png` | Particle grid sheet (custom slicing) |
-| `kewlfont.png` | Bitmap font |
-| `menu.jpg` | Full-screen menu background |
-| `aw.png` | Full-screen campaign map |
-| `hand-cursor.png` | CSS `cursor: url(...)` — must be a real file URL |
-| `nightshot.png` | Large night-vision overlay — kept as a single full texture |
+| `assets/campaign/` | Campaign maps, thumbs, backgrounds, intro art, human walk-cycle |
+| `assets/gfx/tutorial/` | Full-screen tutorial images |
+| `assets/gfx/explosion.png`, `explosion_nuke.png` | Animated FX sheets (custom slicing) |
+| `assets/gfx/particle.png` | Particle grid sheet (custom slicing) |
+| `assets/gfx/kewlfont.png` | Bitmap font |
+| `assets/gfx/menu.jpg` | Full-screen menu background |
+| `assets/gfx/hand-cursor.png` | CSS `cursor: url(...)` — must be a real file URL |
+| `assets/gfx/nightshot.png` | Large night-vision overlay — kept as a single full texture |
 
-Everything else under `sprites/` should be packed for release.
+Campaign loose art and level JSON live under `public/assets/campaign/<id>/` (not packed). Thumbs, viech intros, backgrounds, maps, and `N.json` level packs sit beside each other.
+
+Everything else under `textures-pack/sprites/` should be packed for release.
 
 ## TexturePacker settings
 
@@ -103,10 +103,10 @@ textures-pack/
     BOMBS/
     buttons/
     buttons_map/
-    thumbs/
-    viech/
     3rdparty/
     tower.png
     cannon.png
     …
 ```
+
+Campaign thumbs, viech intros, backgrounds, maps, and JSON: `public/assets/campaign/<id>/` (loose, not packed).

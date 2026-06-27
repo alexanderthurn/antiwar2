@@ -5,7 +5,7 @@
     "name": "Nuke",
     "author": "Feuerware",
     "description": "This is their last resort. The US is using their full nuclear fire power against the civilians.",
-    "thumbnail": "assets/gfx/thumbs/desert.png"
+    "thumbnail": "assets/campaign/aw/thumbs/desert.png"
   },
   "config": {
     "startMoney": 500,
@@ -72,9 +72,9 @@
       "tower": "assets/gfx/tower.png",
       "cannon": "assets/gfx/cannon.png",
       "crosshair": "assets/gfx/crosshair1.png",
-      "human": "assets/gfx/human.png",
-      "ground": "assets/gfx/backgrounds/ground.png",
-      "background": "assets/gfx/backgrounds/nuke.png"
+      "human": "assets/campaign/aw/human.png",
+      "ground": "assets/campaign/aw/backgrounds/ground.png",
+      "background": "assets/campaign/aw/backgrounds/nuke.png"
     }
   },
   "bombs": {

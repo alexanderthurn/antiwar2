@@ -11,7 +11,7 @@ antiwar2/
 ├── docs/                    # This documentation
 ├── old/                     # v1 reference (do not ship)
 ├── public/
-│   ├── campaign/            # 1.json, 2.json, index.json
+│   ├── assets/campaign/     # JSON + campaign art per id
 │   └── assets/              # gfx/, sfx/ (ported from old/)
 ├── scripts/
 │   └── convert-v1.ts        # v1 txt → JSON CLI
@@ -196,7 +196,7 @@ Menu
 
 ```mermaid
 flowchart LR
-    JSON[campaign/N.json] --> Loader[CampaignLoader]
+    JSON[assets/campaign/N.json] --> Loader[CampaignLoader]
     Loader --> Runtime[GameRuntime state]
     Runtime --> Systems
     Assets[public/assets/] --> AssetLoader

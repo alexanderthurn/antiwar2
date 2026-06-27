@@ -5,7 +5,7 @@
     "name": "Sector One",
     "author": "Mangoo",
     "description": "Welcome to first Level  I hope you will have some fun  If you lock an enemy, you fire guided and stronger missiles, try it.",
-    "thumbnail": "assets/gfx/thumbs/mangoo.png"
+    "thumbnail": "assets/campaign/aw/thumbs/mangoo.png"
   },
   "config": {
     "startMoney": 1000,
@@ -72,9 +72,9 @@
       "tower": "assets/gfx/tower.png",
       "cannon": "assets/gfx/cannon.png",
       "crosshair": "assets/gfx/crosshair1.png",
-      "human": "assets/gfx/human.png",
-      "ground": "assets/gfx/backgrounds/ground.png",
-      "background": "assets/gfx/backgrounds/ai_mangoo.jpg"
+      "human": "assets/campaign/aw/human.png",
+      "ground": "assets/campaign/aw/backgrounds/ground.png",
+      "background": "assets/campaign/aw/backgrounds/ai_mangoo.jpg"
     }
   },
   "bombs": {
@@ -144,7 +144,7 @@
   "rounds": [
     {
       "name": "2026",
-      "background": "assets/gfx/backgrounds/mangoo.jpg",
+      "background": "assets/campaign/aw/backgrounds/mangoo.jpg",
       "weather": [
         0,
         0,

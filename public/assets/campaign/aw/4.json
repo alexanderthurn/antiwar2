@@ -1,18 +1,17 @@
 {
   "schemaVersion": 1,
-  "id": 12,
+  "id": 4,
   "meta": {
-    "name": "Dragi",
-    "author": "Mangoo",
-    "description": "Little crocodile wants revenge. Shoot it down!",
-    "thumbnail": "assets/gfx/thumbs/dragi.png",
-    "difficulty": "easy"
+    "name": "Overlord",
+    "author": "Mangoo / pop",
+    "description": "Big Brother is watching you!",
+    "thumbnail": "assets/campaign/aw/thumbs/cia.png"
   },
   "config": {
     "startMoney": 500,
     "startHumans": 3,
     "startRockets": 10,
-    "startHumanHp": 100,
+    "startHumanHp": 50,
     "startHumanMoney": 300,
     "startRocketPower": 50,
     "startRocketSpeed": 1200,
@@ -23,13 +22,13 @@
     "humanHpRefresh": 1,
     "moneyFactor": 1,
     "crashingRockets": 0,
-    "bloody": 5,
     "buttonsDisabled": {
       "human": true,
-      "humanHp": true,
+      "humanHp": false,
       "humanMoney": true,
       "rocket": true,
       "rocketSpeed": true,
+      "rocketPower": false,
       "aim": true
     },
     "upgrades": {
@@ -73,40 +72,40 @@
       "tower": "assets/gfx/tower.png",
       "cannon": "assets/gfx/cannon.png",
       "crosshair": "assets/gfx/crosshair1.png",
-      "human": "assets/gfx/human.png",
-      "ground": "assets/gfx/backgrounds/ground2.png",
-      "background": "assets/gfx/backgrounds/bonus.jpg"
+      "human": "assets/campaign/aw/human.png",
+      "ground": "assets/campaign/aw/backgrounds/ground4.png",
+      "background": "assets/campaign/aw/backgrounds/level3.jpg"
     }
   },
   "bombs": {
     "BOMB_EI": {
-      "image": "assets/gfx/BOMBS/ei.png",
+      "image": "assets/gfx/BOMBS/bomb_nuke.png",
       "scale": [
-        0.5,
-        0.5
+        0.8,
+        0.8
       ],
       "hp": 10,
-      "damage": 100,
-      "speed": 42,
+      "damage": 80,
+      "speed": 84,
       "rotationSpeed": 300,
       "explosion": {
-        "type": 1,
-        "power": 100,
-        "range": 2,
+        "type": 3,
+        "power": 15,
+        "range": 3.5,
         "lifetime": 20
       },
       "trail": 0,
       "checkOutOfScreen": false
     },
     "BOMB_EI2": {
-      "image": "assets/gfx/BOMBS/ei.png",
+      "image": "assets/gfx/BOMBS/torpedo.png",
       "scale": [
-        0.3,
-        0.3
+        0.8,
+        0.8
       ],
       "hp": 10,
-      "damage": 500,
-      "speed": 180,
+      "damage": 49,
+      "speed": 300,
       "rotationSpeed": 300,
       "explosion": {
         "type": 1,
@@ -114,16 +113,35 @@
         "range": 1,
         "lifetime": 20
       },
-      "trail": 3,
+      "trail": 0,
+      "checkOutOfScreen": true
+    },
+    "BOMB_EI3": {
+      "image": "assets/gfx/BOMBS/buschfeuer.png",
+      "scale": [
+        0.32,
+        0.32
+      ],
+      "hp": 10,
+      "damage": 700,
+      "speed": 270,
+      "rotationSpeed": 300,
+      "explosion": {
+        "type": 1,
+        "power": 1,
+        "range": 1,
+        "lifetime": 5
+      },
+      "trail": 0.2,
       "checkOutOfScreen": true
     },
     "BOMB_PLAYER": {
-      "image": "assets/gfx/BOMBS/messer.png",
+      "image": "assets/gfx/BOMBS/player_rocket.png",
       "scale": [
-        0.4,
-        0.4
+        0.64,
+        0.64
       ],
-      "hp": 10,
+      "hp": 100,
       "damage": 100,
       "speed": 120,
       "rotationSpeed": 2400,
@@ -147,19 +165,18 @@
       ],
       "ai": "BOMBERSIMPLE",
       "drawStyle": 0,
-      "image": "assets/gfx/AIRPLANES/dragi.png",
+      "image": "assets/gfx/AIRPLANES/satelit2.png",
       "scale": [
-        0.5,
-        0.5
+        1.2,
+        1.2
       ],
       "scream": "bloodscream.ogg",
-      "stealthPhaseSec": 0,
       "aiConfig": {
         "flightBand": {
           "minY": 0,
-          "maxY": 300
+          "maxY": 422
         },
-        "dropIntervalSec": 5
+        "dropIntervalSec": 3.333
       }
     },
     "DRAGI2": {
@@ -171,43 +188,41 @@
       ],
       "ai": "FIGHTERSIMPLE",
       "drawStyle": 1,
-      "image": "assets/gfx/AIRPLANES/dragi2.png",
+      "image": "assets/gfx/AIRPLANES/satelit.png",
       "scale": [
-        0.5,
-        0.5
+        1.6,
+        1.6
       ],
       "scream": "bloodscream.ogg",
-      "stealthPhaseSec": 0,
       "aiConfig": {
         "flightBand": {
           "minY": 0,
-          "maxY": 500
+          "maxY": 703
         },
         "dropIntervalSec": 0.833
       }
     },
     "DRAGI3": {
       "hp": 600000,
-      "speed": 300,
-      "rotationSpeed": 1200,
+      "speed": 420,
+      "rotationSpeed": 1800,
       "weapons": [
-        "BOMB_EI2"
+        "BOMB_EI3"
       ],
       "ai": "FIGHTERSIMPLE",
       "drawStyle": 1,
-      "image": "assets/gfx/AIRPLANES/dragi3.png",
+      "image": "assets/gfx/AIRPLANES/direktor.png",
       "scale": [
-        2,
-        2
+        2.88,
+        2.88
       ],
       "scream": "bloodscream.ogg",
-      "stealthPhaseSec": 0,
       "aiConfig": {
         "flightBand": {
-          "minY": -200,
-          "maxY": 400
+          "minY": -281,
+          "maxY": 422
         },
-        "dropIntervalSec": 0.333
+        "dropIntervalSec": 0.167
       }
     }
   },
@@ -232,9 +247,7 @@
           "y": 281,
           "angle": 0
         }
-      ],
-      "background": "assets/gfx/backgrounds/bonus.jpg",
-      "ground": "assets/gfx/backgrounds/ground2.png"
+      ]
     },
     {
       "name": "LEVEL1_TUTORIAL",

@@ -5,7 +5,7 @@
     "name": "XR",
     "author": "xr",
     "description": "Break the limits of your mind!",
-    "thumbnail": "assets/gfx/thumbs/desert.png"
+    "thumbnail": "assets/campaign/aw/thumbs/desert.png"
   },
   "config": {
     "startMoney": 2000,
@@ -72,9 +72,9 @@
       "tower": "assets/gfx/tower.png",
       "cannon": "assets/gfx/cannon.png",
       "crosshair": "assets/gfx/crosshair2.png",
-      "human": "assets/gfx/human.png",
-      "ground": "assets/gfx/backgrounds/ground.png",
-      "background": "assets/gfx/backgrounds/mangoo.jpg"
+      "human": "assets/campaign/aw/human.png",
+      "ground": "assets/campaign/aw/backgrounds/ground.png",
+      "background": "assets/campaign/aw/backgrounds/mangoo.jpg"
     }
   },
   "bombs": {

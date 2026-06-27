@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Convert v1 data/<pack>/ text files to public/campaign/N.json
+ * Convert v1 data/<pack>/ text files to public/assets/campaign/<id>/N.json
  * Usage: node scripts/convert-v1.mjs --source data/schnappi --campaign aw --out 12.json --id 12
  */
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -93,7 +93,7 @@ function gfxPath(p, kind = 'auto') {
   if (kind === 'plane') return `assets/gfx/AIRPLANES/${renamePlaneImageFile(n)}`;
   if (n.endsWith('.png') || n.endsWith('.jpg') || n.endsWith('.PNG') || n.endsWith('.JPG')) {
     if (n.includes('/')) return `assets/gfx/${n}`;
-    return `assets/gfx/backgrounds/${n}`;
+    return `assets/campaign/aw/backgrounds/${n}`;
   }
   return `assets/gfx/${n}`;
 }
@@ -156,7 +156,7 @@ function parseConfig(cfg) {
       tower: 'assets/gfx/tower.png',
       cannon: 'assets/gfx/cannon.png',
       crosshair: 'assets/gfx/crosshair1.png',
-      human: 'assets/gfx/human.png',
+      human: 'assets/campaign/aw/human.png',
       ground: gfxPath(ground),
       background: gfxPath(bg),
     },

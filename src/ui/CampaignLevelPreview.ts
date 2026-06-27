@@ -194,7 +194,7 @@ export class CampaignLevelPreview extends Container {
   async preloadThumbnails(packs: LevelPack[]): Promise<void> {
     const paths = new Set<string>();
     for (const pack of packs) {
-      paths.add(pack.meta.thumbnail ?? 'assets/gfx/thumbs/desert.png');
+      paths.add(pack.meta.thumbnail ?? 'assets/campaign/aw/thumbs/desert.png');
     }
     await this.preloadTexturePaths([...paths]);
   }
@@ -216,7 +216,7 @@ export class CampaignLevelPreview extends Container {
     record?: LevelRecord,
   ): void {
     this.activeLevelIndex = levelIndex;
-    const thumbPath = pack.meta.thumbnail ?? 'assets/gfx/thumbs/desert.png';
+    const thumbPath = pack.meta.thumbnail ?? 'assets/campaign/aw/thumbs/desert.png';
     const tex = this.thumbTextures.get(thumbPath);
     this.thumbSprite.visible = true;
     this.difficultyLine.visible = true;

@@ -21,7 +21,7 @@ Open http://localhost:5173 — multiple campaigns from the main menu, local co-o
 - Adding levels, bombs, airplanes, rounds, and `aiConfig`
 - Per-second units and v1 porting (`scripts/convert-v1.mjs`)
 
-Campaign data: `public/campaign/` (`aw/`, `aw2/`, …). Round override reference: [`public/campaign/format.md`](public/campaign/format.md).
+Campaign data and art: `public/assets/campaign/` (`hub/`, `aw/`, `aw2/`, …). Round override reference: [`public/assets/campaign/format.md`](public/assets/campaign/format.md).
 
 Developer schema notes: [`docs/03-data-format.md`](docs/03-data-format.md).
 

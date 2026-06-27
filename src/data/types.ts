@@ -202,11 +202,11 @@ export interface CampaignRegistry {
 }
 
 function campaignBase(campaignId: string): string {
-  return `campaign/${campaignId}`;
+  return `assets/campaign/${campaignId}`;
 }
 
 export async function loadCampaignRegistry(): Promise<CampaignRegistry> {
-  const res = await fetch(publicUrl('campaign/registry.json'));
+  const res = await fetch(publicUrl('assets/campaign/registry.json'));
   if (!res.ok) throw new Error('Failed to load campaign registry');
   return res.json() as Promise<CampaignRegistry>;
 }

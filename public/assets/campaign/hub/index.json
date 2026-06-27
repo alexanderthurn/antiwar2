@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "id": "hub",
   "campaignName": "Conflicts",
-  "mapImage": "assets/gfx/hub.png",
+  "mapImage": "assets/campaign/hub/map.png",
   "freeSelect": true,
   "levels": [
     {
@@ -10,7 +10,7 @@
       "campaignId": "aw",
       "name": "Antiwar 1",
       "description": "The original Antiwar campaign.",
-      "thumbnail": "assets/gfx/aw.png",
+      "thumbnail": "assets/campaign/aw/map.png",
       "mapX": 640,
       "mapY": 540,
       "pathType": 1
@@ -20,7 +20,7 @@
       "campaignId": "aw2",
       "name": "Antiwar 2",
       "description": "The Antiwar 2 campaign.",
-      "thumbnail": "assets/gfx/aw2.png",
+      "thumbnail": "assets/campaign/aw2/map.png",
       "mapX": 1280,
       "mapY": 540,
       "pathType": 1

@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "id": 3,
+  "id": 9,
   "meta": {
-    "name": "Boss One",
+    "name": "Boss Three",
     "author": "Mangoo",
-    "description": "Harhar, its time to say good bye. God bless America. This Enemy is already dead",
-    "thumbnail": "assets/gfx/thumbs/whitehouse.png"
+    "description": "Bing bang, here she comes. Can you beat her?",
+    "thumbnail": "assets/campaign/aw/thumbs/whitehouse.png"
   },
   "config": {
-    "startMoney": 4000,
+    "startMoney": 3000,
     "startHumans": 3,
     "startRockets": 5,
     "startHumanHp": 100,
@@ -71,22 +71,23 @@
     "assets": {
       "tower": "assets/gfx/tower.png",
       "cannon": "assets/gfx/cannon.png",
-      "crosshair": "assets/gfx/crosshair2.png",
-      "human": "assets/gfx/human.png",
-      "ground": "assets/gfx/backgrounds/ground2.png",
-      "background": "assets/gfx/backgrounds/whitehouse.jpg"
+      "crosshair": "assets/gfx/crosshair1.png",
+      "human": "assets/campaign/aw/human.png",
+      "ground": "assets/campaign/aw/backgrounds/ground2.png",
+      "background": "assets/campaign/aw/backgrounds/whitehouse.jpg"
     },
     "sounds": {
       "music": "boss.ogg",
-      "musicVolume": 0.8
+      "musicVolume": 0.8,
+      "shoot": "piu.ogg"
     }
   },
   "bombs": {
     "BOMB_PLAYER": {
-      "image": "assets/gfx/BOMBS/player_rocket.png",
+      "image": "assets/gfx/BOMBS/quantum2.png",
       "scale": [
-        0.8,
-        0.8
+        0.32,
+        0.32
       ],
       "hp": 10,
       "damage": 100,
@@ -98,7 +99,7 @@
         "range": 1,
         "lifetime": 20
       },
-      "trail": 1,
+      "trail": 0,
       "checkOutOfScreen": true
     },
     "BOMB_OLD": {
@@ -109,7 +110,7 @@
       ],
       "hp": 10,
       "damage": 100,
-      "speed": 78,
+      "speed": 42,
       "rotationSpeed": 300,
       "explosion": {
         "type": 1,
@@ -117,51 +118,51 @@
         "range": 3,
         "lifetime": 20
       },
-      "trail": 1,
+      "trail": 0,
       "checkOutOfScreen": false
     },
-    "ROCKET_COLA": {
-      "image": "assets/gfx/BOMBS/rocket_cola.png",
+    "QUANTUM_TORPEDO": {
+      "image": "assets/gfx/BOMBS/quantum.png",
       "scale": [
-        1.6,
-        1.6
+        0.96,
+        0.96
       ],
       "hp": 1,
-      "damage": 20,
-      "speed": 300,
+      "damage": 100,
+      "speed": 150,
       "rotationSpeed": 300,
       "explosion": {
         "type": 1,
-        "power": 20,
+        "power": 2,
         "range": 2,
-        "lifetime": 20
+        "lifetime": 1
       },
-      "trail": 1,
+      "trail": 0,
       "checkOutOfScreen": true
     }
   },
   "airplanes": {
-    "ENDMASTER_BARON": {
-      "hp": 20000,
+    "ENDMASTER_RICE": {
+      "hp": 40000,
       "speed": 300,
       "rotationSpeed": 600,
       "weapons": [
         "BOMB_OLD",
-        "ROCKET_COLA"
+        "QUANTUM_TORPEDO"
       ],
-      "ai": "BARON",
-      "drawStyle": 1,
-      "image": "assets/gfx/AIRPLANES/endmaster_baron.png",
+      "ai": "RICE",
+      "drawStyle": 0,
+      "image": "assets/gfx/AIRPLANES/endmaster_rice.png",
       "scale": [
         0.64,
         0.64
       ],
       "aiConfig": {
         "flightBand": {
-          "minY": 0,
+          "minY": 141,
           "maxY": 422
         },
-        "dropIntervalSec": 0.667
+        "dropIntervalSec": 1.667
       }
     }
   },
@@ -195,7 +196,7 @@
       "spawns": [
         {
           "kind": "airplane",
-          "type": "ENDMASTER_BARON",
+          "type": "ENDMASTER_RICE",
           "x": -187,
           "y": 141,
           "angle": 0
@@ -203,7 +204,7 @@
       ],
       "intro": {
         "text": "You are dead",
-        "image": "assets/gfx/AIRPLANES/endmaster_baron.png",
+        "image": "assets/gfx/AIRPLANES/endmaster_rice.png",
         "time": 5000,
         "sound": "yeahbaby.ogg"
       },

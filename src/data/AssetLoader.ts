@@ -13,19 +13,16 @@ const ATLAS_ENTRY_JSON = [`${ATLAS_DIR}/game-0.json`, `${ATLAS_DIR}/game.json`];
 
 /** Loaded as individual files — not packed into the gameplay atlas. */
 const STANDALONE_FILES = new Set([
-  'assets/gfx/human.png',
   'assets/gfx/explosion.png',
   'assets/gfx/explosion_nuke.png',
   'assets/gfx/particle.png',
   'assets/gfx/kewlfont.png',
   'assets/gfx/menu.jpg',
-  'assets/gfx/aw.png',
-  'assets/gfx/aw2.png',
   'assets/gfx/hand-cursor.png',
   'assets/gfx/nightshot.png',
 ]);
 
-const STANDALONE_PREFIXES = ['assets/gfx/backgrounds/', 'assets/gfx/tutorial/'];
+const STANDALONE_PREFIXES = ['assets/campaign/', 'assets/gfx/tutorial/'];
 
 const loaded = new Set<string>();
 const textureCache = new Map<string, Texture>();

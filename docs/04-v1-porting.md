@@ -1,6 +1,6 @@
 # 04 — Porting v1 Data to JSON
 
-How to convert `old/data/<campaign>/` text files into `public/campaign/<id>/N.json`.
+How to convert `old/data/<campaign>/` text files into `public/assets/campaign/<id>/N.json`.
 
 Reference: `old/levels_selbermachen.txt` (original SDK).
 
@@ -81,7 +81,7 @@ v1 paths are relative to `gfx/` or `sfx/`. Prefix with `assets/`:
 
 ```
 IMAGE: bomber.png           → assets/gfx/AIRPLANES/bomber.png
-CHANGE_BACKGROUND: mangoo.jpg → assets/gfx/backgrounds/mangoo.jpg
+CHANGE_BACKGROUND: mangoo.jpg → assets/campaign/aw/backgrounds/mangoo.jpg
 MUSIC: sfx/game.ogg          → assets/sfx/game.ogg
 INTRO_IMAGE: AIRPLANES/bomber.png → assets/gfx/AIRPLANES/bomber.png
 ```

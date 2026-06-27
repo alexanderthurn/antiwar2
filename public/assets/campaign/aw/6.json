@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "id": 13,
+  "id": 6,
   "meta": {
-    "name": "Boss Four",
+    "name": "Boss Two",
     "author": "Mangoo",
-    "description": "The Godfather of Evil. Its time for revenge. If you can make this round we will be very proud.",
-    "thumbnail": "assets/gfx/thumbs/whitehouse.png"
+    "description": "Strange biologic mutation tries to stop us. Do you recognize it?",
+    "thumbnail": "assets/campaign/aw/thumbs/whitehouse.png"
   },
   "config": {
-    "startMoney": 2500,
+    "startMoney": 3500,
     "startHumans": 3,
     "startRockets": 5,
     "startHumanHp": 100,
@@ -72,15 +72,13 @@
       "tower": "assets/gfx/tower.png",
       "cannon": "assets/gfx/cannon.png",
       "crosshair": "assets/gfx/crosshair1.png",
-      "human": "assets/gfx/human.png",
-      "ground": "assets/gfx/backgrounds/ground2.png",
-      "background": "assets/gfx/backgrounds/whitehouse.jpg"
+      "human": "assets/campaign/aw/human.png",
+      "ground": "assets/campaign/aw/backgrounds/ground2.png",
+      "background": "assets/campaign/aw/backgrounds/whitehouse.jpg"
     },
     "sounds": {
       "music": "boss.ogg",
-      "musicVolume": 0.8,
-      "winner": "ultimate_winner.ogg",
-      "win": "ultimate_winner.ogg"
+      "musicVolume": 0.8
     }
   },
   "bombs": {
@@ -103,89 +101,68 @@
       "trail": 1,
       "checkOutOfScreen": true
     },
-    "MG_BUSH": {
-      "image": "assets/gfx/BOMBS/bush_rocket.png",
+    "BOMB_EI": {
+      "image": "assets/gfx/BOMBS/ei.png",
       "scale": [
-        1.6,
-        1.6
+        0.96,
+        0.96
       ],
       "hp": 1,
-      "damage": 150,
-      "speed": 180,
-      "rotationSpeed": 300,
+      "damage": 90,
+      "speed": 120,
+      "rotationSpeed": 21600,
       "explosion": {
         "type": 1,
-        "power": 150,
-        "range": 3,
-        "lifetime": 30
+        "power": 200,
+        "range": 4,
+        "lifetime": 20
       },
       "trail": 0,
       "checkOutOfScreen": false
     },
-    "PHASER": {
-      "image": "assets/gfx/BOMBS/phaser.png",
+    "BOMB_EI_ANTHRAX": {
+      "image": "assets/gfx/BOMBS/ei_anthrax.png",
+      "scale": [
+        0.8,
+        0.8
+      ],
+      "hp": 1,
+      "damage": 0,
+      "speed": 240,
+      "rotationSpeed": 21600,
+      "explosion": {
+        "type": 2,
+        "power": 2,
+        "range": 4,
+        "lifetime": 40
+      },
+      "trail": 0,
+      "checkOutOfScreen": false
+    }
+  },
+  "airplanes": {
+    "ENDMASTER_VOGEL": {
+      "hp": 30000,
+      "speed": 240,
+      "rotationSpeed": 21600,
+      "weapons": [
+        "BOMB_EI",
+        "BOMB_EI_ANTHRAX"
+      ],
+      "ai": "VOGEL",
+      "drawStyle": 1,
+      "image": "assets/gfx/AIRPLANES/endmaster_vogel.png",
       "scale": [
         1.6,
         1.6
       ],
-      "hp": 1,
-      "damage": 60,
-      "speed": 360,
-      "rotationSpeed": 300,
-      "explosion": {
-        "type": 0,
-        "power": 60,
-        "range": 2,
-        "lifetime": 0
-      },
-      "trail": 0,
-      "checkOutOfScreen": true
-    }
-  },
-  "airplanes": {
-    "ENDMASTER_BUSH": {
-      "hp": 160000,
-      "speed": 300,
-      "rotationSpeed": 600,
-      "weapons": [
-        "UFO",
-        "MG_BUSH"
-      ],
-      "ai": "BUSH",
-      "drawStyle": 0,
-      "image": "assets/gfx/AIRPLANES/endmaster_bush.png",
-      "scale": [
-        0.64,
-        0.64
-      ],
+      "scream": "scream1.ogg",
       "aiConfig": {
         "flightBand": {
-          "minY": 42,
-          "maxY": 14
+          "minY": 0,
+          "maxY": 422
         },
-        "dropIntervalSec": 0.167
-      }
-    },
-    "UFO": {
-      "hp": 100,
-      "speed": 300,
-      "rotationSpeed": 900,
-      "weapons": [
-        "PHASER"
-      ],
-      "ai": "FIGHTERSIMPLE",
-      "drawStyle": 1,
-      "image": "assets/gfx/AIRPLANES/endmaster_bush.png",
-      "scale": [
-        0.144,
-        0.144
-      ],
-      "aiConfig": {
-        "flightBand": {
-          "minY": 422,
-          "maxY": 703
-        },
-        "dropIntervalSec": 1.667
+        "dropIntervalSec": 0.833
       }
     }
   },
@@ -219,7 +196,7 @@
       "spawns": [
         {
           "kind": "airplane",
-          "type": "ENDMASTER_BUSH",
+          "type": "ENDMASTER_VOGEL",
           "x": -187,
           "y": 141,
           "angle": 0
@@ -227,11 +204,11 @@
       ],
       "intro": {
         "text": "You are dead",
-        "image": "assets/gfx/AIRPLANES/endmaster_bush.png",
+        "image": "assets/gfx/AIRPLANES/endmaster_vogel.png",
         "time": 5000,
         "sound": "yeahbaby.ogg"
       },
-      "winSound": "ultimate_winner.ogg"
+      "winSound": "winner.ogg"
     }
   ]
 }

@@ -6,7 +6,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const CAMPAIGN_ROOT = join(import.meta.dirname, '../public/campaign');
+const CAMPAIGN_ROOT = join(import.meta.dirname, '../public/assets/campaign');
 
 /** Per-level config.sounds (merged over code defaults). */
 const LEVEL_SOUNDS = {

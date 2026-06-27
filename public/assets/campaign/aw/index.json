@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "aw",
   "campaignName": "Antiwar 1",
-  "mapImage": "assets/gfx/aw.png",
+  "mapImage": "assets/campaign/aw/map.png",
   "levels": [
     {
       "file": "1.json",

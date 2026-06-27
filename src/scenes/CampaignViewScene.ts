@@ -94,7 +94,7 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
 
     this.preview = new CampaignLevelPreview();
     const thumbPaths = this.levelPacks
-      .map((pack) => pack?.meta.thumbnail ?? 'assets/gfx/thumbs/desert.png')
+      .map((pack) => pack?.meta.thumbnail ?? 'assets/campaign/aw/thumbs/desert.png')
       .filter(Boolean);
     for (const link of this.campaignLinks) {
       if (link?.thumbnail) thumbPaths.push(link.thumbnail);

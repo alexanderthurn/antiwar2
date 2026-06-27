@@ -9,8 +9,10 @@ All coordinates are in **design space** (1920×1080), letterboxed to the browser
 ## File locations
 
 ```
-public/campaign/
+public/assets/campaign/
   registry.json           # menu entries: id + menuTitle
+  hub/
+    index.json            # top-level campaign picker
   aw/
     index.json            # campaign map + level list
     1.json … 13.json      # level packs
@@ -40,7 +42,7 @@ public/campaign/
   "schemaVersion": 1,
   "id": "aw",
   "campaignName": "Antiwar 1",
-  "mapImage": "assets/gfx/aw.png",
+  "mapImage": "assets/campaign/aw/map.png",
   "levels": [
     { "file": "1.json", "name": "Tutorial", "mapX": 188, "mapY": 225, "pathType": 0 },
     { "file": "2.json", "name": "Sector One", "mapX": 600, "mapY": 225, "pathType": 1 }
@@ -60,7 +62,7 @@ public/campaign/
     "name": "Tutorial",
     "author": "Mangoo",
     "description": "How to play Antiwar",
-    "thumbnail": "assets/gfx/thumbs/desert.png",
+    "thumbnail": "assets/campaign/aw/thumbs/desert.png",
     "difficulty": "easy",
     "arcade": false
   },
@@ -139,7 +141,7 @@ Maps from v1 `config.txt`.
     "tower": "assets/gfx/tower.png",
     "cannon": "assets/gfx/cannon.png",
     "crosshair": "assets/gfx/crosshair1.png",
-    "human": "assets/gfx/human.png",
+    "human": "assets/campaign/aw/human.png",
     "explosion": "assets/gfx/explosion.png",
     "explosionNuke": "assets/gfx/explosion_nuke.png",
     "bullet": "assets/gfx/bullet.png",
@@ -299,8 +301,8 @@ Each entry = one v1 `[ROUND_NAME]` section. **Array order = play order.** Sectio
 {
   "name": "ONE SHOOT",
   "weather": [0, 0, 0, 0, 0],
-  "background": "assets/gfx/backgrounds/mangoo.jpg",
-  "ground": "assets/gfx/backgrounds/ground.png",
+  "background": "assets/campaign/aw/backgrounds/mangoo.jpg",
+  "ground": "assets/campaign/aw/backgrounds/ground.png",
   "intro": {
     "text": "shoot your enemy",
     "image": "assets/gfx/AIRPLANES/bomber.png",
@@ -376,6 +378,6 @@ The loader should reject or warn on:
 
 ## Example: minimal valid `1.json`
 
-See `public/campaign/aw/1.json` for a converted tutorial pack.
+See `public/assets/campaign/aw/1.json` for a converted tutorial pack.
 
 Conversion procedure: [04-v1-porting.md](./04-v1-porting.md)

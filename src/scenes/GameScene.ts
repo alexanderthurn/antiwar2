@@ -267,7 +267,7 @@ export class GameScene extends Container implements MenuActionsHost {
     this.levelRocketsFired = 0;
     this.levelCivilianDeaths = 0;
     this.playerRocketTex = await loadTexture(this.level.bombs.BOMB_PLAYER!.image);
-    this.humanBaseTex = await loadTexture(pack.config.assets.human ?? 'assets/gfx/human.png');
+    this.humanBaseTex = await loadTexture(pack.config.assets.human ?? 'assets/campaign/aw/human.png');
 
     if (this.civilians.length === 0) {
       await this.spawnCivilians(pack.config.startHumans);
