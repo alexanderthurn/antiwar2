@@ -6,6 +6,16 @@ export const KEWL_FONT_FAMILY = 'KewlFont';
 /** Shared vertical position for screen titles (Shop, Paused, main menu, etc.). */
 export const UI_TITLE_Y = Math.round(DESIGN.height * 0.1);
 export const UI_TITLE_MAIN_MENU_Y = Math.round(DESIGN.height * 0.05);
+/** Design-space font size for stacked menu buttons (main menu, pause, options). */
+export const MENU_ITEM_FONT_SIZE = 28;
+/** Design-space font size for screen titles above menu lists (Options, Paused, etc.). */
+export const MENU_TITLE_FONT_SIZE = 36;
+/** Standard width of centered menu button rows. */
+export const MENU_BTN_WIDTH = 420;
+/** Vertical position of the first stacked menu button row. */
+export const MENU_BTN_START_Y = 400;
+/** Design-space font size for menu footer links (version, imprint, etc.). */
+export const MENU_FOOTER_FONT_SIZE = 21;
 /** Multiplier applied to all kewlText size values (design-space px). */
 export const KEWL_FONT_DISPLAY_SCALE = 2;
 /** Extra space between lines in multi-line labels (HUD, credits, etc.). */
@@ -75,6 +85,17 @@ export function kewlLineHeight(designSize: number): number {
 /** Vertical gap to leave between stacked text blocks at a given design font size. */
 export function kewlBlockGap(designSize: number): number {
   return Math.round(kewlLineHeight(designSize) * 0.45);
+}
+
+/** Vertical step between stacked focusable menu rows (buttons, toggles). */
+export function menuRowStep(designSize: number): number {
+  return kewlLineHeight(designSize) * 0.8;
+}
+
+/** Total height of a vertically centered menu block (excludes trailing gap). */
+export function menuBlockHeight(rowCount: number, designSize: number): number {
+  if (rowCount <= 0) return 0;
+  return rowCount * menuRowStep(designSize) - kewlBlockGap(designSize);
 }
 
 export interface KewlTextOptions {

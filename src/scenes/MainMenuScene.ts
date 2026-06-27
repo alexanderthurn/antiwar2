@@ -11,12 +11,11 @@ import { createMenuBackground } from '../ui/MenuBackground';
 import { MenuLogo } from '../ui/MenuLogo';
 import { HowToPlayOverlay } from '../ui/HowToPlayOverlay';
 import { SettingsOverlay } from '../ui/SettingsOverlay';
-import { kewlLineHeight, kewlMeasuredSize, kewlTextLeftInset, UI_TITLE_MAIN_MENU_Y } from '../ui/KewlFont';
+import { kewlLineHeight, kewlMeasuredSize, kewlTextLeftInset, MENU_BTN_START_Y, MENU_BTN_WIDTH, MENU_FOOTER_FONT_SIZE, MENU_ITEM_FONT_SIZE, menuRowStep, UI_TITLE_MAIN_MENU_Y } from '../ui/KewlFont';
 
 const LOGO_PATH = 'assets/gfx/logo.png';
 const LOGO_HEIGHT = 200;
 const FOOTER_MARGIN = 21;
-const FOOTER_FONT_SIZE = 21;
 const CREDIT_URL = 'https://feuerware.com';
 
 let welcomePlayed = false;
@@ -105,11 +104,10 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     this.logo = new MenuLogo(logoTex, centerX, UI_TITLE_MAIN_MENU_Y, LOGO_HEIGHT);
     this.menuContent.addChild(this.logo);
 
-    const btnW = 420;
+    const btnW = MENU_BTN_WIDTH;
     const btnX = centerX - btnW / 2;
-    const btnSize = 28;
-    const btnStep = kewlLineHeight(btnSize) * 0.8;
-    let btnY = 400;
+    const btnStep = menuRowStep(MENU_ITEM_FONT_SIZE);
+    let btnY = MENU_BTN_START_Y;
 
     for (const campaign of registry.campaigns) {
       this.addChildCampaignButton(campaign, btnX, btnY, btnW, onSelectCampaign);
@@ -122,7 +120,7 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     btnY += btnStep;
     this.menuContent.addChild(this.makeButton('menu-credits', 'Credits', btnX, btnY, btnW, onCredits));
 
-    const footerLineH = kewlLineHeight(FOOTER_FONT_SIZE);
+    const footerLineH = kewlLineHeight(MENU_FOOTER_FONT_SIZE);
     const footerY = DESIGN.height - FOOTER_MARGIN - footerLineH;
 
     const versionText = `Version: ${packageJson.version}`;
@@ -130,14 +128,14 @@ export class MainMenuScene extends Container implements MenuActionsHost {
       this.makeFooterLink(
         'menu-version',
         versionText,
-        FOOTER_MARGIN - kewlTextLeftInset(FOOTER_FONT_SIZE),
+        FOOTER_MARGIN - kewlTextLeftInset(MENU_FOOTER_FONT_SIZE),
         footerY,
         VERSION_URL,
       ),
     );
 
     const creditText = 'Feuerware';
-    const creditW = kewlMeasuredSize(creditText, FOOTER_FONT_SIZE).width;
+    const creditW = kewlMeasuredSize(creditText, MENU_FOOTER_FONT_SIZE).width;
     this.menuContent.addChild(
       this.makeFooterLink(
         'menu-credit',
@@ -187,7 +185,7 @@ export class MainMenuScene extends Container implements MenuActionsHost {
       y,
       w,
       center: true,
-      fontSize: 28,
+      fontSize: MENU_ITEM_FONT_SIZE,
       onPress: onClick,
     });
     this.menuActions.push(action);
@@ -210,7 +208,7 @@ export class MainMenuScene extends Container implements MenuActionsHost {
       y,
       w,
       align,
-      fontSize: FOOTER_FONT_SIZE,
+      fontSize: MENU_FOOTER_FONT_SIZE,
       onPress: () => window.open(url, '_blank', 'noopener,noreferrer'),
     });
     this.menuActions.push(action);

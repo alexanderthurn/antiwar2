@@ -11,13 +11,22 @@ import type { MenuActionsHost } from '../input/MenuActionsHost';
 import type { UiAction } from '../input/UiMenuController';
 import { playMenuClick } from '../audio/UiSounds';
 import { createMenuBackground } from './MenuBackground';
-import { kewlBlockGap, kewlLineHeight, kewlMeasuredSize, kewlString, kewlText, kewlTextLeftInset, UI_TITLE_Y } from './KewlFont';
+import {
+  kewlLineHeight,
+  kewlMeasuredSize,
+  kewlString,
+  kewlText,
+  kewlTextLeftInset,
+  MENU_BTN_START_Y,
+  MENU_BTN_WIDTH,
+  MENU_FOOTER_FONT_SIZE,
+  MENU_ITEM_FONT_SIZE,
+  MENU_TITLE_FONT_SIZE,
+  menuRowStep,
+  UI_TITLE_Y,
+} from './KewlFont';
 
-const ROW_FONT = 22;
-const BACK_FONT = 20;
-const BTN_W = 420;
 const FOOTER_MARGIN = 21;
-const FOOTER_FONT_SIZE = 16;
 
 export class SettingsOverlay extends Container implements MenuActionsHost {
   private menuActions: UiAction[] = [];
@@ -35,7 +44,7 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
     this.addChild(await createMenuBackground());
 
     const centerX = DESIGN.width / 2;
-    const title = kewlText({ text: 'Options', size: 36, anchorX: 0.5 });
+    const title = kewlText({ text: 'Options', size: MENU_TITLE_FONT_SIZE, anchorX: 0.5 });
     title.position.set(centerX, UI_TITLE_Y);
     this.addChild(title);
 
@@ -68,26 +77,23 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
       },
     ] as const;
 
-    const btnX = centerX - BTN_W / 2;
-    const rowStep = kewlLineHeight(ROW_FONT) + kewlBlockGap(ROW_FONT);
-    const backStep = kewlLineHeight(BACK_FONT) + kewlBlockGap(BACK_FONT);
-    const blockH = rows.length * rowStep + backStep;
-    let rowY = (DESIGN.height - blockH) / 2;
+    const btnX = centerX - MENU_BTN_WIDTH / 2;
+    const rowStep = menuRowStep(MENU_ITEM_FONT_SIZE);
+    let rowY = MENU_BTN_START_Y;
 
     for (const row of rows) {
       this.addRow(row.id, row.label, btnX, rowY, row.onPress);
       rowY += rowStep;
     }
 
-    const backW = 200;
     const back = createFocusableButton({
       id: 'settings-back',
       label: 'Back',
-      x: centerX - backW / 2,
+      x: btnX,
       y: rowY,
       center: true,
-      w: backW,
-      fontSize: BACK_FONT,
+      w: MENU_BTN_WIDTH,
+      fontSize: MENU_ITEM_FONT_SIZE,
       onPress: () => this.onBack(),
     });
     this.addChild(back.view);
@@ -100,7 +106,7 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
   }
 
   private addFooterActions(): void {
-    const footerLineH = kewlLineHeight(FOOTER_FONT_SIZE);
+    const footerLineH = kewlLineHeight(MENU_FOOTER_FONT_SIZE);
     const footerY = DESIGN.height - FOOTER_MARGIN - footerLineH;
 
     const clearLabel = 'Clear all game data';
@@ -108,14 +114,14 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
       this.makeFooterButton(
         'settings-clear-data',
         clearLabel,
-        FOOTER_MARGIN - kewlTextLeftInset(FOOTER_FONT_SIZE),
+        FOOTER_MARGIN - kewlTextLeftInset(MENU_FOOTER_FONT_SIZE),
         footerY,
         () => clearAllGameData(),
       ),
     );
 
     const resetLabel = 'Reset options';
-    const resetW = kewlMeasuredSize(resetLabel, FOOTER_FONT_SIZE).width;
+    const resetW = kewlMeasuredSize(resetLabel, MENU_FOOTER_FONT_SIZE).width;
     this.addChild(
       this.makeFooterButton(
         'settings-reset-options',
@@ -145,7 +151,7 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
       y,
       w,
       align,
-      fontSize: FOOTER_FONT_SIZE,
+      fontSize: MENU_FOOTER_FONT_SIZE,
       playClick: false,
       onPress: () => {
         onPress();
@@ -182,9 +188,9 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
       label: `${label}: ...`,
       x,
       y,
-      w: BTN_W,
+      w: MENU_BTN_WIDTH,
       center: true,
-      fontSize: ROW_FONT,
+      fontSize: MENU_ITEM_FONT_SIZE,
       playClick: false,
       onPress,
     });
