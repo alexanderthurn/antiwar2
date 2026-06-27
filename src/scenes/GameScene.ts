@@ -1110,10 +1110,10 @@ export class GameScene extends Container implements MenuActionsHost {
       const clickRight = isPointer && this.pointerFireEdgeRight;
       if (clickLeft) this.tryFireClick(player, player.leftCannon, 'left');
       if (clickRight) this.tryFireClick(player, player.rightCannon, 'right');
-      if (player.fireLeft && !clickLeft && settingsStore.get().autofireEnabled) {
+      if (player.fireLeft && !clickLeft) {
         this.tryFireAuto(player, player.leftCannon, 'left');
       }
-      if (player.fireRight && !clickRight && settingsStore.get().autofireEnabled) {
+      if (player.fireRight && !clickRight) {
         this.tryFireAuto(player, player.rightCannon, 'right');
       }
     }

@@ -10,8 +10,6 @@ export interface GameSettings {
   soundVolume: number;
   musicVolume: number;
   graphicsQuality: GraphicsQuality;
-  /** v1 Autofire: NORMAL = hold to repeat; OFF = click only. */
-  autofireEnabled: boolean;
 }
 
 const STORAGE_KEY = 'antiwar2_settings';
@@ -22,7 +20,6 @@ const DEFAULTS: GameSettings = {
   soundVolume: 0.7,
   musicVolume: 0.5,
   graphicsQuality: 'high',
-  autofireEnabled: true,
 };
 
 type Listener = (settings: GameSettings) => void;

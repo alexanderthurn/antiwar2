@@ -68,15 +68,6 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
           playMenuClick();
         },
       },
-      {
-        id: 'settings-autofire',
-        label: 'Autofire',
-        onPress: () => {
-          const s = settingsStore.get();
-          settingsStore.set({ autofireEnabled: !s.autofireEnabled });
-          playMenuClick();
-        },
-      },
       ...(isCampaignComplete()
         ? [{
             id: 'settings-hardcore',
@@ -174,7 +165,6 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
     const s = settingsStore.get();
     this.setRow('settings-sound', s.soundEnabled ? 'ON' : 'OFF');
     this.setRow('settings-music', s.musicEnabled ? 'ON' : 'OFF');
-    this.setRow('settings-autofire', s.autofireEnabled ? 'ON' : 'OFF');
     if (isCampaignComplete()) {
       this.setRow('settings-hardcore', profileStore.get().hardcoreEnabled ? 'ON' : 'OFF');
     }
@@ -188,5 +178,5 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
 }
 
 export function formatSettingsSummary(s: GameSettings): string {
-  return `Sound ${s.soundEnabled ? 'on' : 'off'} / Music ${s.musicEnabled ? 'on' : 'off'} / Autofire ${s.autofireEnabled ? 'on' : 'off'} / ${GRAPHICS_LABELS[s.graphicsQuality]} graphics`;
+  return `Sound ${s.soundEnabled ? 'on' : 'off'} / Music ${s.musicEnabled ? 'on' : 'off'} / ${GRAPHICS_LABELS[s.graphicsQuality]} graphics`;
 }
