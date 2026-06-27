@@ -150,18 +150,20 @@
         "BOMB_EI_ANTHRAX"
       ],
       "ai": "VOGEL",
-      "aiParams": [
-        0,
-        422,
-        0.833
-      ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/endmaster_vogel.png",
       "scale": [
         1.6,
         1.6
       ],
-      "scream": "scream1.ogg"
+      "scream": "scream1.ogg",
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 0.833
+      }
     }
   },
   "rounds": [

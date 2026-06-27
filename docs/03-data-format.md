@@ -10,24 +10,40 @@ All coordinates are in **design space** (1920×1080), letterboxed to the browser
 
 ```
 public/campaign/
-  index.json      # Campaign order and display names
-  format.md       # Per-round overrides (background, music, SFX) — quick reference
-  1.json          # Tutorial
-  2.json          # mangoo_easy
-  ...
-  12.json         # boss4
+  registry.json           # menu entries: id + menuTitle
+  aw/
+    index.json            # campaign map + level list
+    1.json … 13.json      # level packs
+  aw2/
+    index.json
+    1.json …
 ```
 
 ---
 
-## Campaign index (`index.json`)
+## Campaign registry (`registry.json`)
 
 ```json
 {
   "schemaVersion": 1,
+  "campaigns": [
+    { "id": "aw", "menuTitle": "Antiwar 1" },
+    { "id": "aw2", "menuTitle": "Antiwar 2" }
+  ]
+}
+```
+
+## Campaign index (`<campaignId>/index.json`)
+
+```json
+{
+  "schemaVersion": 1,
+  "id": "aw",
+  "campaignName": "Antiwar 1",
+  "mapImage": "assets/gfx/map.png",
   "levels": [
-    { "file": "1.json", "name": "Tutorial" },
-    { "file": "2.json", "name": "Mangoo Easy" }
+    { "file": "1.json", "name": "Tutorial", "mapX": 188, "mapY": 225, "pathType": 0 },
+    { "file": "2.json", "name": "Sector One", "mapX": 600, "mapY": 225, "pathType": 1 }
   ]
 }
 ```
@@ -230,7 +246,7 @@ Player rocket **effective** speed and damage come from runtime upgrades (`startR
 
 ## `airplanes` — units
 
-**Units:** `speed` is **px/s**; `rotationSpeed` is **deg/s**; `aiParams[2]` is **average seconds between weapon drops** (for standard AIs).
+**Units:** `speed` is **px/s**; `rotationSpeed` is **deg/s**; `aiConfig.dropIntervalSec` is **average seconds between weapon drops** (for standard AIs).
 
 ```json
 {
@@ -240,7 +256,10 @@ Player rocket **effective** speed and damage come from runtime upgrades (`startR
     "rotationSpeed": 21600,
     "weapons": ["BOMB_0"],
     "ai": "BOMBERSIMPLE",
-    "aiParams": [0, 300, 10],
+    "aiConfig": {
+      "flightBand": { "minY": 0, "maxY": 422 },
+      "dropIntervalSec": 10
+    },
     "drawStyle": 0,
     "image": "assets/gfx/AIRPLANES/bomber.png",
     "scale": [0.6, 0.6],
@@ -260,7 +279,10 @@ Player rocket **effective** speed and damage come from runtime upgrades (`startR
 | `rotationSpeed` | `ROTATION_SPEED` | **deg/s** (v1 × 60); unused for `drawStyle` 0 bombers |
 | `weapons` | `BOMB_TYP_0`, `BOMB_TYP_1`, … | Array of bomb names |
 | `ai` | `KI` | See [08-ai-types.md](./08-ai-types.md) |
-| `aiParams` | `KI_PARAM_A/B/C` | Meaning depends on AI; C is drop interval **seconds** (v1 C ÷ 60) |
+| `aiConfig` | `KI_PARAM_*` | Named AI tuning — see below |
+| `aiConfig.flightBand` | `KI_PARAM_A/B` (Y band) | `{ minY, maxY }` in px |
+| `aiConfig.dropIntervalSec` | `KI_PARAM_C` | Seconds between drops (v1 C ÷ 60) |
+| `aiConfig.glideTarget` | `KI_PARAM_A/B` (PARACHUTE) | `{ startX, endX }` in px |
 | `drawStyle` | `DRAWSTYLE` | 0=bomber flip, 1=fighter rotate, 2=heli tilt |
 | `stealthPhaseSec` | `IS_STEALTHED` | Seconds per stealth/visible phase; 0 = off |
 | `carrier` | `CARRIER` | 0=bombs, 1=spawns child planes |
@@ -354,6 +376,6 @@ The loader should reject or warn on:
 
 ## Example: minimal valid `1.json`
 
-See `public/campaign/1.json` (created during Phase 1) for a converted tutorial pack.
+See `public/campaign/aw/1.json` for a converted tutorial pack.
 
 Conversion procedure: [04-v1-porting.md](./04-v1-porting.md)

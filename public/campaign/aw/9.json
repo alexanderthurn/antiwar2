@@ -151,17 +151,19 @@
         "QUANTUM_TORPEDO"
       ],
       "ai": "RICE",
-      "aiParams": [
-        141,
-        422,
-        1.667
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/endmaster_rice.png",
       "scale": [
         0.64,
         0.64
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 141,
+          "maxY": 422
+        },
+        "dropIntervalSec": 1.667
+      }
     }
   },
   "rounds": [

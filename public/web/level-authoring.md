@@ -26,10 +26,25 @@ Create your own campaigns: economy, rounds, enemy planes, and weapons. This guid
 
 | File | Purpose |
 |------|---------|
-| `public/campaign/index.json` | Campaign list, map positions, display names |
-| `public/campaign/N.json` | One **level pack** — everything for that level |
+| `public/campaign/registry.json` | Menu list — which campaigns exist (`id`, `menuTitle`) |
+| `public/campaign/<id>/index.json` | Level order, map positions, display names for one campaign |
+| `public/campaign/<id>/N.json` | One **level pack** — everything for that level |
 
-Each `N.json` replaces the old v1 quartet (`config.txt`, `levels.txt`, `bombs.txt`, `airplanes.txt`) in a **single file**.
+Example layout:
+
+```
+public/campaign/
+  registry.json
+  format.md              # round override quick reference
+  aw/                      # campaign id "aw" (Antiwar 1)
+    index.json
+    1.json … 13.json
+  aw2/                     # campaign id "aw2" (Antiwar 2)
+    index.json
+    1.json
+```
+
+Each campaign folder is self-contained. Saves are keyed by campaign id (`aw_` / `aw_h` for normal/hardcore).
 
 ### Top-level shape
 
@@ -51,11 +66,17 @@ Each `N.json` replaces the old v1 quartet (`config.txt`, `levels.txt`, `bombs.tx
 }
 ```
 
-Add an entry to `index.json` so the level appears on the campaign map:
+Add an entry to `public/campaign/registry.json` so the campaign appears on the main menu:
+
+```json
+{ "id": "aw2", "menuTitle": "Antiwar 2" }
+```
+
+Add levels in `public/campaign/<id>/index.json`:
 
 ```json
 {
-  "file": "14.json",
+  "file": "2.json",
   "name": "Desert Strike",
   "mapX": 640,
   "mapY": 400,
@@ -66,8 +87,9 @@ Add an entry to `index.json` so the level appears on the campaign map:
 ### Where things live
 
 ```
-index.json          → campaign order & map
-N.json
+registry.json       → main menu campaign list
+<id>/index.json     → level order & map for that campaign
+<id>/N.json
   ├─ config         → start money, upgrades, default art & audio
   ├─ bombs          → all projectiles (including BOMB_PLAYER)
   ├─ airplanes      → enemy (and helper) unit types
@@ -476,8 +498,8 @@ Each frame the engine rolls: `random() < dt / dropIntervalSec`. So `10` ≈ one 
 
 ### Minimal new level
 
-1. Copy an existing `public/campaign/N.json` close to your idea.
-2. Change `id`, `meta`, and register in `index.json`.
+1. Copy an existing pack from `public/campaign/aw/` or `public/campaign/aw2/`.
+2. Register the campaign in `registry.json` (if new) and add levels to `<id>/index.json`.
 3. Tweak `rounds[].spawns` and `maxAirplanes`.
 4. Adjust `airplanes.*.aiConfig.dropIntervalSec` for pressure.
 5. Test in dev: `npm run dev` → campaign map → your level.
@@ -498,14 +520,14 @@ Each frame the engine rolls: `random() < dt / dropIntervalSec`. So `10` ≈ one 
 | `KI_PARAM_C: 600` | `dropIntervalSec: 10` |
 | `INTRO_TIME: 300` (frames) | `intro.time: 5000` (ms) — shipped levels already use ms |
 
-Use `node scripts/convert-v1.mjs` for bulk conversion. Details: `docs/04-v1-porting.md` (developer docs).
+Use `node scripts/convert-v1.mjs --source data/pack --campaign aw2 --out 1.json --id 1` for bulk conversion.
 
 ### Validate before shipping
 
 - [ ] `BOMB_PLAYER` exists
 - [ ] Every `spawns[].type` exists in `airplanes`
 - [ ] Every `weapons[]` entry exists in `bombs`
-- [ ] `aiConfig` matches AI (parachute → `glideTarget`, not `flightBand`)
+- [ ] `aiConfig` matches AI type (parachute → `glideTarget`, patrol → `flightBand`)
 - [ ] `maxAirplanes` matches intended wave pressure
 - [ ] Story limits use **ms**, speeds use **px/s**
 

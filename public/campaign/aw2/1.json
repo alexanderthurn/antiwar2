@@ -126,17 +126,19 @@
         "BOMB_0"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        5
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber.png",
       "scale": [
         0.8,
         0.8
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 5
+      }
     }
   },
   "rounds": [

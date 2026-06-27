@@ -3,10 +3,10 @@
  * Adds config.sounds overrides, intro.sound on text-only intros, and winSound on boss rounds.
  * Run: node scripts/patch-campaign-sounds.mjs
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const CAMPAIGN_DIR = join(import.meta.dirname, '../public/campaign');
+const CAMPAIGN_ROOT = join(import.meta.dirname, '../public/campaign');
 
 /** Per-level config.sounds (merged over code defaults). */
 const LEVEL_SOUNDS = {
@@ -106,8 +106,10 @@ function patchPack(pack) {
 }
 
 let total = 0;
-for (let i = 1; i <= 12; i++) {
-  const file = join(CAMPAIGN_DIR, `${i}.json`);
+const awDir = join(CAMPAIGN_ROOT, 'aw');
+for (let i = 1; i <= 13; i++) {
+  const file = join(awDir, `${i}.json`);
+  if (!existsSync(file)) continue;
   const pack = JSON.parse(readFileSync(file, 'utf8'));
   if (patchPack(pack)) {
     writeFileSync(file, `${JSON.stringify(pack, null, 2)}\n`);

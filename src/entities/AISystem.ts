@@ -1,8 +1,11 @@
 import { DESIGN } from '../core/DesignSpace';
 import { combatSpeedMultiplier } from '../core/RunMode';
 import type { AirplaneDef, BombDef, LevelPack } from '../data/types';
+import { normalizeAI, resolveAiConfig } from './AiConfig';
 import type { CombatEntity } from './CombatEntity';
 import type { PatrolMotion } from './EntityTraits';
+
+export { normalizeAI } from './AiConfig';
 
 function planeSpeed(def: AirplaneDef): number {
   return def.speed * combatSpeedMultiplier();
@@ -12,10 +15,10 @@ function bombSpeed(def: BombDef): number {
   return def.speed * combatSpeedMultiplier();
 }
 
-/** aiParams[2] — average seconds between weapon drops (Poisson-style roll each frame). */
+/** `aiConfig.dropIntervalSec` — average seconds between weapon drops. */
 function dropIntervalSec(def: AirplaneDef, fallbackSec: number): number {
-  const interval = def.aiParams[2];
-  return interval > 0 ? interval : fallbackSec;
+  const interval = resolveAiConfig(def).dropIntervalSec;
+  return interval != null && interval > 0 ? interval : fallbackSec;
 }
 
 function rollDrop(dt: number, intervalSec: number): boolean {
@@ -37,18 +40,6 @@ export interface AIUpdateContext {
   skyBomb: (def: BombDef, x: number) => void;
 }
 
-const AI_ALIASES: Record<string, string> = {
-  KIHELISIMPLE: 'HELISIMPLE',
-  KIHELIAPACHE: 'HELIAPACHE',
-  KIFIGHTERLIZZARD: 'FIGHTERLIZZARD',
-  KICARRIER: 'CARRIER',
-  KIPARACHUTE: 'PARACHUTE',
-};
-
-export function normalizeAI(ai: string): string {
-  const upper = ai.toUpperCase();
-  return AI_ALIASES[upper] ?? upper;
-}
 
 function flipHorizontal(entity: CombatEntity, dir: 1 | -1): void {
   if (entity.airplaneDef?.drawStyle === 1) return;
@@ -98,7 +89,7 @@ function driftY(motion: PatrolMotion, entity: CombatEntity, dt: number, rate = 2
 }
 
 function maybeRetargetY(motion: PatrolMotion, def: AirplaneDef, dt: number, chance = 0.3): void {
-  const [minY, maxY] = def.aiParams;
+  const { minY, maxY } = resolveAiConfig(def).flightBand;
   if (Math.random() < dt * chance) {
     motion.targetY = minY + Math.random() * (maxY - minY);
     motion.altChanges += 1;
@@ -149,7 +140,7 @@ function fireHeliBottomBurst(
 }
 
 function retargetAltitude(motion: PatrolMotion, def: AirplaneDef): void {
-  const [minY, maxY] = def.aiParams;
+  const { minY, maxY } = resolveAiConfig(def).flightBand;
   motion.targetY = minY + Math.random() * Math.max(1, maxY - minY);
 }
 
@@ -227,7 +218,7 @@ function pickFighterMgTargetX(currentX: number): number {
 }
 
 function aiYBand(def: AirplaneDef): { min: number; max: number } {
-  const [minY, maxY] = def.aiParams;
+  const { minY, maxY } = resolveAiConfig(def).flightBand;
   return { min: minY, max: maxY };
 }
 
@@ -337,7 +328,7 @@ function updateHeliSimple(entity: CombatEntity, motion: PatrolMotion, def: Airpl
 }
 
 function updateHeliApache(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
-  const [minY, maxY] = def.aiParams;
+  const { minY, maxY } = resolveAiConfig(def).flightBand;
   const speed = planeSpeed(def);
 
   if (motion.phase === 0) {
@@ -369,7 +360,7 @@ function updateHeliApache(entity: CombatEntity, motion: PatrolMotion, def: Airpl
 }
 
 function updateFighterLizzard(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
-  const [minY, maxY] = def.aiParams;
+  const { minY, maxY } = resolveAiConfig(def).flightBand;
   const speed = planeSpeed(def);
 
   if (motion.phase === 0) {
@@ -414,7 +405,9 @@ function updateCarrier(entity: CombatEntity, motion: PatrolMotion, def: Airplane
 }
 
 function updateParachute(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
-  const [startX, endX] = def.aiParams;
+  const glide = resolveAiConfig(def).glideTarget;
+  if (!glide) return;
+  const { startX, endX } = glide;
   const targetX = motion.dir > 0 ? endX : startX;
   const dx = targetX - entity.x;
   const speed = planeSpeed(def);
@@ -519,7 +512,7 @@ export function createPatrolMotion(
   spawnIndex: number,
   isEndmaster: boolean,
 ): PatrolMotion {
-  const [minY, maxY] = [def.aiParams[0], def.aiParams[1]];
+  const { minY, maxY } = resolveAiConfig(def).flightBand;
   const ai = normalizeAI(def.ai);
   const band = { min: minY, max: maxY };
   const targetX = ai === 'FIGHTERMG' ? pickFighterMgTargetX(x) : x;

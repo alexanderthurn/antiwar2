@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Convert v1 data/<pack>/ text files to public/campaign/N.json
- * Usage: node scripts/convert-v1.mjs --source data/schnappi --out public/campaign/12.json --id 12
+ * Usage: node scripts/convert-v1.mjs --source data/schnappi --campaign aw --out 12.json --id 12
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, basename } from 'node:path';
@@ -206,17 +206,25 @@ function parseAirplanes(sections) {
       const w = s[`BOMB_TYP_${i}`];
       if (w) weapons.push(w);
     }
+    const paramA = num(s.KI_PARAM_A, 0);
+    const paramB = num(s.KI_PARAM_B, 300);
+    const paramC = num(s.KI_PARAM_C, 300) / V1_FRAME_RATE;
+    const ki = s.KI;
+    const aiConfig =
+      String(ki).toUpperCase() === 'PARACHUTE' || String(ki).toUpperCase() === 'KIPARACHUTE'
+        ? { glideTarget: { startX: paramA, endX: paramB } }
+        : {
+            flightBand: { minY: paramA, maxY: paramB },
+            ...(paramC > 0 ? { dropIntervalSec: paramC } : {}),
+          };
+
     airplanes[renamePlaneType(name)] = {
       hp: num(s.HP, 50),
       speed: num(s.SPEED, 2) * V1_FRAME_RATE,
       rotationSpeed: num(s.ROTATION_SPEED, 360) * V1_FRAME_RATE,
       weapons,
-      ai: s.KI,
-      aiParams: [
-        num(s.KI_PARAM_A, 0),
-        num(s.KI_PARAM_B, 300),
-        num(s.KI_PARAM_C, 300) / V1_FRAME_RATE,
-      ],
+      ai: ki,
+      aiConfig,
       drawStyle: num(s.DRAWSTYLE, 0),
       image: gfxPath(s.IMAGE, 'plane'),
       scale: [num(s.SCALE_X, 1), num(s.SCALE_Y, 1)],
@@ -281,13 +289,18 @@ function main() {
   const srcIdx = args.indexOf('--source');
   const outIdx = args.indexOf('--out');
   const idIdx = args.indexOf('--id');
-  if (srcIdx < 0 || outIdx < 0 || idIdx < 0) {
-    console.error('Usage: node scripts/convert-v1.mjs --source data/schnappi --out public/campaign/12.json --id 12');
+  const campaignIdx = args.indexOf('--campaign');
+  if (srcIdx < 0 || outIdx < 0 || idIdx < 0 || campaignIdx < 0) {
+    console.error(
+      'Usage: node scripts/convert-v1.mjs --source data/schnappi --campaign aw --out 12.json --id 12',
+    );
     process.exit(1);
   }
   const source = args[srcIdx + 1];
-  const out = args[outIdx + 1];
+  const outFile = args[outIdx + 1];
+  const campaignId = args[campaignIdx + 1];
   const id = Number(args[idIdx + 1]);
+  const out = join(import.meta.dirname, '..', 'public', 'campaign', campaignId, outFile);
   const dir = join(import.meta.dirname, '..', source);
 
   const configText = readFileSync(join(dir, 'config.txt'), 'utf8');
@@ -332,15 +345,15 @@ function main() {
       scale: [0.8, 0.8],
       hp: 10,
       damage: 100,
-      speed: 2,
-      rotationSpeed: 20,
+      speed: 120,
+      rotationSpeed: 1200,
       explosion: { type: 1, power: 0, range: 1, lifetime: 20 },
       trail: 1,
       checkOutOfScreen: true,
     };
   }
 
-  writeFileSync(join(import.meta.dirname, '..', out), `${JSON.stringify(pack, null, 2)}\n`);
+  writeFileSync(out, `${JSON.stringify(pack, null, 2)}\n`);
   console.log(`Wrote ${out} — ${rounds.length} rounds, ${Object.keys(airplanes).length} planes`);
 }
 

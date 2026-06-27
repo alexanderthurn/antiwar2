@@ -62,7 +62,7 @@ damage = baseDamage × aimPower × (startAimTime / currentAimTime)
 
 ### Bombs (enemy)
 
-- Dropped by airplanes per AI drop interval (`aiParams[2]` seconds)
+- Dropped by airplanes per `aiConfig.dropIntervalSec`
 - Fall at `speed` **px/s** (typical enemy bombs: ~18–78 px/s)
 - `checkOutOfScreen: false` — fall straight down
 - On ground impact: damage civilians in `explosion.range`

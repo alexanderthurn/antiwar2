@@ -164,18 +164,20 @@
         "BOMB_EI"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        3.333
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/satelit2.png",
       "scale": [
         1.2,
         1.2
       ],
-      "scream": "bloodscream.ogg"
+      "scream": "bloodscream.ogg",
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 3.333
+      }
     },
     "DRAGI2": {
       "hp": 2000,
@@ -185,18 +187,20 @@
         "BOMB_EI2"
       ],
       "ai": "FIGHTERSIMPLE",
-      "aiParams": [
-        0,
-        703,
-        0.833
-      ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/satelit.png",
       "scale": [
         1.6,
         1.6
       ],
-      "scream": "bloodscream.ogg"
+      "scream": "bloodscream.ogg",
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 703
+        },
+        "dropIntervalSec": 0.833
+      }
     },
     "DRAGI3": {
       "hp": 600000,
@@ -206,18 +210,20 @@
         "BOMB_EI3"
       ],
       "ai": "FIGHTERSIMPLE",
-      "aiParams": [
-        -281,
-        422,
-        0.167
-      ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/direktor.png",
       "scale": [
         2.88,
         2.88
       ],
-      "scream": "bloodscream.ogg"
+      "scream": "bloodscream.ogg",
+      "aiConfig": {
+        "flightBand": {
+          "minY": -281,
+          "maxY": 422
+        },
+        "dropIntervalSec": 0.167
+      }
     }
   },
   "rounds": [

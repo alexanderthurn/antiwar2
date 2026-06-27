@@ -279,18 +279,20 @@
         "BOMB_0"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        5
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/vc_1.png",
       "scale": [
         0.96,
         0.96
       ],
-      "scream": "oerks.ogg"
+      "scream": "oerks.ogg",
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 5
+      }
     },
     "FRED": {
       "hp": 500,
@@ -300,18 +302,20 @@
         "BOMB_0"
       ],
       "ai": "HELISIMPLE",
-      "aiParams": [
-        281,
-        563,
-        5
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/fred_1.png",
       "scale": [
         0.8,
         0.8
       ],
-      "scream": "oe.ogg"
+      "scream": "oe.ogg",
+      "aiConfig": {
+        "flightBand": {
+          "minY": 281,
+          "maxY": 563
+        },
+        "dropIntervalSec": 5
+      }
     },
     "NUKE_VIECH": {
       "hp": 1000,
@@ -321,18 +325,20 @@
         "BOMB_NUKE"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        5
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/vc_nuke.png",
       "scale": [
         0.96,
         0.96
       ],
-      "scream": "oerks.ogg"
+      "scream": "oerks.ogg",
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 5
+      }
     },
     "STEALTH_VIECH": {
       "hp": 2000,
@@ -342,11 +348,6 @@
         "BOMB_0"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        2.5
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/vc_camo.png",
       "scale": [
@@ -354,7 +355,14 @@
         0.96
       ],
       "scream": "oerks.ogg",
-      "stealthPhaseSec": 4
+      "stealthPhaseSec": 4,
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 2.5
+      }
     },
     "JET_VIECH": {
       "hp": 300,
@@ -364,18 +372,20 @@
         "BOMB_MG2"
       ],
       "ai": "FIGHTERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        0.083
-      ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/vc_jet.png",
       "scale": [
         0.48,
         0.48
       ],
-      "scream": "oerks.ogg"
+      "scream": "oerks.ogg",
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 0.083
+      }
     },
     "H_VIECH": {
       "hp": 75000,
@@ -385,18 +395,20 @@
         "BOMB_BIG"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        422,
-        422,
-        3.333
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/vc_zep.png",
       "scale": [
         1.92,
         1.92
       ],
-      "scream": "oerks.ogg"
+      "scream": "oerks.ogg",
+      "aiConfig": {
+        "flightBand": {
+          "minY": 422,
+          "maxY": 422
+        },
+        "dropIntervalSec": 3.333
+      }
     }
   },
   "rounds": [

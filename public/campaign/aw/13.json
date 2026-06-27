@@ -152,17 +152,19 @@
         "MG_BUSH"
       ],
       "ai": "BUSH",
-      "aiParams": [
-        42,
-        14,
-        0.167
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/endmaster_bush.png",
       "scale": [
         0.64,
         0.64
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 42,
+          "maxY": 14
+        },
+        "dropIntervalSec": 0.167
+      }
     },
     "UFO": {
       "hp": 100,
@@ -172,17 +174,19 @@
         "PHASER"
       ],
       "ai": "FIGHTERSIMPLE",
-      "aiParams": [
-        422,
-        703,
-        1.667
-      ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/endmaster_bush.png",
       "scale": [
         0.144,
         0.144
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 422,
+          "maxY": 703
+        },
+        "dropIntervalSec": 1.667
+      }
     }
   },
   "rounds": [

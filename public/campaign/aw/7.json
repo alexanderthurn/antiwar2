@@ -125,18 +125,20 @@
       "rotationSpeed": 21600,
       "weapons": [],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        211,
-        422,
-        5000
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/saegefisch.png",
       "scale": [
         0.8,
         0.8
       ],
-      "lastScream": "headshot.ogg"
+      "lastScream": "headshot.ogg",
+      "aiConfig": {
+        "flightBand": {
+          "minY": 211,
+          "maxY": 422
+        },
+        "dropIntervalSec": 5000
+      }
     },
     "FISCHLI": {
       "hp": 1,
@@ -144,18 +146,20 @@
       "rotationSpeed": 21600,
       "weapons": [],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        211,
-        422,
-        5000
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/fischli_grins.png",
       "scale": [
         1.6,
         1.6
       ],
-      "lastScream": "holyshit.ogg"
+      "lastScream": "holyshit.ogg",
+      "aiConfig": {
+        "flightBand": {
+          "minY": 211,
+          "maxY": 422
+        },
+        "dropIntervalSec": 5000
+      }
     },
     "HAI": {
       "hp": 1,
@@ -163,18 +167,20 @@
       "rotationSpeed": 21600,
       "weapons": [],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        211,
-        422,
-        5000
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/hai.png",
       "scale": [
         0.8,
         0.8
       ],
-      "lastScream": "crash_shot.ogg"
+      "lastScream": "crash_shot.ogg",
+      "aiConfig": {
+        "flightBand": {
+          "minY": 211,
+          "maxY": 422
+        },
+        "dropIntervalSec": 5000
+      }
     }
   },
   "rounds": [

@@ -118,17 +118,19 @@
         "BOMB_0"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        10
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber.png",
       "scale": [
         0.8,
         0.8
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 10
+      }
     },
     "BOMBER2": {
       "hp": 200,
@@ -138,17 +140,19 @@
         "BOMB_0"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        281,
-        563,
-        10
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber.png",
       "scale": [
         1.28,
         1.28
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 281,
+          "maxY": 563
+        },
+        "dropIntervalSec": 10
+      }
     },
     "BOMBER3": {
       "hp": 100000,
@@ -158,17 +162,19 @@
         "BOMB_0"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        281,
-        563,
-        10
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_big.png",
       "scale": [
         2.24,
         2.24
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 281,
+          "maxY": 563
+        },
+        "dropIntervalSec": 10
+      }
     }
   },
   "rounds": [

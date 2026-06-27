@@ -150,17 +150,19 @@
         "ROCKET_COLA"
       ],
       "ai": "BARON",
-      "aiParams": [
-        0,
-        422,
-        0.667
-      ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/endmaster_baron.png",
       "scale": [
         0.64,
         0.64
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 0.667
+      }
     }
   },
   "rounds": [

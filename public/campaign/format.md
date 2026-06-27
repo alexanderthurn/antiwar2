@@ -4,7 +4,7 @@ Each `N.json` file is a self-contained **level pack**: economy, units, bombs, an
 
 **Authoring guide (players & modders):** [`public/web/level-authoring.md`](../web/level-authoring.md) — full English tutorial with `aiConfig` and per-second units.
 
-See also `index.json` for campaign order and map placement. Full schema notes live in `docs/03-data-format.md`; this file focuses on **per-round overrides** added for v1 parity.
+See also `registry.json` and each `<campaignId>/index.json` for map placement. Full schema notes live in `docs/03-data-format.md`; this file focuses on **per-round overrides** added for v1 parity.
 
 ---
 
@@ -12,10 +12,17 @@ See also `index.json` for campaign order and map placement. Full schema notes li
 
 ```
 public/campaign/
-  index.json     # campaign manifest
-  1.json …       # level packs
-  format.md      # this file
+  registry.json          # menu: [{ "id": "aw", "menuTitle": "..." }, …]
+  format.md              # this file
+  aw/
+    index.json           # map + level list for Antiwar 1
+    1.json …             # level packs
+  aw2/
+    index.json
+    1.json …
 ```
+
+Level URLs at runtime: `campaign/<id>/N.json` (loaded via `loadLevelPack(campaignId, file)`).
 
 ---
 
@@ -87,6 +94,7 @@ Omit fields on rounds that should keep the previous value — keeps JSON small.
 | `rotationSpeed` | degrees per second (360 = one full turn/s) |
 | `aiConfig.dropIntervalSec` | seconds between weapon drops |
 | `aiConfig.flightBand` | vertical patrol range (px) |
+| `aiConfig.glideTarget` | parachute horizontal targets (px) |
 | `stealthPhaseSec` | seconds per stealth/visible phase |
 | `intro.time`, `startAimTime`, `storyLimits.*Time` | milliseconds |
 

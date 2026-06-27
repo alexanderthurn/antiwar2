@@ -457,17 +457,19 @@
         "BOMB_NUKE"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        1.333
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber.png",
       "scale": [
         0.8,
         0.8
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 1.333
+      }
     },
     "BOMBERS": {
       "hp": 2000,
@@ -477,17 +479,19 @@
         "BOMB_NUKE"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        0.333
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber.png",
       "scale": [
         0.8,
         0.8
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 0.333
+      }
     },
     "BOMBERM": {
       "hp": 2500,
@@ -497,17 +501,19 @@
         "BOMB_NUKE_M"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        2
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber.png",
       "scale": [
         0.32,
         0.32
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 2
+      }
     },
     "BOMBER_BIG_NUKE": {
       "hp": 4000,
@@ -517,17 +523,19 @@
         "BOMB_BIG_NUKE"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        5
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_big.png",
       "scale": [
         1.6,
         1.6
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 5
+      }
     },
     "BOMBER_BIG_NUKEH": {
       "hp": 16000,
@@ -537,17 +545,19 @@
         "BOMB_NUKE_M"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        2.083
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_big.png",
       "scale": [
         1.6,
         1.6
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 2.083
+      }
     },
     "BOMBER_HARD_NUKE": {
       "hp": 8000,
@@ -557,17 +567,19 @@
         "BOMB_NUKE"
       ],
       "ai": "BOMBERHARD",
-      "aiParams": [
-        422,
-        422,
-        5
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_hard.png",
       "scale": [
         1.6,
         1.6
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 422,
+          "maxY": 422
+        },
+        "dropIntervalSec": 5
+      }
     },
     "BOMBER_STEALTH_NUKE": {
       "hp": 3000,
@@ -577,18 +589,20 @@
         "BOMB_NUKE"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        1
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_stealthnuke.png",
       "scale": [
         0.48,
         0.48
       ],
-      "stealthPhaseSec": 4
+      "stealthPhaseSec": 4,
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 1
+      }
     },
     "BOMBER_STEALTH_NUKES": {
       "hp": 8000,
@@ -598,18 +612,20 @@
         "BOMB_NUKES"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        1.5
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_stealthnuke.png",
       "scale": [
         0.48,
         0.48
       ],
-      "stealthPhaseSec": 5
+      "stealthPhaseSec": 5,
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 1.5
+      }
     },
     "FIGHTER_JET": {
       "hp": 1000,
@@ -619,17 +635,19 @@
         "ROCKET_0"
       ],
       "ai": "FIGHTERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        0.417
-      ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/fighter.PNG",
       "scale": [
         0.32,
         0.32
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 0.417
+      }
     },
     "FIGHTER_MG": {
       "hp": 300,
@@ -639,17 +657,19 @@
         "BOMB_MG2"
       ],
       "ai": "FIGHTERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        0.1
-      ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/fighter_mg.png",
       "scale": [
         0.32,
         0.32
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 0.1
+      }
     },
     "FIGHTER_MG2": {
       "hp": 1500,
@@ -659,17 +679,19 @@
         "BOMB_MG2"
       ],
       "ai": "FIGHTERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        0.05
-      ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/fighter_mg.png",
       "scale": [
         0.32,
         0.32
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 0.05
+      }
     },
     "HELI_APACHE": {
       "hp": 4000,
@@ -679,17 +701,19 @@
         "ROCKET_0"
       ],
       "ai": "HELIAPACHE",
-      "aiParams": [
-        422,
-        844,
-        0.833
-      ],
       "drawStyle": 2,
       "image": "assets/gfx/AIRPLANES/helikopter_apache.png",
       "scale": [
         0.48,
         0.48
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 422,
+          "maxY": 844
+        },
+        "dropIntervalSec": 0.833
+      }
     },
     "HELI_NUKE": {
       "hp": 3000,
@@ -699,17 +723,19 @@
         "BOMB_NUKE"
       ],
       "ai": "HELISIMPLE",
-      "aiParams": [
-        281,
-        563,
-        1.583
-      ],
       "drawStyle": 2,
       "image": "assets/gfx/AIRPLANES/helikopter.png",
       "scale": [
         0.64,
         0.64
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 281,
+          "maxY": 563
+        },
+        "dropIntervalSec": 1.583
+      }
     },
     "HELI_NUKES": {
       "hp": 6000,
@@ -719,17 +745,19 @@
         "BOMB_NUKE"
       ],
       "ai": "HELISIMPLE",
-      "aiParams": [
-        281,
-        563,
-        1
-      ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/helikopter.png",
       "scale": [
         0.32,
         0.32
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 281,
+          "maxY": 563
+        },
+        "dropIntervalSec": 1
+      }
     },
     "CARRIER": {
       "hp": 75000,
@@ -739,17 +767,19 @@
         "BOMBER_CARRIER"
       ],
       "ai": "CARRIER",
-      "aiParams": [
-        0,
-        422,
-        0.833
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_troops.png",
       "scale": [
         0.8,
         0.8
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 0.833
+      }
     },
     "BOMBER_SPLITTER": {
       "hp": 5000,
@@ -759,17 +789,19 @@
         "BOMB_SPLITTER"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        141,
-        281,
-        2.333
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_splitter.png",
       "scale": [
         1.6,
         1.6
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 141,
+          "maxY": 281
+        },
+        "dropIntervalSec": 2.333
+      }
     },
     "BOMBER_CARRIER": {
       "hp": 1000,
@@ -779,17 +811,19 @@
         "BOMB_SPLITN"
       ],
       "ai": "BOMBERSIMPLE",
-      "aiParams": [
-        0,
-        422,
-        3.667
-      ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber.png",
       "scale": [
         0.32,
         0.32
-      ]
+      ],
+      "aiConfig": {
+        "flightBand": {
+          "minY": 0,
+          "maxY": 422
+        },
+        "dropIntervalSec": 3.667
+      }
     }
   },
   "rounds": [

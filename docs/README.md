@@ -21,5 +21,5 @@ Browser remake of **Antiwar v1.5** (Vite + TypeScript + Pixi.js).
 ## Conventions
 
 - Game coordinates: **1920×1080 design space**, letterboxed to the window.
-- Campaign levels: `public/campaign/1.json` … `12.json`.
+- Campaign levels: `public/campaign/aw/1.json` … `aw/13.json`, plus `aw2/` for new content.
 - When in doubt, match v1 behavior in `old/data/` and `old/readme.txt`.

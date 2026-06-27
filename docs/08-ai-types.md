@@ -2,15 +2,13 @@
 
 Enemy flight and attack patterns from v1. All AIs are **hardcoded in the engine** — level JSON only references them by name.
 
-Implement as TypeScript classes with a common interface:
-
 ```typescript
 interface AIBehavior {
   update(plane: Airplane, dt: number): void;
 }
 ```
 
-Parameters come from `airplane.aiParams` → `[A, B, C]`.
+Parameters come from `airplane.aiConfig` (named fields, not index slots).
 
 ---
 
@@ -18,13 +16,28 @@ Parameters come from `airplane.aiParams` → `[A, B, C]`.
 
 Most bombers/fighters/helicopters use:
 
-| Param | Meaning |
-|-------|---------|
-| A | `startY` — lower bound of flight band (px) |
-| B | `endY` — upper bound of flight band (px) |
-| C | Average **seconds between weapon drops** (Poisson-style roll each frame) |
+```json
+"aiConfig": {
+  "flightBand": { "minY": 0, "maxY": 422 },
+  "dropIntervalSec": 10
+}
+```
 
-Planes fly between waypoints generated in the Y band between A and B.
+| Field | Unit | Meaning |
+|-------|------|---------|
+| `flightBand.minY` | px | Bottom of vertical patrol band |
+| `flightBand.maxY` | px | Top of patrol band |
+| `dropIntervalSec` | s | Average time between primary weapon drops |
+
+Planes drift between random altitudes in the Y band.
+
+**Parachute** uses `glideTarget` instead:
+
+```json
+"aiConfig": {
+  "glideTarget": { "startX": 0, "endX": 960 }
+}
+```
 
 ---
 
@@ -64,97 +77,67 @@ Planes fly between waypoints generated in the Y band between A and B.
 ### HELIAPACHE
 
 - Attack run: starts high at screen edge, dives, climbs out other side
-- 1 weapon
+- 1 weapon — uses `flightBand` only (`dropIntervalSec` ignored; burst at dive bottom)
 
 ### FIGHTERLIZZARD
 
 - Dive attack from high altitude
 - MG during dive + **3 missiles** near turn point
-- **2 weapons** (`BOMB_TYP_0`, `BOMB_TYP_1`)
+- **2 weapons** (`weapons[0]`, `weapons[1]`)
 - **Used in:** mangoo2, xr, arcade
 
 ### CARRIER
 
 - Spawns child interceptor planes instead of (or in addition to) bombs
-- `carrier: 1` on airplane definition
-- Children die when parent destroyed (v1.22+)
-- **Used in:** mangoo2, nuke, arcade
+- `weapons[0]` = child airplane type
+- Uses `flightBand` only — spawns every ~2.5 s (engine default)
 
 ### PARACHUTE
 
-- Different params: **A = startX, B = endX**, C unused
-- Flies to ground at target X, explodes on impact (kamikaze)
-- 0 weapons
+- `glideTarget: { startX, endX }` — horizontal glide, ground detonation
+- `weapons[0]` = bomb on impact
 - **Used in:** mangoo2, arcade
 
 ---
 
 ## Boss AIs
 
-Scripted patterns — port by studying `old/data/boss*/airplanes.txt` and `levels.txt`. Not waypoint-based.
+Scripted patterns — port by studying boss level packs. Use `flightBand` + `dropIntervalSec` plus hardcoded phase timers in code.
 
 ### Baron (`KI: Baron`)
 
 - **Campaign:** boss1, arcade
-- Dual weapons: `BOMB_OLD`, `ROCKET_COLA`
+- Dual weapons
 - `drawStyle: 1` (fighter rotation)
-- Large HP (~20000 in boss1)
-- Nuke explosion on death
-- Special "Cola attack" pattern (flies outside screen — tuned in v37)
 
 ### Vogel (`KI: Vogel`)
 
 - **Campaign:** boss2
 - Dual weapons
-- Final rage attack — dive depth reduced in v37
 
 ### RICE (`KI: RICE`)
 
 - **Campaign:** boss3
-- Custom projectile: `quantum2.png` rocket skin
-- Laser/phaser attacks (v1.1: primary shot changed to laser)
-- Strengthened phasers in v37
+- Custom projectile patterns
 
 ### BUSH (`KI: BUSH`)
 
 - **Campaign:** boss4
-- Bombs from sky (not only from plane)
-- +50% HP and stronger bombs in v37
-- Supporting `FIGHTERSIMPLE` escorts in boss4 pack
-
-Boss implementations will likely need **phase state machines** (inspect original behavior via playtesting old binary or iterative tuning).
+- Bombs from sky + patrol drops
 
 ---
 
 ## AI name normalization
 
-Data files are inconsistent. Map all aliases in `AIDispatcher`:
-
 | In data files | Canonical |
 |---------------|-----------|
 | `BOMBERSIMPLE` | `BOMBERSIMPLE` |
-| `BOMBERHARD` | `BOMBERHARD` |
 | `KIHELISIMPLE` / `HELISIMPLE` | `HELISIMPLE` |
 | `KIHELIAPACHE` / `HELIAPACHE` | `HELIAPACHE` |
 | `KIFIGHTERLIZZARD` / `FIGHTERLIZZARD` | `FIGHTERLIZZARD` |
 | `KICARRIER` / `CARRIER` | `CARRIER` |
 | `KIPARACHUTE` / `PARACHUTE` | `PARACHUTE` |
-| `Baron` / `BARON` | `Baron` |
-| `Vogel` | `Vogel` |
-| `RICE` | `RICE` |
-| `BUSH` | `BUSH` |
-
----
-
-## Implementation priority
-
-| Priority | AI | Reason |
-|----------|-----|--------|
-| P0 | BOMBERSIMPLE | Tutorial + first levels |
-| P1 | FIGHTERSIMPLE, HELISIMPLE | Early mangoo_easy |
-| P2 | BOMBERHARD, HELIAPACHE | Mid campaign |
-| P3 | FIGHTERLIZZARD, CARRIER, PARACHUTE | mangoo2+ |
-| P4 | Baron, Vogel, RICE, BUSH | Boss levels |
+| `Baron` / `BARON` | `BARON` |
 
 ---
 
@@ -166,24 +149,22 @@ For standard AIs with drop interval `C` seconds:
 each frame: if random() < dt / C → drop bomb from weapons[0]
 ```
 
-When porting from v1, `C = KI_PARAM_C / 60`.
+When porting from v1: `dropIntervalSec = KI_PARAM_C / 60`.
 
 Multi-weapon planes (Lizzard, Baron):
 
-- Primary weapon on ground strafe timer
+- Primary weapon on `dropIntervalSec` roll
 - Secondary on dive phase or separate timer
-
-Exact timings — tune against v1 gameplay feel.
 
 ---
 
 ## Testing each AI
 
 1. Create debug round JSON with single spawn of that type
-2. Verify flight stays in Y band [A, B]
-3. Verify bombs drop at expected rate
+2. Verify flight stays in `flightBand`
+3. Verify bombs drop at expected rate (`dropIntervalSec`)
 4. Verify plane flips/rotates per `drawStyle`
-5. Compare travel speed to `airplane.speed`
+5. Compare travel speed to `airplane.speed` (px/s)
 
 Debug round example:
 

@@ -31,7 +31,7 @@ export class PauseOverlay extends Container {
     const btnSize = 22;
     const btnW = 320;
     const btnX = centerX - btnW / 2;
-    const btnStep = kewlLineHeight(btnSize) + kewlBlockGap(btnSize);
+    const btnStep = kewlLineHeight(btnSize)*0.5 + kewlBlockGap(btnSize);
     const labels = [
       { id: 'pause-resume', label: 'Resume', onPress: onResume },
       { id: 'pause-restart', label: 'Restart', onPress: onRestart },

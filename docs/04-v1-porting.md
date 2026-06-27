@@ -1,6 +1,6 @@
 # 04 — Porting v1 Data to JSON
 
-How to convert `old/data/<campaign>/` text files into `public/campaign/N.json`.
+How to convert `old/data/<campaign>/` text files into `public/campaign/<id>/N.json`.
 
 Reference: `old/levels_selbermachen.txt` (original SDK).
 
@@ -69,7 +69,9 @@ Apply to:
 | `SPEED` | `speed` | × 60 → **px/s** |
 | `ROTATION_SPEED` | `rotationSpeed` | × 60 → **deg/s** |
 | `START_ROCKET_SPEED` | `startRocketSpeed` | × 60 → **px/s** |
-| `KI_PARAM_C` | `aiParams[2]` | ÷ 60 → **seconds** between drops |
+| `KI_PARAM_A/B` (Y) | `aiConfig.flightBand.minY` / `maxY` |
+| `KI_PARAM_A/B` (X, parachute) | `aiConfig.glideTarget.startX` / `endX` |
+| `KI_PARAM_C` | `aiConfig.dropIntervalSec` | ÷ 60 → **seconds** between drops |
 
 `scripts/convert-v1.mjs` applies these automatically. One-time migration for existing JSON: `node scripts/migrate-per-second.mjs`.
 
@@ -94,7 +96,7 @@ Use tables in [03-data-format.md](./03-data-format.md). Common renames:
 | `DRAW_SCHWEIF` | `trail` |
 | `BOMB_TYPS` + `BOMB_TYP_N` | `weapons: []` |
 | `KI` | `ai` |
-| `KI_PARAM_A/B/C` | `aiParams: [a,b,c]` |
+| `KI_PARAM_A/B/C` | `aiConfig` (named fields) |
 | `EXPLOSION_TYP` | `explosion.type` |
 
 ### Step 5 — Merge into one file

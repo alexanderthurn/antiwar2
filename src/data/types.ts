@@ -32,13 +32,34 @@ export interface StoryLimits {
   minMoney?: number;
 }
 
+export interface FlightBand {
+  minY: number;
+  maxY: number;
+}
+
+export interface GlideTarget {
+  startX: number;
+  endX: number;
+}
+
+export interface AirplaneAiConfig {
+  /** Vertical patrol band (px, design space). */
+  flightBand?: FlightBand;
+  /** Average seconds between primary weapon drops. */
+  dropIntervalSec?: number;
+  /** PARACHUTE — horizontal glide targets before ground detonation. */
+  glideTarget?: GlideTarget;
+}
+
 export interface AirplaneDef {
   hp: number;
   speed: number;
   rotationSpeed: number;
   weapons: string[];
   ai: string;
-  aiParams: [number, number, number];
+  aiConfig?: AirplaneAiConfig;
+  /** @deprecated Use `aiConfig`. Removed from level JSON after migration. */
+  aiParams?: [number, number, number];
   drawStyle: number;
   image: string;
   scale: [number, number];
