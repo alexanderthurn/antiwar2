@@ -850,7 +850,7 @@
       ],
       "intro": {
         "text": "Nukes! Lots of Nukes!",
-        "image": "assets/gfx/nuke_intro.png",
+        "image": "assets/campaign/aw/nuke_intro.png",
         "time": 3333,
         "sound": "gong.ogg"
       }
