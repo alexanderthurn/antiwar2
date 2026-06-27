@@ -1,8 +1,12 @@
 import { defineConfig } from 'vite';
+import pkg from './package.json';
 import { looseSpritesDevPlugin } from './vite/looseSpritesDev';
 
 export default defineConfig({
   base: './',
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   plugins: [looseSpritesDevPlugin()],
   server: {
     host: true,

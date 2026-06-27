@@ -1,4 +1,5 @@
 import { BitmapText, Container, Graphics, Sprite, type Texture } from 'pixi.js';
+import { formatHighscoreLine, type LevelRecord } from '../core/CampaignRun';
 import { DESIGN } from '../core/DesignSpace';
 import type { LevelPack } from '../data/types';
 import { loadTexture } from '../data/AssetLoader';
@@ -86,8 +87,10 @@ export class CampaignLevelPreview extends Container {
   private titleText!: BitmapText;
   private difficultyLine!: BitmapText;
   private authorLine!: BitmapText;
+  private highscoreLine!: BitmapText;
   private descriptionText!: BitmapText;
   private thumbSprite!: Sprite;
+
   private thumbTextures = new Map<string, Texture>();
   private activeLevelIndex: number | null = null;
 
@@ -118,18 +121,17 @@ export class CampaignLevelPreview extends Container {
     this.card.addChild(this.difficultyLine);
     this.authorLine = kewlText({ text: '', size: META_SIZE });
     this.card.addChild(this.authorLine);
+    this.highscoreLine = kewlText({ text: '', size: DESC_SIZE });
+    this.card.addChild(this.highscoreLine);
 
     this.descriptionText = kewlText({ text: '', size: DESC_SIZE });
     this.card.addChild(this.descriptionText);
   }
 
-  private layoutCard(pack: LevelPack, tex: Texture | undefined): void {
+  private layoutCard(pack: LevelPack, tex: Texture | undefined, record?: LevelRecord): void {
     const midY = CARD_H / 2;
     const descW = CARD_W - PAD * 2;
-    const descAreaTop = midY + PAD;
-    const descAreaH = CARD_H - descAreaTop - PAD;
     const descLineH = kewlLineHeight(DESC_SIZE);
-    const maxDescLines = Math.max(1, Math.floor(descAreaH / descLineH));
 
     this.divider.clear();
     this.divider.moveTo(PAD, midY).lineTo(CARD_W - PAD, midY).stroke({ color: DIVIDER_COLOR, width: 2 });
@@ -167,6 +169,19 @@ export class CampaignLevelPreview extends Container {
     this.authorLine.text = `Author: ${pack.meta.author}`;
     this.authorLine.position.set(infoX, infoY);
 
+    let descAreaTop = midY + PAD;
+    if (record) {
+      this.highscoreLine.text = formatHighscoreLine(record);
+      this.highscoreLine.position.set(thumbX, descAreaTop);
+      this.highscoreLine.visible = true;
+      descAreaTop += descLineH + 12;
+    } else {
+      this.highscoreLine.visible = false;
+    }
+
+    const descAreaH = CARD_H - descAreaTop - PAD;
+    const maxDescLines = Math.max(1, Math.floor(descAreaH / descLineH));
+
     this.descriptionText.text = wrapKewlText(
       pack.meta.description,
       descW,
@@ -190,11 +205,16 @@ export class CampaignLevelPreview extends Container {
     );
   }
 
-  show(levelIndex: number, pack: LevelPack, anchor: CampaignPreviewAnchor): void {
+  show(
+    levelIndex: number,
+    pack: LevelPack,
+    anchor: CampaignPreviewAnchor,
+    record?: LevelRecord,
+  ): void {
     this.activeLevelIndex = levelIndex;
     const thumbPath = pack.meta.thumbnail ?? 'assets/gfx/thumbs/desert.png';
     const tex = this.thumbTextures.get(thumbPath);
-    this.layoutCard(pack, tex);
+    this.layoutCard(pack, tex, record);
 
     const pos = placeCard(anchor);
     this.card.position.set(pos.x, pos.y);

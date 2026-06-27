@@ -1,5 +1,6 @@
 import { BitmapText, Container } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
+import { clearAllGameData } from '../core/SavedData';
 import {
   settingsStore,
   type GameSettings,
@@ -10,11 +11,13 @@ import type { MenuActionsHost } from '../input/MenuActionsHost';
 import type { UiAction } from '../input/UiMenuController';
 import { playMenuClick } from '../audio/UiSounds';
 import { createMenuBackground } from './MenuBackground';
-import { kewlBlockGap, kewlLineHeight, kewlString, kewlText, UI_TITLE_Y } from './KewlFont';
+import { kewlBlockGap, kewlLineHeight, kewlMeasuredSize, kewlString, kewlText, kewlTextLeftInset, UI_TITLE_Y } from './KewlFont';
 
 const ROW_FONT = 22;
 const BACK_FONT = 20;
 const BTN_W = 420;
+const FOOTER_MARGIN = 21;
+const FOOTER_FONT_SIZE = 16;
 
 export class SettingsOverlay extends Container implements MenuActionsHost {
   private menuActions: UiAction[] = [];
@@ -90,8 +93,67 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
     this.addChild(back.view);
     this.menuActions.push(back.action);
 
+    this.addFooterActions();
+
     this.unsub = settingsStore.subscribe(() => this.refresh());
     this.refresh();
+  }
+
+  private addFooterActions(): void {
+    const footerLineH = kewlLineHeight(FOOTER_FONT_SIZE);
+    const footerY = DESIGN.height - FOOTER_MARGIN - footerLineH;
+
+    const clearLabel = 'Clear all saved data';
+    this.addChild(
+      this.makeFooterButton(
+        'settings-clear-data',
+        clearLabel,
+        FOOTER_MARGIN - kewlTextLeftInset(FOOTER_FONT_SIZE),
+        footerY,
+        () => clearAllGameData(),
+      ),
+    );
+
+    const resetLabel = 'Reset options to default';
+    const resetW = kewlMeasuredSize(resetLabel, FOOTER_FONT_SIZE).width;
+    this.addChild(
+      this.makeFooterButton(
+        'settings-reset-options',
+        resetLabel,
+        DESIGN.width - FOOTER_MARGIN - resetW - 20,
+        footerY,
+        () => settingsStore.resetToDefaults(),
+        'right',
+        resetW,
+      ),
+    );
+  }
+
+  private makeFooterButton(
+    id: string,
+    label: string,
+    x: number,
+    y: number,
+    onPress: () => void,
+    align: 'left' | 'right' = 'left',
+    w?: number,
+  ): Container {
+    const { view, action } = createFocusableButton({
+      id,
+      label,
+      x,
+      y,
+      w,
+      align,
+      fontSize: FOOTER_FONT_SIZE,
+      playClick: false,
+      onPress: () => {
+        onPress();
+        playMenuClick();
+      },
+    });
+    this.menuActions.push(action);
+    return view;
   }
 
   destroy(options?: Parameters<Container['destroy']>[0]): void {

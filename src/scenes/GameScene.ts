@@ -147,7 +147,7 @@ export class GameScene extends Container implements MenuActionsHost {
   private civilians: Civilian[] = [];
   private introOverlay: Container | null = null;
   private gameHud: GameHud | null = null;
-  private levelElapsedSec = 0;
+  private levelElapsedMs = 0;
   private shopOverlay: ShopOverlay | null = null;
   private buyMacroRunning = false;
   private roundElapsedMs = 0;
@@ -263,7 +263,7 @@ export class GameScene extends Container implements MenuActionsHost {
     }
 
     this.clearCombat();
-    this.levelElapsedSec = 0;
+    this.levelElapsedMs = 0;
     this.levelRocketsFired = 0;
     this.levelCivilianDeaths = 0;
     this.playerRocketTex = await loadTexture(this.level.bombs.BOMB_PLAYER!.image);
@@ -1001,7 +1001,7 @@ export class GameScene extends Container implements MenuActionsHost {
     this.session.initFromLevel(this.level);
     this.clearAllCivilians();
     await this.spawnCivilians(this.level.config.startHumans);
-    this.levelElapsedSec = 0;
+    this.levelElapsedMs = 0;
 
     await this.startRound(0);
   }
@@ -1030,7 +1030,7 @@ export class GameScene extends Container implements MenuActionsHost {
     }
 
     if (this.phase === 'playing' || this.phase === 'shop') {
-      this.levelElapsedSec += dt;
+      this.levelElapsedMs += dt * 1000;
     }
 
     if (this.phase === 'playing') {
@@ -1234,7 +1234,7 @@ export class GameScene extends Container implements MenuActionsHost {
       this.failStoryLimit('Time up');
       return;
     }
-    if (limits.maxTime !== undefined && limits.maxTime >= 0 && this.levelElapsedSec * 1000 >= limits.maxTime) {
+    if (limits.maxTime !== undefined && limits.maxTime >= 0 && this.levelElapsedMs >= limits.maxTime) {
       this.failStoryLimit('Time up');
       return;
     }
@@ -1590,7 +1590,7 @@ export class GameScene extends Container implements MenuActionsHost {
     const score = computeLevelScore(this.session.money);
     this.onLevelWon?.({
       levelIndex: this.campaignLevelIndex,
-      timeSec: this.levelElapsedSec,
+      timeMs: Math.max(0, Math.floor(this.levelElapsedMs)),
       score,
     });
     this.phase = 'levelComplete';
@@ -1684,7 +1684,7 @@ export class GameScene extends Container implements MenuActionsHost {
     this.gameHud?.refresh(
       this.availableRockets(),
       this.session.money,
-      this.levelElapsedSec,
+      this.levelElapsedMs / 1000,
       this.storyLimits,
       { roundRocketsFired: this.roundRocketsFired, roundElapsedMs: this.roundElapsedMs },
     );

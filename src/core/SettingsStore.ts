@@ -52,6 +52,17 @@ export class SettingsStore {
     this.set({ graphicsQuality: next });
   }
 
+  resetToDefaults(): void {
+    this.settings = { ...DEFAULTS };
+    this.save();
+    this.notify();
+  }
+
+  reloadFromStorage(): void {
+    this.settings = this.load();
+    this.notify();
+  }
+
   subscribe(listener: Listener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);

@@ -1,6 +1,5 @@
 import { Container, Graphics, Sprite } from 'pixi.js';
 import {
-  formatLevelTime,
   isHardcoreRun,
   type CampaignRunId,
   runProgressStore,
@@ -144,7 +143,6 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
     const entry = index.levels[levelIndex]!;
     const unlocked = runProgressStore.isUnlocked(this.runId, levelIndex);
     const completed = runProgressStore.isCompleted(this.runId, levelIndex);
-    const stats = runProgressStore.getLevelStats(this.runId, levelIndex);
 
     const node = new Container();
     node.position.set(entry.mapX, entry.mapY);
@@ -166,15 +164,6 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
     levelNum.position.set(MAP_LEVEL_LABEL_OFFSET.x, MAP_LEVEL_LABEL_OFFSET.y);
     node.addChild(levelNum);
 
-    if (unlocked && stats?.bestTimeSec !== undefined) {
-      const timeLabel = kewlTextAtCenter({
-        text: formatLevelTime(stats.bestTimeSec),
-        size: 14,
-      });
-      timeLabel.position.set(MAP_LEVEL_LABEL_OFFSET.x, MAP_LEVEL_LABEL_OFFSET.y + 22);
-      node.addChild(timeLabel);
-    }
-
     if (unlocked) {
       const pack = this.levelPacks[levelIndex]!;
       const activate = () => onStartLevel(entry.file, levelIndex);
@@ -190,8 +179,10 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
         setFocused: (focused) => {
           if (node.destroyed) return;
           node.scale.set(focused ? FOCUS_SCALE : 1);
-          if (focused) this.preview?.show(levelIndex, pack, { x: entry.mapX, y: entry.mapY });
-          else this.preview?.hideIfLevel(levelIndex);
+          if (focused) {
+            const record = runProgressStore.getLevelStats(this.runId, levelIndex);
+            this.preview?.show(levelIndex, pack, { x: entry.mapX, y: entry.mapY }, record);
+          } else this.preview?.hideIfLevel(levelIndex);
         },
       });
     }

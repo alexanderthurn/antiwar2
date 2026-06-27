@@ -1,30 +1,30 @@
-/** Default campaign id — dev URLs and legacy save migration. */
+/** Default campaign id — dev URLs and save keys. */
 export const DEFAULT_CAMPAIGN_ID = 'aw';
 
 /** Saved playthrough key, e.g. `aw_`, `aw_h`, `iraq_2004_`, `iraq_2004_h`. */
 export type CampaignRunId = string;
 
-export interface LevelRunStats {
-  bestTimeSec?: number;
-  bestScore?: number;
-  completedAt?: string;
+export interface LevelRecord {
+  time: number;
+  score: number;
+  date: number;
+  version: number;
+  nick: string;
 }
 
 export interface RunProgress {
   unlockedIndex: number;
   campaignComplete: boolean;
-  levels: Record<string, LevelRunStats>;
+  levels: Record<string, LevelRecord>;
 }
 
 export interface LevelWonStats {
   levelIndex: number;
-  timeSec: number;
+  timeMs: number;
   score: number;
 }
 
 const STORAGE_PREFIX = 'antiwar2_run_';
-const LEGACY_CAMPAIGN_KEY = 'antiwar2_campaign';
-const LEGACY_HIGHSCORE_KEY = 'antiwar2_highscores';
 
 function emptyProgress(): RunProgress {
   return { unlockedIndex: 0, campaignComplete: false, levels: {} };
@@ -57,21 +57,44 @@ export function computeLevelScore(money: number): number {
   return Math.floor(money);
 }
 
-export function formatLevelTime(sec: number): string {
-  const total = Math.max(0, Math.floor(sec));
+export function formatLevelTime(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
   const m = Math.floor(total / 60);
   const s = total % 60;
   if (m > 0) return `${m}:${String(s).padStart(2, '0')}`;
   return `${total}s`;
 }
 
+/** hh:mm:ss for campaign highscore display. */
+export function formatLevelTimeHms(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+export function formatHighscoreLine(record: LevelRecord): string {
+  return `Best: ${formatLevelTimeHms(record.time)}`;
+}
+
+/** Time is primary; score breaks ties on equal time. */
+export function isBetterLevelRecord(
+  prev: LevelRecord | undefined,
+  time: number,
+  score: number,
+): boolean {
+  if (!prev) return true;
+  if (time < prev.time) return true;
+  if (time === prev.time && score > prev.score) return true;
+  return false;
+}
+
 /** Per-run campaign progress — each normal/hardcore campaign has isolated saves. */
 export class RunProgressStore {
   private readonly cache = new Map<CampaignRunId, RunProgress>();
-  private migratedLegacy = false;
 
   get(runId: CampaignRunId): Readonly<RunProgress> {
-    this.migrateLegacyOnce();
     let progress = this.cache.get(runId);
     if (!progress) {
       progress = this.load(runId);
@@ -88,7 +111,7 @@ export class RunProgressStore {
     return levelIndex < this.get(runId).unlockedIndex;
   }
 
-  getLevelStats(runId: CampaignRunId, levelIndex: number): LevelRunStats | undefined {
+  getLevelStats(runId: CampaignRunId, levelIndex: number): LevelRecord | undefined {
     return this.get(runId).levels[String(levelIndex)];
   }
 
@@ -106,24 +129,34 @@ export class RunProgressStore {
     return !wasComplete && progress.campaignComplete;
   }
 
-  recordLevelResult(runId: CampaignRunId, levelIndex: number, timeSec: number, score: number): void {
+  /**
+   * Saves a level result when it beats the stored record (time first, score tiebreak).
+   * @returns true when the record was replaced.
+   */
+  recordLevelResult(
+    runId: CampaignRunId,
+    levelIndex: number,
+    timeMs: number,
+    score: number,
+    record: Omit<LevelRecord, 'time' | 'score'>,
+  ): boolean {
     const progress = this.mutable(runId);
     const key = String(levelIndex);
-    const prev = progress.levels[key] ?? {};
-    const next: LevelRunStats = { ...prev };
+    const prev = progress.levels[key];
+    const time = Math.max(0, Math.floor(timeMs));
+    const nextScore = Math.floor(score);
 
-    if (prev.bestTimeSec === undefined || timeSec < prev.bestTimeSec) {
-      next.bestTimeSec = timeSec;
-    }
-    if (prev.bestScore === undefined || score > prev.bestScore) {
-      next.bestScore = score;
-    }
-    if (!prev.completedAt) {
-      next.completedAt = new Date().toISOString().slice(0, 10);
-    }
+    if (!isBetterLevelRecord(prev, time, nextScore)) return false;
 
-    progress.levels[key] = next;
+    progress.levels[key] = {
+      time,
+      score: nextScore,
+      date: record.date,
+      version: record.version,
+      nick: record.nick,
+    };
     this.save(runId, progress);
+    return true;
   }
 
   reset(runId: CampaignRunId): void {
@@ -151,8 +184,11 @@ export class RunProgressStore {
     this.save(runId, progress);
   }
 
+  afterStorageClear(): void {
+    this.cache.clear();
+  }
+
   private mutable(runId: CampaignRunId): RunProgress {
-    this.migrateLegacyOnce();
     const progress = structuredClone(this.get(runId)) as RunProgress;
     this.cache.set(runId, progress);
     return progress;
@@ -163,13 +199,20 @@ export class RunProgressStore {
       const raw = localStorage.getItem(storageKey(runId));
       if (!raw) return emptyProgress();
       const parsed = JSON.parse(raw) as Partial<RunProgress>;
+      const levels: Record<string, LevelRecord> = {};
+      if (parsed.levels && typeof parsed.levels === 'object') {
+        for (const [key, entry] of Object.entries(parsed.levels)) {
+          const record = parseLevelRecord(entry);
+          if (record) levels[key] = record;
+        }
+      }
       return {
         unlockedIndex:
           typeof parsed.unlockedIndex === 'number' && parsed.unlockedIndex >= 0
             ? Math.floor(parsed.unlockedIndex)
             : 0,
         campaignComplete: parsed.campaignComplete === true,
-        levels: parsed.levels && typeof parsed.levels === 'object' ? parsed.levels : {},
+        levels,
       };
     } catch {
       return emptyProgress();
@@ -183,47 +226,19 @@ export class RunProgressStore {
       // ignore quota / private browsing
     }
   }
+}
 
-  private migrateLegacyOnce(): void {
-    if (this.migratedLegacy) return;
-    this.migratedLegacy = true;
-
-    const normalId = normalRunId(DEFAULT_CAMPAIGN_ID);
-    if (localStorage.getItem(storageKey(normalId))) return;
-
-    try {
-      const legacyRaw = localStorage.getItem(LEGACY_CAMPAIGN_KEY);
-      if (!legacyRaw) return;
-
-      const legacy = JSON.parse(legacyRaw) as {
-        unlockedIndex?: number;
-        campaignComplete?: boolean;
-      };
-      const progress = emptyProgress();
-      if (typeof legacy.unlockedIndex === 'number' && legacy.unlockedIndex >= 0) {
-        progress.unlockedIndex = Math.floor(legacy.unlockedIndex);
-      }
-      if (legacy.campaignComplete === true) progress.campaignComplete = true;
-
-      const scoresRaw = localStorage.getItem(LEGACY_HIGHSCORE_KEY);
-      if (scoresRaw) {
-        const scores = JSON.parse(scoresRaw) as Record<string, { score?: number }>;
-        for (const [id, entry] of Object.entries(scores)) {
-          if (!entry || typeof entry.score !== 'number') continue;
-          const levelIndex = Number(id) - 1;
-          if (levelIndex < 0) continue;
-          progress.levels[String(levelIndex)] = { bestScore: entry.score };
-        }
-      }
-
-      this.cache.set(normalId, progress);
-      this.save(normalId, progress);
-      localStorage.removeItem(LEGACY_CAMPAIGN_KEY);
-      localStorage.removeItem(LEGACY_HIGHSCORE_KEY);
-    } catch {
-      // ignore corrupt legacy save
-    }
-  }
+function parseLevelRecord(raw: unknown): LevelRecord | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const entry = raw as Record<string, unknown>;
+  if (typeof entry.time !== 'number' || typeof entry.score !== 'number') return undefined;
+  return {
+    time: Math.max(0, Math.floor(entry.time)),
+    score: Math.floor(entry.score),
+    date: typeof entry.date === 'number' ? entry.date : 0,
+    version: typeof entry.version === 'number' ? entry.version : 0,
+    nick: typeof entry.nick === 'string' ? entry.nick : '',
+  };
 }
 
 export const runProgressStore = new RunProgressStore();
