@@ -22,7 +22,7 @@ const STANDALONE_FILES = new Set([
   'assets/gfx/nightshot.png',
 ]);
 
-const STANDALONE_PREFIXES = ['assets/campaign/', 'assets/gfx/tutorial/'];
+const STANDALONE_PREFIXES = ['assets/campaign/', 'assets/gfx/tutorial/', 'assets/gfx/3rdparty/'];
 
 const loaded = new Set<string>();
 const textureCache = new Map<string, Texture>();
