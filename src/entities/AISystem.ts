@@ -7,11 +7,11 @@ import type { PatrolMotion } from './EntityTraits';
 const TICK_SCALE = 60;
 
 function planeSpeed(def: AirplaneDef): number {
-  return def.speed * combatSpeedMultiplier();
+  return def.speed * TICK_SCALE * combatSpeedMultiplier();
 }
 
 function bombSpeed(def: BombDef): number {
-  return def.speed * combatSpeedMultiplier();
+  return def.speed * TICK_SCALE * combatSpeedMultiplier();
 }
 
 export interface AIUpdateContext {
