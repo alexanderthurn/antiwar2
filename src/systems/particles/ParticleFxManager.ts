@@ -3,6 +3,7 @@ import { GROUND_SURFACE_Y } from '../../core/DesignSpace';
 import type { EffectQuality } from '../../core/GraphicsQuality';
 import { loadTexture } from '../../data/AssetLoader';
 import type { CombatEntity } from '../../entities/CombatEntity';
+import { spritesOverlap } from '../collision';
 import { napalmGroundLifeSec } from '../NapalmHazardManager';
 import { sliceFireSheet } from './sliceFireSheet';
 import { sliceParticleSheet } from './sliceParticleSheet';
@@ -19,7 +20,13 @@ const NAPALM_BLOB_ANIM_S = 0.1;
 const CIVILIAN_DISPLAY_HEIGHT = 344 * 0.2;
 /** fire.png is 145×67, five frames → ~29×67 per frame. */
 const NAPALM_FRAME_H = 67;
+/** Align napalm pool with civilian feet (ground strip + 2px). */
+const NAPALM_GROUND_Y = GROUND_SURFACE_Y + 2;
 const NAPALM_BLOB_GRAVITY = 34;
+const NAPALM_BURN_TICK_S = 0.35;
+const NAPALM_RAIN_EXTINGUISH = 2.4;
+/** Start fading when this fraction of lifetime remains (0.65 = last 65% fades out). */
+const NAPALM_FADE_START_RATIO = 0.65;
 const CLOUD_FRAME_START = 4;
 const CLOUD_FRAME_COUNT = 8;
 /** Second row of particle.png — dark metal shrapnel. */
@@ -126,14 +133,13 @@ interface NapalmBlob {
   animTimer: number;
   frameIdx: number;
   settled: boolean;
+  burnCooldown: number;
 }
 
-export interface NapalmParticleHitTarget {
+export interface NapalmBurnTarget {
   id: number;
   alive: boolean;
-  x: number;
-  feetY: number;
-  halfWidth: number;
+  sprite: Sprite;
 }
 
 export interface NapalmExplosionOpts {
@@ -210,6 +216,7 @@ export class ParticleFxManager {
   private readonly trailEmitters = new Map<number, TrailEmitter>();
   private readonly groundFires: GroundFireEmitter[] = [];
   private readonly napalmBlobs: NapalmBlob[] = [];
+  private napalmRain = 0;
   private trailLayer: Container | null = null;
   private fxLayer: Container | null = null;
   private loaded = false;
@@ -318,9 +325,10 @@ export class ParticleFxManager {
     pool.container.update();
   }
 
-  update(dt: number, buckets: EntityBuckets): void {
+  update(dt: number, buckets: EntityBuckets, opts?: { rain?: number }): void {
     if (!this.loaded || !this.trailLayer || !this.fxLayer) return;
 
+    this.napalmRain = opts?.rain ?? 0;
     const profile = QUALITY[this.quality];
     this.syncTrailEmitters(buckets, profile);
     if (profile) {
@@ -446,26 +454,26 @@ export class ParticleFxManager {
     }
   }
 
-  /** Mid-air / ground napalm blobs that can scorch civilians while falling. */
-  queryNapalmParticleHits(
-    civilians: NapalmParticleHitTarget[],
-  ): { civilianId: number; damage: number }[] {
-    const hits: { civilianId: number; damage: number }[] = [];
+  /** Damage civilians whose sprites overlap a napalm blob (not invisible radii). */
+  queryNapalmBurnHits(targets: NapalmBurnTarget[]): { civilianId: number; damage: number; hitX: number; hitY: number }[] {
+    const hits: { civilianId: number; damage: number; hitX: number; hitY: number }[] = [];
 
     for (const blob of this.napalmBlobs) {
-      if (blob.life <= 0) continue;
-      const frame = blob.frames[blob.frameIdx];
-      const w = (frame?.width ?? 29) * blob.sprite.scale.x;
-      const h = (frame?.height ?? NAPALM_FRAME_H) * blob.sprite.scale.y;
-      const hazardR = Math.max(w, h) * 0.42;
+      if (blob.life <= 0 || blob.sprite.alpha < 0.08 || blob.burnCooldown > 0) continue;
 
-      for (const civilian of civilians) {
-        if (!civilian.alive) continue;
-        const dx = civilian.x - blob.x;
-        const dy = civilian.feetY - blob.y;
-        if (dx * dx + dy * dy > hazardR * hazardR) continue;
-        hits.push({ civilianId: civilian.id, damage: 12 });
+      let hitAny = false;
+      for (const target of targets) {
+        if (!target.alive) continue;
+        if (!spritesOverlap(blob.sprite, target.sprite)) continue;
+        hits.push({
+          civilianId: target.id,
+          damage: 14,
+          hitX: blob.sprite.x,
+          hitY: blob.sprite.y,
+        });
+        hitAny = true;
       }
+      if (hitAny) blob.burnCooldown = NAPALM_BURN_TICK_S;
     }
 
     return hits;
@@ -813,7 +821,9 @@ export class ParticleFxManager {
   private tickNapalmBlobs(dt: number): void {
     for (let i = this.napalmBlobs.length - 1; i >= 0; i--) {
       const blob = this.napalmBlobs[i]!;
-      blob.life -= dt;
+      const rainFactor = this.napalmRain * NAPALM_RAIN_EXTINGUISH;
+      blob.life -= dt * (1 + rainFactor);
+      blob.burnCooldown = Math.max(0, blob.burnCooldown - dt);
       if (blob.life <= 0) {
         blob.sprite.destroy();
         this.napalmBlobs.splice(i, 1);
@@ -826,8 +836,8 @@ export class ParticleFxManager {
         blob.vy += NAPALM_BLOB_GRAVITY * dt;
         blob.vx *= 1 - dt * 0.35;
 
-        if (blob.y >= GROUND_SURFACE_Y) {
-          blob.y = GROUND_SURFACE_Y;
+        if (blob.y >= NAPALM_GROUND_Y) {
+          blob.y = NAPALM_GROUND_Y;
           blob.vy = 0;
           blob.vx *= 0.85;
           blob.settled = true;
@@ -848,8 +858,15 @@ export class ParticleFxManager {
         if (frame) blob.sprite.texture = frame;
       }
 
-      const fade = Math.min(1, blob.life / Math.max(0.01, blob.maxLife * 0.4));
-      blob.sprite.alpha = 0.65 + fade * 0.3;
+      const lifeRatio = blob.life / Math.max(0.01, blob.maxLife);
+      let alpha: number;
+      if (lifeRatio >= NAPALM_FADE_START_RATIO) {
+        alpha = 0.92;
+      } else {
+        const t = lifeRatio / NAPALM_FADE_START_RATIO;
+        alpha = 0.92 * t ** 1.25;
+      }
+      blob.sprite.alpha = alpha;
     }
   }
 
@@ -884,7 +901,7 @@ export class ParticleFxManager {
       const bx = x + (Math.random() - 0.5) * spread * 2;
       const by = airborne
         ? y + (Math.random() - 0.5) * Math.max(24, radius * 0.35)
-        : GROUND_SURFACE_Y - 80 - Math.random() * 120;
+        : NAPALM_GROUND_Y + (Math.random() - 0.5) * 4;
 
       sprite.x = bx;
       sprite.y = by;
@@ -897,13 +914,14 @@ export class ParticleFxManager {
         frames: this.napalmFireFrames,
         x: bx,
         y: by,
-        vx: (Math.random() - 0.5) * 14,
-        vy: airborne ? 18 + Math.random() * 28 : 10 + Math.random() * 18,
+        vx: airborne ? (Math.random() - 0.5) * 14 : (Math.random() - 0.5) * 8,
+        vy: airborne ? 18 + Math.random() * 28 : 0,
         life,
         maxLife: life,
         animTimer: Math.random() * NAPALM_BLOB_ANIM_S,
         frameIdx: Math.floor(Math.random() * this.napalmFireFrames.length),
-        settled: false,
+        settled: !airborne,
+        burnCooldown: 0,
       });
     }
   }

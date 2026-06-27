@@ -32,7 +32,6 @@ import { CloudLayer } from '../systems/CloudLayer';
 import { WeatherLayer } from '../systems/WeatherLayer';
 import { NightVisionLayer } from '../systems/NightVisionLayer';
 import { ExplosionManager } from '../systems/ExplosionManager';
-import { NapalmHazardManager } from '../systems/NapalmHazardManager';
 import { ParticleFxManager } from '../systems/particles/ParticleFxManager';
 import { KillStreakManager } from '../systems/KillStreakTracker';
 import {
@@ -137,7 +136,6 @@ export class GameScene extends Container implements MenuActionsHost {
   private entities = new EntityController();
   private explosionManager = new ExplosionManager();
   private particleFx = new ParticleFxManager();
-  private napalmHazards = new NapalmHazardManager();
   private entityHpBars = new EntityHpBarOverlay();
   private killStreaks = new KillStreakManager();
   private players = new PlayerManager();
@@ -371,7 +369,6 @@ export class GameScene extends Container implements MenuActionsHost {
     this.entities.clear();
     this.explosionManager.clear();
     this.particleFx.clear();
-    this.napalmHazards.clear();
     this.entityHpBars.clear();
     this.bossHpBar?.clear();
     for (const s of this.players.slots) s.rocketsInFlight = 0;
@@ -503,15 +500,6 @@ export class GameScene extends Container implements MenuActionsHost {
   ): void {
     this.explosionManager.spawn(x, y, type, radius);
     this.particleFx.spawnExplosion(x, y, type, radius, fxOpts);
-    if (type === 4) {
-      this.napalmHazards.registerExplosion(
-        x,
-        y,
-        radius,
-        fxOpts?.power ?? 100,
-        fxOpts?.lifetime ?? 40,
-      );
-    }
     if (playAudio) this.levelAudio.playExplosion(type);
     if (rumble === 'plane') this.triggerRumble(true, explosionRadiusToIntensity(radius));
     else if (rumble === 'explosion') this.triggerRumble(false, explosionRadiusToIntensity(radius));
@@ -1100,7 +1088,7 @@ export class GameScene extends Container implements MenuActionsHost {
       menu.update(input);
       this.releaseTouchFire(input);
       this.explosionManager.update(dt);
-      this.particleFx.update(dt, this.particleBuckets());
+      this.particleFx.update(dt, this.particleBuckets(), { rain: this.round.weather[0] ?? 0 });
       return;
     }
 
@@ -1112,7 +1100,7 @@ export class GameScene extends Container implements MenuActionsHost {
     beginCollisionFrame();
 
     this.explosionManager.update(dt);
-    this.particleFx.update(dt, this.particleBuckets());
+    this.particleFx.update(dt, this.particleBuckets(), { rain: this.round.weather[0] ?? 0 });
     this.killStreaks.tick(dt);
     this.bossHpBar?.refresh();
     this.entityHpBars.update(
@@ -1171,7 +1159,7 @@ export class GameScene extends Container implements MenuActionsHost {
       this.entityCallbacks(),
       this.civilians,
     );
-    this.updateNapalmHazards(dt);
+    this.updateNapalmHazards();
     this.checkWinLoss();
     this.updateHud();
   }
@@ -1382,39 +1370,20 @@ export class GameScene extends Container implements MenuActionsHost {
     };
   }
 
-  private napalmCivilianTargets() {
-    return this.civilians.map((c) => ({
+  private updateNapalmHazards(): void {
+    const targets = this.civilians.map((c) => ({
       id: c.id,
       alive: c.alive,
-      x: c.x,
-      feetY: GROUND_FEET_Y,
-      halfWidth: c.sprite.width * 0.5,
+      sprite: c.sprite,
     }));
-  }
 
-  private updateNapalmHazards(dt: number): void {
-    const targets = this.napalmCivilianTargets();
-    const rain = this.round.weather[0] ?? 0;
-
-    this.napalmHazards.update(dt, rain, targets, {
-      onCivilianBurnDamage: (civilianId, damage) => {
-        const civilian = this.civilians.find((c) => c.id === civilianId);
-        if (!civilian?.alive) return;
-        this.applyCivilianDamage(civilian, damage, {
-          explosionType: 4,
-          lingeringBurn: true,
-          hitFrom: { x: civilian.x, y: GROUND_FEET_Y - 40 },
-        });
-      },
-    });
-
-    for (const hit of this.particleFx.queryNapalmParticleHits(targets)) {
+    for (const hit of this.particleFx.queryNapalmBurnHits(targets)) {
       const civilian = this.civilians.find((c) => c.id === hit.civilianId);
       if (!civilian?.alive) continue;
       this.applyCivilianDamage(civilian, hit.damage, {
         explosionType: 4,
         lingeringBurn: true,
-        hitFrom: { x: civilian.x, y: civilian.sprite.y },
+        hitFrom: { x: hit.hitX, y: hit.hitY },
       });
     }
   }
