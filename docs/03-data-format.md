@@ -40,7 +40,7 @@ public/campaign/
   "schemaVersion": 1,
   "id": "aw",
   "campaignName": "Antiwar 1",
-  "mapImage": "assets/gfx/map.png",
+  "mapImage": "assets/gfx/aw.png",
   "levels": [
     { "file": "1.json", "name": "Tutorial", "mapX": 188, "mapY": 225, "pathType": 0 },
     { "file": "2.json", "name": "Sector One", "mapX": 600, "mapY": 225, "pathType": 1 }

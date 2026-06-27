@@ -96,7 +96,7 @@ Defines the **campaign map**: display name, background image, and where each lev
   "schemaVersion": 1,
   "id": "desert",
   "campaignName": "Desert Storm",
-  "mapImage": "assets/gfx/map.png",
+  "mapImage": "assets/gfx/aw.png",
   "levels": [
     {
       "file": "1.json",

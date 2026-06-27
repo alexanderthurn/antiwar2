@@ -38,7 +38,7 @@ These remain as individual files in `public/assets/gfx/`:
 | `particle.png` | Particle grid sheet (custom slicing) |
 | `kewlfont.png` | Bitmap font |
 | `menu.jpg` | Full-screen menu background |
-| `map.png` | Full-screen campaign map |
+| `aw.png` | Full-screen campaign map |
 | `hand-cursor.png` | CSS `cursor: url(...)` — must be a real file URL |
 | `nightshot.png` | Large night-vision overlay — kept as a single full texture |
 

@@ -199,7 +199,7 @@ Upgrades increase team `maxRockets` → redistributed on next shop phase (or imm
 
 ## Campaign view
 
-**A:** **Reuse v1 map UI** — `gfx/map.png` node layout from `campaign.txt` coordinates.
+**A:** **Reuse v1 map UI** — `gfx/aw.png` node layout from `campaign.txt` coordinates.
 
 ---
 

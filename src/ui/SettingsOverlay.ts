@@ -103,7 +103,7 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
     const footerLineH = kewlLineHeight(FOOTER_FONT_SIZE);
     const footerY = DESIGN.height - FOOTER_MARGIN - footerLineH;
 
-    const clearLabel = 'Clear all saved data';
+    const clearLabel = 'Clear all game data';
     this.addChild(
       this.makeFooterButton(
         'settings-clear-data',
@@ -114,7 +114,7 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
       ),
     );
 
-    const resetLabel = 'Reset options to default';
+    const resetLabel = 'Reset options';
     const resetW = kewlMeasuredSize(resetLabel, FOOTER_FONT_SIZE).width;
     this.addChild(
       this.makeFooterButton(
