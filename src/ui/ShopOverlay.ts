@@ -87,7 +87,6 @@ export class ShopOverlay extends Container {
     roundNumber: number,
     roundTotal: number,
     hasMoreRounds: boolean,
-    private readonly canAutoBuy: () => boolean = () => true,
   ) {
     super();
     this.onBuy = onBuy;
@@ -121,7 +120,7 @@ export class ShopOverlay extends Container {
     const visible = this.hasBuyableItem();
     this.autoBuyView.visible = visible;
     if (this.autoBuyAction) {
-      this.autoBuyAction.enabled = () => this.canAutoBuy() && this.hasBuyableItem();
+      this.autoBuyAction.enabled = () => this.hasBuyableItem();
     }
   }
 
@@ -198,7 +197,7 @@ export class ShopOverlay extends Container {
       base: baseTex,
       icon: autoTex,
       onPress: () => this.onAutoBuy(),
-      enabled: () => this.canAutoBuy() && this.hasBuyableItem(),
+      enabled: () => this.hasBuyableItem(),
     });
     this.autoBuyView = auto.view;
     this.autoBuyAction = auto.action;

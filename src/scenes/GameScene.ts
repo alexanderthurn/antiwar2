@@ -72,7 +72,6 @@ const PLAYER_ROCKET_DAMAGE_SCALE_MAX = 2;
 /** Seconds between autofire shots while fire is held (clicks are not limited). */
 const PLAYER_AUTO_FIRE_COOLDOWN_S = 0.5;
 const PLAYER_TOUCH_AUTO_FIRE_COOLDOWN_S = PLAYER_AUTO_FIRE_COOLDOWN_S * 0.5;
-const AUTO_BUY_COOLDOWN_S = 10;
 /** Damage multiplier for rockets fired with an active lock-on target. */
 const LOCK_ON_ROCKET_DAMAGE_FACTOR = 2.0;
 
@@ -151,7 +150,6 @@ export class GameScene extends Container implements MenuActionsHost {
   private levelElapsedSec = 0;
   private shopOverlay: ShopOverlay | null = null;
   private buyMacroRunning = false;
-  private autoBuyCooldownLeft = 0;
   private roundElapsedMs = 0;
   private levelRocketsFired = 0;
   private roundRocketsFired = 0;
@@ -1028,9 +1026,6 @@ export class GameScene extends Container implements MenuActionsHost {
 
     if (this.phase === 'playing' || this.phase === 'shop') {
       this.levelElapsedSec += dt;
-      if (this.phase === 'shop') {
-        this.autoBuyCooldownLeft = Math.max(0, this.autoBuyCooldownLeft - dt);
-      }
     }
 
     if (this.phase === 'playing') {
@@ -1469,7 +1464,6 @@ export class GameScene extends Container implements MenuActionsHost {
       this.roundIndex + 1,
       this.level.rounds.length,
       hasMoreRounds,
-      () => this.autoBuyCooldownLeft <= 0,
     );
     this.uiLayer.addChild(this.shopOverlay);
     this.updateHud();
@@ -1509,7 +1503,6 @@ export class GameScene extends Container implements MenuActionsHost {
   }
 
   private autoBuyUpgrades(): void {
-    if (this.autoBuyCooldownLeft > 0) return;
     let purchased = false;
     while (true) {
       const key = this.findCheapestBuyableUpgrade();
@@ -1518,7 +1511,6 @@ export class GameScene extends Container implements MenuActionsHost {
     }
     if (purchased) {
       this.levelAudio.playPay();
-      this.autoBuyCooldownLeft = AUTO_BUY_COOLDOWN_S;
       this.shopOverlay?.refresh(this.session);
     }
   }
