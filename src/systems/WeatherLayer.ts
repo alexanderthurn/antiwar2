@@ -18,7 +18,7 @@ interface SnowLive {
   spin: number;
 }
 
-const MAX_RAIN = 420;
+const MAX_RAIN = 1680;
 const MAX_SNOW = 320;
 
 export class WeatherLayer extends Container {
@@ -85,7 +85,7 @@ export class WeatherLayer extends Container {
   }
 
   private rainCount(): number {
-    return this.rain > 0 ? Math.min(MAX_RAIN, Math.round(this.rain * 260 + 24)) : 0;
+    return this.rain > 0 ? Math.min(MAX_RAIN, Math.round(this.rain * 1040 + 96)) : 0;
   }
 
   private snowCount(): number {
@@ -188,7 +188,7 @@ export class WeatherLayer extends Container {
       y: randomY ? Math.random() * DESIGN.height : -Math.random() * DESIGN.height * 0.25,
       vy: (650 + Math.random() * 400) * intensity,
       vx: this.wind * 55 + (Math.random() - 0.5) * 18,
-      scale: 0.55 + Math.random() * 0.45,
+      scale: 0.14 + Math.random() * 0.11,
       alpha: 0.35 + Math.random() * 0.2,
     };
   }
