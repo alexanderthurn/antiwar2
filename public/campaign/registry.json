@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "campaigns": [
+    { "id": "aw", "menuTitle": "Antiwar 1" },
+    { "id": "aw2", "menuTitle": "Antiwar 2" }
+  ]
+}

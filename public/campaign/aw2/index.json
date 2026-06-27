@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "aw2",
+  "campaignName": "Antiwar 2",
+  "mapImage": "assets/gfx/map.png",
+  "levels": [
+    {
+      "file": "1.json",
+      "name": "Sector One",
+      "mapX": 990,
+      "mapY": 582,
+      "pathType": 1
+    }
+  ]
+}

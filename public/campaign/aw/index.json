@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
-  "campaignName": "Antiwar",
+  "id": "aw",
+  "campaignName": "Antiwar 1",
   "mapImage": "assets/gfx/map.png",
   "levels": [
     {

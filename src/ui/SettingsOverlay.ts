@@ -4,7 +4,6 @@ import {
   settingsStore,
   type GameSettings,
 } from '../core/SettingsStore';
-import { profileStore } from '../core/ProfileStore';
 import { GRAPHICS_LABELS } from '../core/GraphicsQuality';
 import { createFocusableButton } from '../input/FocusableButton';
 import type { MenuActionsHost } from '../input/MenuActionsHost';
@@ -13,17 +12,6 @@ import { playMenuClick } from '../audio/UiSounds';
 import { createMenuBackground } from './MenuBackground';
 import { kewlBlockGap, kewlLineHeight, kewlString, kewlText, UI_TITLE_Y } from './KewlFont';
 
-const STORAGE_CAMPAIGN = 'antiwar2_campaign';
-
-function isCampaignComplete(): boolean {
-  try {
-    const raw = localStorage.getItem(STORAGE_CAMPAIGN);
-    if (!raw) return false;
-    return (JSON.parse(raw) as { campaignComplete?: boolean }).campaignComplete === true;
-  } catch {
-    return false;
-  }
-}
 const ROW_FONT = 22;
 const BACK_FONT = 20;
 const BTN_W = 420;
@@ -33,7 +21,6 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
   private rowLabels = new Map<string, { prefix: string; text: BitmapText }>();
   private onBack: () => void;
   private unsub: (() => void) | null = null;
-  private unsubProfile: (() => void) | null = null;
 
   constructor(onBack: () => void) {
     super();
@@ -68,17 +55,6 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
           playMenuClick();
         },
       },
-      ...(isCampaignComplete()
-        ? [{
-            id: 'settings-hardcore',
-            label: 'Hardcore',
-            onPress: () => {
-              const p = profileStore.get();
-              profileStore.set({ hardcoreEnabled: !p.hardcoreEnabled });
-              playMenuClick();
-            },
-          }]
-        : []),
       {
         id: 'settings-graphics',
         label: 'Graphics',
@@ -115,15 +91,12 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
     this.menuActions.push(back.action);
 
     this.unsub = settingsStore.subscribe(() => this.refresh());
-    this.unsubProfile = profileStore.subscribe(() => this.refresh());
     this.refresh();
   }
 
   destroy(options?: Parameters<Container['destroy']>[0]): void {
     this.unsub?.();
     this.unsub = null;
-    this.unsubProfile?.();
-    this.unsubProfile = null;
     super.destroy(options);
   }
 
@@ -165,9 +138,6 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
     const s = settingsStore.get();
     this.setRow('settings-sound', s.soundEnabled ? 'ON' : 'OFF');
     this.setRow('settings-music', s.musicEnabled ? 'ON' : 'OFF');
-    if (isCampaignComplete()) {
-      this.setRow('settings-hardcore', profileStore.get().hardcoreEnabled ? 'ON' : 'OFF');
-    }
     this.setRow('settings-graphics', GRAPHICS_LABELS[s.graphicsQuality]);
   }
 

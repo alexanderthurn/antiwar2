@@ -1,5 +1,13 @@
 import { Application, Container, Graphics } from 'pixi.js';
-import { CampaignProgress } from './core/CampaignProgress';
+import {
+  DEFAULT_CAMPAIGN_ID,
+  hardcoreRunId,
+  isHardcoreRun,
+  normalRunId,
+  runProgressStore,
+  type CampaignRunId,
+} from './core/CampaignRun';
+import { setRunHardcore } from './core/RunMode';
 import { shopDigitFromKeyboard } from './core/BuyScript';
 import { DESIGN } from './core/DesignSpace';
 import {
@@ -53,7 +61,8 @@ export class App {
     designPxPerCm: 0,
   };
   private mode: SceneMode = 'menu';
-  private campaignProgress = new CampaignProgress();
+  private activeCampaignId = DEFAULT_CAMPAIGN_ID;
+  private activeRunId: CampaignRunId = normalRunId(DEFAULT_CAMPAIGN_ID);
   private game: GameScene | null = null;
   private touchUi = false;
 
@@ -120,17 +129,19 @@ export class App {
   }
 
   private async bootFromDevUrl(dev: DevGameState): Promise<void> {
-    const index = await loadCampaignIndex();
+    const index = await loadCampaignIndex(DEFAULT_CAMPAIGN_ID);
     const entry = index.levels[dev.levelIndex];
     if (!entry) {
       console.warn(`[dev-url] Campaign level ${dev.levelIndex + 1} not found`);
       this.showMainMenu(true);
       return;
     }
-    this.campaignProgress.ensureUnlockedAtLeast(dev.levelIndex);
-    this.campaignProgress.playingIndex = dev.levelIndex;
+    const devRunId = normalRunId(DEFAULT_CAMPAIGN_ID);
+    runProgressStore.ensureUnlockedAtLeast(devRunId, dev.levelIndex);
+    this.activeCampaignId = DEFAULT_CAMPAIGN_ID;
+    this.activeRunId = devRunId;
 
-    const pack = await loadLevelPack(entry.file);
+    const pack = await loadLevelPack(DEFAULT_CAMPAIGN_ID, entry.file);
     const roundIndex = Math.min(Math.max(0, dev.roundIndex), pack.rounds.length - 1);
     if (roundIndex !== dev.roundIndex) {
       console.warn(`[dev-url] Round ${roundIndex + 1} out of range — using ${roundIndex + 1}`);
@@ -235,12 +246,15 @@ export class App {
   }
 
   private showMainMenu(resetCampaign = false): void {
-    if (resetCampaign) this.campaignProgress.reset();
+    if (resetCampaign) runProgressStore.reset(normalRunId(DEFAULT_CAMPAIGN_ID));
     clearDevUrl();
+    setRunHardcore(false);
+    this.activeCampaignId = DEFAULT_CAMPAIGN_ID;
+    this.activeRunId = normalRunId(DEFAULT_CAMPAIGN_ID);
     this.mode = 'menu';
     this.game = null;
     const menu = new MainMenuScene(
-      () => this.showCampaignView(false),
+      (campaignId) => this.showCampaignViewFor(campaignId, false),
       () => this.showCredits(),
       () => menu.showSettings(),
     );
@@ -256,15 +270,28 @@ export class App {
     this.setScene(new CreditsScene(() => this.showMainMenu(false)));
   }
 
-  private showCampaignView(newRun = false): void {
-    if (newRun) this.campaignProgress.reset();
+  private setActiveRun(campaignId: string, hardcore: boolean): void {
+    this.activeCampaignId = campaignId;
+    this.activeRunId = hardcore ? hardcoreRunId(campaignId) : normalRunId(campaignId);
+  }
+
+  private showCampaignViewFor(campaignId: string, hardcore: boolean, newRun = false): void {
+    this.setActiveRun(campaignId, hardcore);
+    if (newRun) runProgressStore.reset(this.activeRunId);
     clearDevUrl();
+    setRunHardcore(false);
     this.mode = 'campaign';
     this.game = null;
+    const activeCampaignId = campaignId;
+    const activeRunId = this.activeRunId;
+    const hardcoreUnlocked = runProgressStore.isNormalCampaignComplete(campaignId);
     this.setScene(
       new CampaignViewScene(
-        this.campaignProgress,
+        activeCampaignId,
+        activeRunId,
+        hardcoreUnlocked,
         () => this.showMainMenu(false),
+        () => this.showCampaignViewFor(activeCampaignId, !isHardcoreRun(activeRunId)),
         (file, levelIndex) => void this.startLevel(file, levelIndex),
       ),
     );
@@ -272,27 +299,43 @@ export class App {
   }
 
   private async applyCampaignUnlockCheat(): Promise<void> {
-    const index = await loadCampaignIndex();
+    const index = await loadCampaignIndex(this.activeCampaignId);
     const max = index.levels.length - 1;
-    if (this.campaignProgress.isAllUnlocked(max)) {
-      this.campaignProgress.reset();
+    if (runProgressStore.isAllUnlocked(this.activeRunId, max)) {
+      runProgressStore.reset(this.activeRunId);
     } else {
-      this.campaignProgress.unlockAll(max);
+      runProgressStore.unlockAll(this.activeRunId, max);
     }
-    this.showCampaignView(false);
+    this.showCampaignViewFor(this.activeCampaignId, isHardcoreRun(this.activeRunId));
   }
 
   private async startLevel(file: string, levelIndex: number, devBootstrap?: DevBootstrap): Promise<void> {
     this.mode = 'game';
-    this.campaignProgress.playingIndex = levelIndex;
-    const pack = await loadLevelPack(file);
+    setRunHardcore(isHardcoreRun(this.activeRunId));
+    const index = await loadCampaignIndex(this.activeCampaignId);
+    const finalLevelIndex = index.levels.length - 1;
+    const pack = await loadLevelPack(this.activeCampaignId, file);
     const roundIndex = devBootstrap?.roundIndex ?? 0;
     await preloadRound(pack, roundIndex);
 
     const game = new GameScene();
-    game.onReturnToCampaign = () => this.showCampaignView(false);
-    game.onLevelWon = () => this.campaignProgress.completeLevel(levelIndex);
-    game.onLevelComplete = () => this.showCampaignView(false);
+    const runId = this.activeRunId;
+    const campaignId = this.activeCampaignId;
+    game.onReturnToCampaign = () =>
+      this.showCampaignViewFor(campaignId, isHardcoreRun(runId));
+    game.onLevelWon = (stats) => {
+      runProgressStore.recordLevelResult(runId, stats.levelIndex, stats.timeSec, stats.score);
+      const newlyComplete = runProgressStore.completeLevel(
+        runId,
+        stats.levelIndex,
+        finalLevelIndex,
+      );
+      if (newlyComplete && runId === normalRunId(campaignId)) {
+        game.setEndScreenTitle('Campaign complete!\nHardcore mode unlocked.');
+      }
+    };
+    game.onLevelComplete = () =>
+      this.showCampaignViewFor(campaignId, isHardcoreRun(runId));
     game.onRoundStarted = (state) => syncDevUrl(state);
 
     const bootstrap: DevBootstrap = devBootstrap ?? { levelIndex, roundIndex: 0 };

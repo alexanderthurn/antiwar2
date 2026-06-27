@@ -122,6 +122,8 @@ export interface LevelPack {
 
 export interface CampaignIndex {
   schemaVersion: number;
+  /** Stable campaign id for save keys, e.g. `aw` → runs `aw_` / `aw_h`. */
+  id: string;
   campaignName: string;
   mapImage: string;
   levels: Array<{
@@ -133,14 +135,36 @@ export interface CampaignIndex {
   }>;
 }
 
-export async function loadLevelPack(file: string): Promise<LevelPack> {
-  const res = await fetch(publicUrl(`campaign/${file}`));
-  if (!res.ok) throw new Error(`Failed to load campaign/${file}`);
+export interface CampaignRegistryEntry {
+  id: string;
+  menuTitle: string;
+}
+
+export interface CampaignRegistry {
+  schemaVersion: number;
+  campaigns: CampaignRegistryEntry[];
+}
+
+function campaignBase(campaignId: string): string {
+  return `campaign/${campaignId}`;
+}
+
+export async function loadCampaignRegistry(): Promise<CampaignRegistry> {
+  const res = await fetch(publicUrl('campaign/registry.json'));
+  if (!res.ok) throw new Error('Failed to load campaign registry');
+  return res.json() as Promise<CampaignRegistry>;
+}
+
+export async function loadLevelPack(campaignId: string, file: string): Promise<LevelPack> {
+  const path = `${campaignBase(campaignId)}/${file}`;
+  const res = await fetch(publicUrl(path));
+  if (!res.ok) throw new Error(`Failed to load ${path}`);
   return res.json() as Promise<LevelPack>;
 }
 
-export async function loadCampaignIndex(): Promise<CampaignIndex> {
-  const res = await fetch(publicUrl('campaign/index.json'));
-  if (!res.ok) throw new Error('Failed to load campaign index');
+export async function loadCampaignIndex(campaignId: string): Promise<CampaignIndex> {
+  const path = `${campaignBase(campaignId)}/index.json`;
+  const res = await fetch(publicUrl(path));
+  if (!res.ok) throw new Error(`Failed to load ${path}`);
   return res.json() as Promise<CampaignIndex>;
 }

@@ -1,16 +1,25 @@
 import { Container, Graphics, Sprite } from 'pixi.js';
-import type { CampaignProgress } from '../core/CampaignProgress';
-import { highscoreStore } from '../core/HighscoreStore';
+import {
+  formatLevelTime,
+  isHardcoreRun,
+  type CampaignRunId,
+  runProgressStore,
+} from '../core/CampaignRun';
 import { DESIGN } from '../core/DesignSpace';
 import { createFocusableButton } from '../input/FocusableButton';
 import type { MenuActionsHost } from '../input/MenuActionsHost';
 import type { UiAction } from '../input/UiMenuController';
 import { loadTexture } from '../data/AssetLoader';
-import { loadCampaignIndex, loadLevelPack, type CampaignIndex, type LevelPack } from '../data/types';
+import {
+  loadCampaignIndex,
+  loadLevelPack,
+  type CampaignIndex,
+  type LevelPack,
+} from '../data/types';
 import { MENU_POINTER_CURSOR } from '../ui/MenuPointer';
 import { createMenuBackground } from '../ui/MenuBackground';
 import { CampaignLevelPreview } from '../ui/CampaignLevelPreview';
-import { kewlTextAtCenter } from '../ui/KewlFont';
+import { kewlMeasuredSize, kewlText, kewlTextAtCenter } from '../ui/KewlFont';
 
 const MAP_BUTTON_BY_PATH: Record<number, string> = {
   0: 'assets/gfx/buttons_map/button_training.png',
@@ -31,13 +40,16 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
   private preview: CampaignLevelPreview | null = null;
 
   constructor(
-    progress: CampaignProgress,
+    private readonly campaignId: string,
+    private readonly runId: CampaignRunId,
+    private readonly hardcoreUnlocked: boolean,
     onBack: () => void,
+    onToggleHardcore: () => void,
     onStartLevel: (file: string, levelIndex: number) => void,
   ) {
     super();
     this.onBack = onBack;
-    void this.build(progress, onStartLevel);
+    void this.build(onToggleHardcore, onStartLevel);
   }
 
   getMenuActions(): UiAction[] {
@@ -49,11 +61,13 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
   }
 
   private async build(
-    progress: CampaignProgress,
+    onToggleHardcore: () => void,
     onStartLevel: (file: string, levelIndex: number) => void,
   ): Promise<void> {
-    const index = await loadCampaignIndex();
-    this.levelPacks = await Promise.all(index.levels.map((entry) => loadLevelPack(entry.file)));
+    const index = await loadCampaignIndex(this.campaignId);
+    this.levelPacks = await Promise.all(
+      index.levels.map((entry) => loadLevelPack(this.campaignId, entry.file)),
+    );
 
     this.addChild(await createMenuBackground());
     const mapTex = await loadTexture(index.mapImage);
@@ -81,13 +95,41 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
     this.addChild(back.view);
     this.menuActions.push(back.action);
 
+    const title = kewlText({
+      text: index.campaignName,
+      size: 28,
+      anchorX: 0.5,
+    });
+    title.position.set(DESIGN.width / 2, 36);
+    this.addChild(title);
+
+    if (this.hardcoreUnlocked) {
+      const modeLabel = isHardcoreRun(this.runId) ? 'Hardcore' : 'Normal';
+      const modeFont = 18;
+      const modePadX = 14;
+      const modeTextW = kewlMeasuredSize(modeLabel, modeFont).width;
+      const modeW = modeTextW + modePadX * 2;
+      const mode = createFocusableButton({
+        id: 'campaign-mode',
+        label: modeLabel,
+        x: DESIGN.width - 16 - modeW,
+        y: 16,
+        w: modeW,
+        align: 'right',
+        fontSize: modeFont,
+        onPress: () => onToggleHardcore(),
+      });
+      this.addChild(mode.view);
+      this.menuActions.push(mode.action);
+    }
+
     const buttonTex = new Map<number, Awaited<ReturnType<typeof loadTexture>>>();
     for (const pathType of [0, 1, 2, 3]) {
       buttonTex.set(pathType, await loadTexture(MAP_BUTTON_BY_PATH[pathType]!));
     }
 
     for (let i = 0; i < index.levels.length; i++) {
-      this.addChild(this.makeNode(index, i, progress, onStartLevel, buttonTex));
+      this.addChild(this.makeNode(index, i, onStartLevel, buttonTex));
     }
 
     this.addChild(this.preview);
@@ -96,14 +138,13 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
   private makeNode(
     index: CampaignIndex,
     levelIndex: number,
-    progress: CampaignProgress,
     onStartLevel: (file: string, levelIndex: number) => void,
     buttonTex: Map<number, Awaited<ReturnType<typeof loadTexture>>>,
   ): Container {
     const entry = index.levels[levelIndex]!;
-    const unlocked = progress.isUnlocked(levelIndex);
-    const completed = progress.isCompleted(levelIndex);
-    const best = highscoreStore.get(this.levelPacks[levelIndex]?.id ?? levelIndex + 1);
+    const unlocked = runProgressStore.isUnlocked(this.runId, levelIndex);
+    const completed = runProgressStore.isCompleted(this.runId, levelIndex);
+    const stats = runProgressStore.getLevelStats(this.runId, levelIndex);
 
     const node = new Container();
     node.position.set(entry.mapX, entry.mapY);
@@ -125,10 +166,13 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
     levelNum.position.set(MAP_LEVEL_LABEL_OFFSET.x, MAP_LEVEL_LABEL_OFFSET.y);
     node.addChild(levelNum);
 
-    if (best && unlocked) {
-      const scoreLabel = kewlTextAtCenter({ text: String(best.score), size: 14 });
-      scoreLabel.position.set(MAP_LEVEL_LABEL_OFFSET.x, MAP_LEVEL_LABEL_OFFSET.y + 22);
-      node.addChild(scoreLabel);
+    if (unlocked && stats?.bestTimeSec !== undefined) {
+      const timeLabel = kewlTextAtCenter({
+        text: formatLevelTime(stats.bestTimeSec),
+        size: 14,
+      });
+      timeLabel.position.set(MAP_LEVEL_LABEL_OFFSET.x, MAP_LEVEL_LABEL_OFFSET.y + 22);
+      node.addChild(timeLabel);
     }
 
     if (unlocked) {

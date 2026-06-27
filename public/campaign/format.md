@@ -2,6 +2,8 @@
 
 Each `N.json` file is a self-contained **level pack**: economy, units, bombs, and an ordered list of **rounds** (stages). Coordinates are in design space **1920×1080**.
 
+**Authoring guide (players & modders):** [`public/web/level-authoring.md`](../web/level-authoring.md) — full English tutorial with `aiConfig` and per-second units.
+
 See also `index.json` for campaign order and map placement. Full schema notes live in `docs/03-data-format.md`; this file focuses on **per-round overrides** added for v1 parity.
 
 ---
@@ -83,7 +85,8 @@ Omit fields on rounds that should keep the previous value — keeps JSON small.
 |-------|------|
 | `speed`, `startRocketSpeed` | pixels per second |
 | `rotationSpeed` | degrees per second (360 = one full turn/s) |
-| `aiParams[2]` | seconds between weapon drops |
+| `aiConfig.dropIntervalSec` | seconds between weapon drops |
+| `aiConfig.flightBand` | vertical patrol range (px) |
 | `stealthPhaseSec` | seconds per stealth/visible phase |
 | `intro.time`, `startAimTime`, `storyLimits.*Time` | milliseconds |
 

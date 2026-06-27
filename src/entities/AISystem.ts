@@ -1,5 +1,5 @@
 import { DESIGN } from '../core/DesignSpace';
-import { combatSpeedMultiplier } from '../core/ProfileStore';
+import { combatSpeedMultiplier } from '../core/RunMode';
 import type { AirplaneDef, BombDef, LevelPack } from '../data/types';
 import type { CombatEntity } from './CombatEntity';
 import type { PatrolMotion } from './EntityTraits';

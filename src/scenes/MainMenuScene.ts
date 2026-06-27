@@ -3,6 +3,7 @@ import packageJson from '../../package.json';
 import { playSound, sfxPath } from '../audio/SoundManager';
 import { DESIGN } from '../core/DesignSpace';
 import { loadTexture } from '../data/AssetLoader';
+import { loadCampaignRegistry, type CampaignRegistryEntry } from '../data/types';
 import { createFocusableButton } from '../input/FocusableButton';
 import type { MenuActionsHost } from '../input/MenuActionsHost';
 import type { UiAction } from '../input/UiMenuController';
@@ -30,12 +31,12 @@ export class MainMenuScene extends Container implements MenuActionsHost {
   private logo: MenuLogo | null = null;
 
   constructor(
-    onCampaign: () => void,
+    onSelectCampaign: (campaignId: string) => void,
     onCredits: () => void,
     onSettings: () => void,
   ) {
     super();
-    void this.build(onCampaign, onCredits, onSettings);
+    void this.build(onSelectCampaign, onCredits, onSettings);
   }
 
   update(dt: number): void {
@@ -86,10 +87,12 @@ export class MainMenuScene extends Container implements MenuActionsHost {
   }
 
   private async build(
-    onCampaign: () => void,
+    onSelectCampaign: (campaignId: string) => void,
     onCredits: () => void,
     onSettings: () => void,
   ): Promise<void> {
+    const registry = await loadCampaignRegistry();
+
     this.addChild(this.menuContent);
     this.menuContent.addChild(await createMenuBackground());
     if (!welcomePlayed) {
@@ -105,11 +108,14 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     const btnW = 420;
     const btnX = centerX - btnW / 2;
     const btnSize = 28;
-    const btnStep = kewlLineHeight(btnSize) + 10;
+    const btnStep = kewlLineHeight(btnSize) * 0.8;
     let btnY = 400;
 
-    this.menuContent.addChild(this.makeButton('menu-campaign', 'Campaign', btnX, btnY, btnW, onCampaign));
-    btnY += btnStep;
+    for (const campaign of registry.campaigns) {
+      this.addChildCampaignButton(campaign, btnX, btnY, btnW, onSelectCampaign);
+      btnY += btnStep;
+    }
+
     this.menuContent.addChild(this.makeButton('menu-settings', 'Options', btnX, btnY, btnW, onSettings));
     btnY += btnStep;
     this.menuContent.addChild(this.makeButton('menu-how-to-play', 'How to play', btnX, btnY, btnW, () => this.showHowToPlay()));
@@ -145,6 +151,25 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     );
 
     this.mainActions = [...this.menuActions];
+  }
+
+  private addChildCampaignButton(
+    campaign: CampaignRegistryEntry,
+    btnX: number,
+    btnY: number,
+    btnW: number,
+    onSelectCampaign: (campaignId: string) => void,
+  ): void {
+    this.menuContent.addChild(
+      this.makeButton(
+        `menu-campaign-${campaign.id}`,
+        campaign.menuTitle,
+        btnX,
+        btnY,
+        btnW,
+        () => onSelectCampaign(campaign.id),
+      ),
+    );
   }
 
   private makeButton(

@@ -5,7 +5,7 @@ import { DESIGN, V1_SPRITES, towerXForSlot } from '../core/DesignSpace';
 import { effectQualityForGraphics } from '../core/GraphicsQuality';
 import { settingsStore } from '../core/SettingsStore';
 import { LevelSession, UPGRADE_KEYS, type UpgradeKey } from '../core/LevelSession';
-import { computeLevelScore, highscoreStore } from '../core/HighscoreStore';
+import { computeLevelScore, type LevelWonStats } from '../core/CampaignRun';
 import { BUY_MACRO_STEP_MS, BUY_MACROS } from '../core/BuyScript';
 import { DEV_DEEP_LINK_ENABLED, type DevGameState } from '../core/DevDeepLink';
 import { loadTexture, preloadRound } from '../data/AssetLoader';
@@ -179,16 +179,21 @@ export class GameScene extends Container implements MenuActionsHost {
     onDone: () => void;
   } | null = null;
   private campaignLevelIndex = 0;
+  private pendingEndScreenTitle: string | null = null;
   private levelAudio!: LevelAudio;
 
   /** Return to campaign map (pause / level complete). */
   onReturnToCampaign?: () => void;
   /** Level beaten — persist unlock before the end-screen animation. */
-  onLevelWon?: () => void;
+  onLevelWon?: (stats: LevelWonStats) => void;
   /** Level finished — back to campaign map after the end-screen animation. */
   onLevelComplete?: () => void;
   /** Fired when a round/stage begins (for dev URL sync). */
   onRoundStarted?: (state: DevGameState) => void;
+
+  setEndScreenTitle(title: string): void {
+    this.pendingEndScreenTitle = title;
+  }
 
   constructor() {
     super();
@@ -1582,15 +1587,21 @@ export class GameScene extends Container implements MenuActionsHost {
       await this.startRound(this.roundIndex + 1);
       return;
     }
-    this.onLevelWon?.();
-    this.phase = 'levelComplete';
     const score = computeLevelScore(this.session.money);
-    highscoreStore.tryRecord(this.level.id, score);
+    this.onLevelWon?.({
+      levelIndex: this.campaignLevelIndex,
+      timeSec: this.levelElapsedSec,
+      score,
+    });
+    this.phase = 'levelComplete';
     this.closeShop();
     this.clearTransientGameUi();
     this.levelAudio.playLevelWin();
+    const title = this.pendingEndScreenTitle
+      ?? (this.level.id === 1 ? 'Tutorial complete!' : 'Level complete');
+    this.pendingEndScreenTitle = null;
     this.startEndScreenFx(
-      this.level.id === 1 ? 'Tutorial complete!' : 'Level complete',
+      title,
       () => this.onLevelComplete?.(),
     );
   }

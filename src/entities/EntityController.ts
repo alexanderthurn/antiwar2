@@ -1,7 +1,7 @@
 import { Graphics, Sprite, type Container } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
 import type { AirplaneDef, BombDef, LevelPack } from '../data/types';
-import { combatSpeedMultiplier } from '../core/ProfileStore';
+import { combatSpeedMultiplier } from '../core/RunMode';
 import {
   boxesOverlap,
   getBroadPhaseBounds,
