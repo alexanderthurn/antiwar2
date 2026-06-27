@@ -1,4 +1,4 @@
-name: Deploy
+name: Build & Deploy (GitHub Pages + Feuerware)
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -8,6 +8,15 @@ on:
     branches: ['**']
   delete:
   workflow_dispatch:
+    inputs:
+      target:
+        description: 'Production → GitHub Pages + Feuerware /production/. Branch preview → Feuerware /branch/ only.'
+        type: choice
+        required: true
+        default: production
+        options:
+          - production
+          - branch-preview
 
 permissions:
   contents: read
@@ -20,6 +29,7 @@ concurrency:
 
 jobs:
   build:
+    name: Build site
     if: github.event_name != 'delete'
     runs-on: ubuntu-latest
     steps:
@@ -51,8 +61,11 @@ jobs:
           retention-days: 1
 
   deploy-pages:
+    name: Deploy to GitHub Pages
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && inputs.target == 'production')
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -63,6 +76,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   deploy-feuerware:
+    name: Deploy to Feuerware (FTP)
     needs: build
     if: github.event_name != 'delete'
     runs-on: ubuntu-latest
@@ -76,11 +90,13 @@ jobs:
       - name: Set target folder
         id: target
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "folder=production" >> $GITHUB_OUTPUT
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.target }}" = "production" ]; then
+            folder=production
           else
-            echo "folder=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            folder="${{ github.ref_name }}"
           fi
+          echo "folder=$folder" >> $GITHUB_OUTPUT
+          echo "Deploying to Feuerware folder: /$folder/"
 
       - name: Deploy to FTP
         run: |
@@ -104,6 +120,7 @@ jobs:
           EOF
 
   cleanup-feuerware:
+    name: Remove Feuerware preview folder
     if: |
       github.event_name == 'delete' &&
       github.event.ref_type == 'branch' &&
