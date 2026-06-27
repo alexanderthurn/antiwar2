@@ -1,6 +1,6 @@
 # Antiwar — Level authoring guide
 
-Create your own campaigns, levels, enemy planes, and weapons. This is the English successor to the classic v1 modder readme (`data/levels_selbermachen.txt`), updated for **Antiwar 2** (JSON, multiple campaigns, per-second units, named `aiConfig`).
+Create your own campaigns, levels, enemy planes, and weapons. Campaigns are JSON under `public/assets/campaign/`, with per-second units and named `aiConfig`.
 
 **In-game URL:** `/web/level-authoring.md` (with the dev server or deployed build).
 
@@ -12,39 +12,18 @@ Create your own campaigns, levels, enemy planes, and weapons. This is the Englis
 
 ## Contents
 
-1. [v1 → Antiwar 2](#1-v1--antiwar-2)
-2. [Creating a new campaign](#2-creating-a-new-campaign)
-3. [Adding a level to a campaign](#3-adding-a-level-to-a-campaign)
-4. [Level config (`config`)](#4-level-config-config)
-5. [Rounds (`rounds`)](#5-rounds-rounds)
-6. [Bombs & player rockets (`bombs`)](#6-bombs--player-rockets-bombs)
-7. [Airplanes (`airplanes`)](#7-airplanes-airplanes)
-8. [AI types](#8-ai-types)
-9. [Tips & checklist](#9-tips--checklist)
+1. [Creating a new campaign](#1-creating-a-new-campaign)
+2. [Adding a level to a campaign](#2-adding-a-level-to-a-campaign)
+3. [Level config (`config`)](#3-level-config-config)
+4. [Rounds (`rounds`)](#4-rounds-rounds)
+5. [Bombs & player rockets (`bombs`)](#5-bombs--player-rockets-bombs)
+6. [Airplanes (`airplanes`)](#6-airplanes-airplanes)
+7. [AI types](#7-ai-types)
+8. [Tips & checklist](#8-tips--checklist)
 
 ---
 
-## 1. v1 → Antiwar 2
-
-In v1, one campaign was a **folder** with four text files. In Antiwar 2, campaigns live under `public/assets/campaign/<id>/` and each level is a single JSON file.
-
-| v1 (`data/mypack/`) | Antiwar 2 |
-|---------------------|-----------|
-| Entire `data/mypack/` folder | `public/assets/campaign/<id>/` folder |
-| `config.txt` | `N.json` → `config` (+ `meta` for title/author/thumbnail) |
-| `levels.txt` | `N.json` → `rounds[]` |
-| `bombs.txt` | `N.json` → `bombs` |
-| `airplanes.txt` | `N.json` → `airplanes` |
-| Campaign list (manual) | `public/assets/campaign/registry.json` |
-| Level order on map | `<id>/index.json` |
-| `KI_PARAM_A/B/C` | `aiConfig.flightBand`, `dropIntervalSec`, or `glideTarget` |
-| `SPEED: 2` (per frame @ 60 Hz) | `"speed": 120` (px/s) |
-
-**Multiple campaigns:** the main menu reads `registry.json`. Each campaign has its own folder, map, levels, and **separate save progress** (`aw_` / `aw_h` for normal/hardcore on campaign `aw`).
-
----
-
-## 2. Creating a new campaign
+## 1. Creating a new campaign
 
 This is the full checklist when you want a **new entry on the main menu**, not just another level in an existing campaign.
 
@@ -171,7 +150,7 @@ Each `N.json` is self-contained: economy, bombs, airplanes, and all rounds for t
 ```
 
 - `meta.thumbnail` — preview image on the campaign map (hover/select).
-- `BOMB_PLAYER` is **required** in every level pack (see [§6](#6-bombs--player-rockets-bombs)).
+- `BOMB_PLAYER` is **required** in every level pack (see [§5](#5-bombs--player-rockets-bombs)).
 - Start with one round and one bomber spawn; expand from there.
 
 ### Step 6 — Add graphics & audio (optional)
@@ -186,19 +165,9 @@ npm run dev
 
 Main menu → your campaign → map → level 1. Fix JSON errors in the browser console if a pack fails to load.
 
-### Porting an old v1 text pack
-
-If you still have `config.txt`, `levels.txt`, `bombs.txt`, `airplanes.txt`:
-
-```bash
-node scripts/convert-v1.mjs --source data/mypack --campaign desert --out 1.json --id 1
-```
-
-Then add the level to `desert/index.json` and register `desert` in `registry.json`. The converter outputs per-second units and `aiConfig` automatically.
-
 ---
 
-## 3. Adding a level to a campaign
+## 2. Adding a level to a campaign
 
 When the campaign **already exists** (e.g. adding level `2.json` to `aw2`):
 
@@ -248,9 +217,9 @@ registry.json       → main menu
 Round-specific overrides (background, music, intro) are documented in [`format.md`](../assets/campaign/format.md).
 
 ---
-## 4. Level config (`config`)
+## 3. Level config (`config`)
 
-Maps from v1 `config.txt`. Shared for the whole level unless a round overrides something.
+Shared for the whole level unless a round overrides something.
 
 ### Starting resources
 
@@ -281,7 +250,7 @@ Maps from v1 `config.txt`. Shared for the whole level unless a round overrides s
 | `startHumanHp` | — | Civilian hit points |
 | `startHumanMoney` | — | Payout per survivor at round end |
 | `startRocketPower` | — | Rocket damage (before shop upgrades) |
-| `startRocketSpeed` | **px/s** | Rocket velocity (e.g. `360` ≈ old v1 `6`) |
+| `startRocketSpeed` | **px/s** | Rocket velocity |
 | `startAimTime` | **ms** | Time crosshair must stay on target to lock |
 | `aimPower` | — | Guided rocket damage multiplier |
 | `maxHumans` | — | Shop cap on civilians |
@@ -356,9 +325,9 @@ Paths under `sounds` are relative to `assets/sfx/`. Graphics use full paths unde
 
 ---
 
-## 5. Rounds (`rounds`)
+## 4. Rounds (`rounds`)
 
-Each array entry is one stage (old v1 `[SECTION]` in `levels.txt`). **Order = play order.**
+Each array entry is one stage. **Order = play order.**
 
 ### Example round
 
@@ -431,7 +400,7 @@ See [`format.md`](../assets/campaign/format.md) for examples.
 
 ---
 
-## 6. Bombs & player rockets (`bombs`)
+## 5. Bombs & player rockets (`bombs`)
 
 Keyed by name. **`BOMB_PLAYER` is required** in every level pack (player rocket template).
 
@@ -494,7 +463,7 @@ Effective rocket speed/damage in play = `config.startRocketSpeed` / `startRocket
 
 ---
 
-## 7. Airplanes (`airplanes`)
+## 6. Airplanes (`airplanes`)
 
 Define enemy types referenced by `spawns[].type`.
 
@@ -525,7 +494,7 @@ Define enemy types referenced by `spawns[].type`.
 | `speed` | **px/s** | Patrol speed (typical bombers: `120`–`240`) |
 | `rotationSpeed` | **deg/s** | Turn rate for fighters (`drawStyle: 1`); ignored for flipping bombers |
 | `weapons` | names | Bomb types from `bombs` (index 0 = primary) |
-| `ai` | — | Behavior name — see [§8](#8-ai-types) |
+| `ai` | — | Behavior name — see [§7](#7-ai-types) |
 | `aiConfig` | — | AI tuning — see below |
 | `drawStyle` | — | `0` flip left/right, `1` rotate (fighter), `2` heli tilt |
 | `image`, `scale` | — | Sprite path and scale |
@@ -534,7 +503,7 @@ Define enemy types referenced by `spawns[].type`.
 
 ### `aiConfig` — named AI parameters
 
-Use **explicit fields** instead of numbered `KI_PARAM_A/B/C`.
+Tune patrol height and drop rate with named fields.
 
 #### Patrol planes (most types)
 
@@ -606,7 +575,7 @@ Alternates **4 s** invisible / **4 s** visible.
 
 ---
 
-## 8. AI types
+## 7. AI types
 
 Built into the engine — you **pick a name**, not write scripts.
 
@@ -626,8 +595,6 @@ Built into the engine — you **pick a name**, not write scripts.
 
 \*Parachute uses its weapon as the ground explosion, not air drops.
 
-Aliases accepted: `KIHELISIMPLE` → `HELISIMPLE`, `KICARRIER` → `CARRIER`, etc.
-
 ### Drop timing
 
 Each frame the engine rolls: `random() < dt / dropIntervalSec`. So `10` ≈ one bomb every 10 seconds on average, not on a fixed clock.
@@ -642,7 +609,7 @@ Each frame the engine rolls: `random() < dt / dropIntervalSec`. So `10` ≈ one 
 
 ---
 
-## 9. Tips & checklist
+## 8. Tips & checklist
 
 ### Minimal new level (existing campaign)
 
@@ -657,18 +624,6 @@ Each frame the engine rolls: `random() < dt / dropIntervalSec`. So `10` ≈ one 
 - Ground line is near **y ≈ 880** (see `DESIGN.groundY` in code).
 - Spawn bombers at **y = 100–400** for sky patrol.
 - **x = -200** enters from the left; **x = 2120** from the right.
-
-### Porting old v1 text campaigns
-
-| v1 | JSON |
-|----|------|
-| `SPEED: 2` | `"speed": 120` |
-| `ROTATION_SPEED: 20` | `"rotationSpeed": 1200` |
-| `KI_PARAM_A/B` (Y) | `flightBand.minY` / `maxY` |
-| `KI_PARAM_C: 600` | `dropIntervalSec: 10` |
-| `INTRO_TIME: 300` (frames) | `intro.time: 5000` (ms) — shipped levels already use ms |
-
-Use `node scripts/convert-v1.mjs --source data/pack --campaign aw2 --out 1.json --id 1` for bulk conversion.
 
 ### Validate before shipping
 
