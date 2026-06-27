@@ -1,37 +1,46 @@
-import { Container, Graphics, Sprite, type Texture } from 'pixi.js';
+import { Container, Particle, ParticleContainer, type Texture } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
 import { loadTexture } from '../data/AssetLoader';
 
+const RAINDROP_PATH = 'assets/gfx/raindrop.png';
 const SNOWFLAKE_PATH = 'assets/gfx/snowflake.png';
 
-interface RainParticle {
-  x: number;
-  y: number;
-  vy: number;
+interface RainLive {
+  particle: Particle;
   vx: number;
-  len: number;
+  vy: number;
 }
 
-interface SnowParticle {
-  sprite: Sprite;
-  x: number;
-  y: number;
-  vy: number;
+interface SnowLive {
+  particle: Particle;
   vx: number;
+  vy: number;
   spin: number;
-  scale: number;
-  alpha: number;
 }
 
 const MAX_RAIN = 420;
 const MAX_SNOW = 320;
 
 export class WeatherLayer extends Container {
-  private gfx = new Graphics();
-  private snowLayer = new Container();
-  private rainParticles: RainParticle[] = [];
-  private snowParticles: SnowParticle[] = [];
+  private readonly rainContainer = new ParticleContainer({
+    dynamicProperties: {
+      position: true,
+      rotation: true,
+    },
+  });
+  private readonly snowContainer = new ParticleContainer({
+    dynamicProperties: {
+      position: true,
+      rotation: true,
+    },
+  });
+  private readonly rainLive: RainLive[] = [];
+  private readonly rainFree: Particle[] = [];
+  private readonly snowLive: SnowLive[] = [];
+  private readonly snowFree: Particle[] = [];
+  private rainTex: Texture | null = null;
   private snowTex: Texture | null = null;
+  private rainReady = false;
   private snowReady = false;
   private rain = 0;
   private snow = 0;
@@ -39,15 +48,24 @@ export class WeatherLayer extends Container {
 
   constructor() {
     super();
-    this.addChild(this.snowLayer, this.gfx);
+    this.rainContainer.eventMode = 'none';
+    this.snowContainer.eventMode = 'none';
+    this.addChild(this.rainContainer, this.snowContainer);
     this.eventMode = 'none';
-    void this.loadSnowflake();
+    void this.loadTextures();
   }
 
-  private async loadSnowflake(): Promise<void> {
-    this.snowTex = await loadTexture(SNOWFLAKE_PATH);
+  private async loadTextures(): Promise<void> {
+    const [rainTex, snowTex] = await Promise.all([
+      loadTexture(RAINDROP_PATH),
+      loadTexture(SNOWFLAKE_PATH),
+    ]);
     if (this.destroyed) return;
+    this.rainTex = rainTex;
+    this.snowTex = snowTex;
+    this.rainReady = true;
     this.snowReady = true;
+    if (this.rain > 0) this.rebuildRain();
     if (this.snow > 0) this.rebuildSnow();
   }
 
@@ -55,58 +73,135 @@ export class WeatherLayer extends Container {
     this.rain = values[0] ?? 0;
     this.snow = values[2] ?? 0;
     this.wind = values[3] ?? 0;
-    this.rainParticles = [];
-    this.snowParticles = [];
-    this.snowLayer.removeChildren();
+    this.clearRain();
+    this.clearSnow();
 
-    const rainCount =
-      this.rain > 0 ? Math.min(MAX_RAIN, Math.round(this.rain * 260 + 24)) : 0;
-
-    for (let i = 0; i < rainCount; i++) {
-      this.rainParticles.push(this.spawnRainParticle(true));
+    if (this.rain > 0 && this.rainReady) {
+      this.rebuildRain();
     }
-
     if (this.snow > 0 && this.snowReady) {
       this.rebuildSnow();
     }
-    if (rainCount === 0 && this.snow <= 0) this.gfx.clear();
+  }
+
+  private rainCount(): number {
+    return this.rain > 0 ? Math.min(MAX_RAIN, Math.round(this.rain * 260 + 24)) : 0;
   }
 
   private snowCount(): number {
     return this.snow > 0 ? Math.min(MAX_SNOW, Math.round(this.snow * 220 + 32)) : 0;
   }
 
+  private clearRain(): void {
+    for (const entry of this.rainLive) this.recycleRain(entry);
+    this.rainLive.length = 0;
+    this.rainContainer.update();
+  }
+
+  private clearSnow(): void {
+    for (const entry of this.snowLive) this.recycleSnow(entry);
+    this.snowLive.length = 0;
+    this.snowContainer.update();
+  }
+
+  private rebuildRain(): void {
+    this.clearRain();
+    if (!this.rainTex || this.rain <= 0) return;
+
+    const count = this.rainCount();
+    for (let i = 0; i < count; i++) this.pushRain(true);
+    this.rainContainer.update();
+  }
+
   private rebuildSnow(): void {
-    this.snowLayer.removeChildren();
-    this.snowParticles = [];
+    this.clearSnow();
     if (!this.snowTex || this.snow <= 0) return;
 
     const count = this.snowCount();
-    for (let i = 0; i < count; i++) {
-      const data = this.spawnSnowParticle(true);
-      const sprite = new Sprite(this.snowTex);
-      sprite.anchor.set(0.5);
-      sprite.scale.set(data.scale);
-      sprite.alpha = data.alpha;
-      sprite.rotation = Math.random() * Math.PI * 2;
-      sprite.position.set(data.x, data.y);
-      this.snowLayer.addChild(sprite);
-      this.snowParticles.push({ ...data, sprite });
-    }
+    for (let i = 0; i < count; i++) this.pushSnow(true);
+    this.snowContainer.update();
   }
 
-  private spawnRainParticle(randomY = false): RainParticle {
+  private acquireRain(): Particle {
+    const particle = this.rainFree.pop() ?? new Particle({ texture: this.rainTex! });
+    particle.texture = this.rainTex!;
+    this.rainContainer.addParticle(particle);
+    return particle;
+  }
+
+  private acquireSnow(): Particle {
+    const particle = this.snowFree.pop() ?? new Particle({ texture: this.snowTex! });
+    particle.texture = this.snowTex!;
+    this.snowContainer.addParticle(particle);
+    return particle;
+  }
+
+  private recycleRain(entry: RainLive): void {
+    this.rainContainer.removeParticle(entry.particle);
+    this.rainFree.push(entry.particle);
+  }
+
+  private recycleSnow(entry: SnowLive): void {
+    this.snowContainer.removeParticle(entry.particle);
+    this.snowFree.push(entry.particle);
+  }
+
+  private pushRain(randomY: boolean): void {
+    const data = this.spawnRainParticle(randomY);
+    const particle = this.acquireRain();
+    particle.x = data.x;
+    particle.y = data.y;
+    particle.rotation = rainRotation(data.vx, data.vy);
+    particle.scaleX = data.scale;
+    particle.scaleY = data.scale;
+    particle.alpha = data.alpha;
+    particle.anchorX = 0.5;
+    particle.anchorY = 0;
+    this.rainLive.push({ particle, vx: data.vx, vy: data.vy });
+  }
+
+  private pushSnow(randomY: boolean): void {
+    const data = this.spawnSnowParticle(randomY);
+    const particle = this.acquireSnow();
+    particle.x = data.x;
+    particle.y = data.y;
+    particle.rotation = Math.random() * Math.PI * 2;
+    particle.scaleX = data.scale;
+    particle.scaleY = data.scale;
+    particle.alpha = data.alpha;
+    particle.anchorX = 0.5;
+    particle.anchorY = 0.5;
+    this.snowLive.push({ particle, vx: data.vx, vy: data.vy, spin: data.spin });
+  }
+
+  private spawnRainParticle(randomY = false): {
+    x: number;
+    y: number;
+    vy: number;
+    vx: number;
+    scale: number;
+    alpha: number;
+  } {
     const intensity = Math.max(0.35, this.rain);
     return {
       x: Math.random() * DESIGN.width,
       y: randomY ? Math.random() * DESIGN.height : -Math.random() * DESIGN.height * 0.25,
-      vy: (1100 + Math.random() * 700) * intensity,
+      vy: (650 + Math.random() * 400) * intensity,
       vx: this.wind * 55 + (Math.random() - 0.5) * 18,
-      len: 14 + Math.random() * 20,
+      scale: 0.55 + Math.random() * 0.45,
+      alpha: 0.35 + Math.random() * 0.2,
     };
   }
 
-  private spawnSnowParticle(randomY = false): Omit<SnowParticle, 'sprite'> {
+  private spawnSnowParticle(randomY = false): {
+    x: number;
+    y: number;
+    vy: number;
+    vx: number;
+    spin: number;
+    scale: number;
+    alpha: number;
+  } {
     const intensity = Math.max(0.35, this.snow);
     return {
       x: Math.random() * DESIGN.width,
@@ -119,56 +214,71 @@ export class WeatherLayer extends Container {
     };
   }
 
+  private respawnRain(index: number): void {
+    const data = this.spawnRainParticle(false);
+    const entry = this.rainLive[index]!;
+    entry.vx = data.vx;
+    entry.vy = data.vy;
+    entry.particle.x = data.x;
+    entry.particle.y = data.y;
+    entry.particle.rotation = rainRotation(data.vx, data.vy);
+    entry.particle.scaleX = data.scale;
+    entry.particle.scaleY = data.scale;
+    entry.particle.alpha = data.alpha;
+  }
+
   private respawnSnow(index: number): void {
     const data = this.spawnSnowParticle(false);
-    const p = this.snowParticles[index]!;
-    p.x = data.x;
-    p.y = data.y;
-    p.vy = data.vy;
-    p.vx = data.vx;
-    p.spin = data.spin;
-    p.scale = data.scale;
-    p.alpha = data.alpha;
-    p.sprite.scale.set(data.scale);
-    p.sprite.alpha = data.alpha;
-    p.sprite.rotation = Math.random() * Math.PI * 2;
-    p.sprite.position.set(data.x, data.y);
+    const entry = this.snowLive[index]!;
+    entry.vx = data.vx;
+    entry.vy = data.vy;
+    entry.spin = data.spin;
+    entry.particle.x = data.x;
+    entry.particle.y = data.y;
+    entry.particle.rotation = Math.random() * Math.PI * 2;
+    entry.particle.scaleX = data.scale;
+    entry.particle.scaleY = data.scale;
+    entry.particle.alpha = data.alpha;
   }
 
   update(dt: number): void {
     if (this.rain <= 0 && this.snow <= 0) return;
 
-    for (let i = 0; i < this.rainParticles.length; i++) {
-      const p = this.rainParticles[i]!;
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      if (p.y > DESIGN.height + 30 || p.x < -50 || p.x > DESIGN.width + 50) {
-        this.rainParticles[i] = this.spawnRainParticle(false);
+    if (this.rainLive.length > 0) {
+      for (let i = 0; i < this.rainLive.length; i++) {
+        const p = this.rainLive[i]!;
+        p.particle.x += p.vx * dt;
+        p.particle.y += p.vy * dt;
+        if (
+          p.particle.y > DESIGN.height + 30 ||
+          p.particle.x < -50 ||
+          p.particle.x > DESIGN.width + 50
+        ) {
+          this.respawnRain(i);
+        }
       }
+      this.rainContainer.update();
     }
 
-    for (let i = 0; i < this.snowParticles.length; i++) {
-      const p = this.snowParticles[i]!;
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.sprite.rotation += p.spin * dt;
-      p.sprite.position.set(p.x, p.y);
-      if (p.y > DESIGN.height + 20 || p.x < -50 || p.x > DESIGN.width + 50) {
-        this.respawnSnow(i);
+    if (this.snowLive.length > 0) {
+      for (let i = 0; i < this.snowLive.length; i++) {
+        const p = this.snowLive[i]!;
+        p.particle.x += p.vx * dt;
+        p.particle.y += p.vy * dt;
+        p.particle.rotation += p.spin * dt;
+        if (
+          p.particle.y > DESIGN.height + 20 ||
+          p.particle.x < -50 ||
+          p.particle.x > DESIGN.width + 50
+        ) {
+          this.respawnSnow(i);
+        }
       }
-    }
-
-    if (this.rainParticles.length > 0) {
-      this.gfx.clear();
-      for (const p of this.rainParticles) {
-        this.gfx.moveTo(p.x, p.y).lineTo(p.x - p.vx * 0.014, p.y - p.len).stroke({
-          color: 0xb8dcff,
-          width: 1.6,
-          alpha: 0.72,
-        });
-      }
-    } else {
-      this.gfx.clear();
+      this.snowContainer.update();
     }
   }
+}
+
+function rainRotation(vx: number, vy: number): number {
+  return Math.atan2(vx, vy);
 }

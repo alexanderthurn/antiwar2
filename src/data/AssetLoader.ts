@@ -18,6 +18,7 @@ const STANDALONE_FILES = new Set([
   'assets/gfx/particle.png',
   'assets/gfx/kewlfont.png',
   'assets/gfx/menu.jpg',
+  'assets/gfx/logo.png',
   'assets/gfx/hand-cursor.png',
   'assets/gfx/nightshot.png',
 ]);

@@ -39,6 +39,7 @@ These remain as individual files in `public/assets/gfx/`:
 | `assets/gfx/particle.png` | Particle grid sheet (custom slicing) |
 | `assets/gfx/kewlfont.png` | Bitmap font |
 | `assets/gfx/menu.jpg` | Full-screen menu background |
+| `assets/gfx/logo.png` | Main menu logo |
 | `assets/gfx/hand-cursor.png` | CSS `cursor: url(...)` — must be a real file URL |
 | `assets/gfx/nightshot.png` | Large night-vision overlay — kept as a single full texture |
 
