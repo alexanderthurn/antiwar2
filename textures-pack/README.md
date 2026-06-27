@@ -32,6 +32,7 @@ These remain as individual files in `public/assets/gfx/`:
 | Path | Reason |
 |------|--------|
 | `assets/campaign/` | Campaign maps, thumbs, backgrounds, intro art, human walk-cycle |
+| `assets/gfx/buttons_map/` | Campaign map node buttons |
 | `assets/gfx/3rdparty/` | Credits / third-party logos |
 | `assets/gfx/tutorial/` | Full-screen tutorial images |
 | `assets/gfx/explosion.png`, `explosion_nuke.png` | Animated FX sheets (custom slicing) |
@@ -103,12 +104,12 @@ textures-pack/
     AIRPLANES/
     BOMBS/
     buttons/
-    buttons_map/
     tower.png
     cannon.png
     …
 ```
 
 Credits logos: `public/assets/gfx/3rdparty/` (loose, not packed).
+Campaign map buttons: `public/assets/gfx/buttons_map/` (loose, not packed).
 
 Campaign thumbs, viech intros, backgrounds, maps, and JSON: `public/assets/campaign/<id>/` (loose, not packed).
