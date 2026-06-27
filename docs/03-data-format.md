@@ -144,7 +144,6 @@ Maps from v1 `config.txt`.
     "human": "assets/campaign/aw/human.png",
     "explosion": "assets/gfx/explosion.png",
     "explosionNuke": "assets/gfx/explosion_nuke.png",
-    "bullet": "assets/gfx/bullet.png",
     "buttonFolder": "assets/gfx/buttons/"
   },
 
