@@ -49,6 +49,7 @@ export interface EntityControllerCallbacks {
     explosionType: number,
     rumble: 'plane' | 'explosion' | 'none',
     hurtsCivilians?: boolean,
+    lifetime?: number,
   ): void;
   onDropBomb(
     parent: CombatEntity,
@@ -86,6 +87,7 @@ interface PendingDeath {
     range: number;
     damage: number;
     type: number;
+    lifetime: number;
     rumble: 'plane' | 'explosion' | 'none';
     hurtsCivilians: boolean;
   };
@@ -364,7 +366,16 @@ export class EntityController {
       if (death.submunitions) this.spawnSubmunitions(e, level, spawnCtx);
       if (death.groundExplosion) {
         const g = death.groundExplosion;
-        cb.onGroundExplosion(g.x, g.y, g.range, g.damage, g.type, g.rumble, g.hurtsCivilians);
+        cb.onGroundExplosion(
+          g.x,
+          g.y,
+          g.range,
+          g.damage,
+          g.type,
+          g.rumble,
+          g.hurtsCivilians,
+          g.lifetime,
+        );
       }
       if (death.callEntityDeath) {
         cb.onEntityDeath(e, death.skipDeathExplosion ? { skipExplosion: true } : undefined);
@@ -451,6 +462,7 @@ export class EntityController {
               range,
               damage: Math.max(50, Math.round(e.maxHp / 20)),
               type: planeExplosionType(e),
+              lifetime: 20,
               rumble: 'plane',
               hurtsCivilians: true,
             },
@@ -523,6 +535,7 @@ export class EntityController {
                   range: expRange,
                   damage: expPower,
                   type: def.explosion.type,
+                  lifetime: def.explosion.lifetime,
                   rumble: e.traits.deathRumble,
                   hurtsCivilians: true,
                 }
@@ -567,6 +580,7 @@ export class EntityController {
               range: expRange,
               damage: expPower,
               type: def.explosion.type,
+              lifetime: def.explosion.lifetime,
               rumble: bomb.traits.deathRumble,
               hurtsCivilians: true,
             }
@@ -691,6 +705,7 @@ export class EntityController {
               range,
               damage: proj.damage,
               type: proj.bombDef?.explosion.type ?? 1,
+              lifetime: proj.bombDef?.explosion.lifetime ?? 20,
               rumble: 'explosion',
               hurtsCivilians: proj.traits.hurtsHumansOnGround,
             },

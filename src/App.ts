@@ -327,60 +327,66 @@ export class App {
   private async startLevel(file: string, levelIndex: number, devBootstrap?: DevBootstrap): Promise<void> {
     this.mode = 'game';
     setRunHardcore(isHardcoreRun(this.activeRunId));
-    const index = await loadCampaignIndex(this.activeCampaignId);
-    const finalLevelIndex = lastPlayableLevelIndex(index);
-    const pack = await loadLevelPack(this.activeCampaignId, file);
-    const roundIndex = devBootstrap?.roundIndex ?? 0;
-    await preloadRound(pack, roundIndex);
+    try {
+      const index = await loadCampaignIndex(this.activeCampaignId);
+      const finalLevelIndex = lastPlayableLevelIndex(index);
+      const pack = await loadLevelPack(this.activeCampaignId, file);
+      const roundIndex = devBootstrap?.roundIndex ?? 0;
+      await preloadRound(pack, roundIndex);
 
-    const game = new GameScene();
-    const runId = this.activeRunId;
-    const campaignId = this.activeCampaignId;
-    game.onReturnToCampaign = () =>
-      this.showCampaignViewFor(campaignId, isHardcoreRun(runId));
-    game.onLevelWon = (stats) => {
-      const meta = {
-        date: Date.now(),
-        version: GAME_VERSION_CODE,
-        nick: playerProfile.getNick(),
+      const game = new GameScene();
+      const runId = this.activeRunId;
+      const campaignId = this.activeCampaignId;
+      game.onReturnToCampaign = () =>
+        this.showCampaignViewFor(campaignId, isHardcoreRun(runId));
+      game.onLevelWon = (stats) => {
+        const meta = {
+          date: Date.now(),
+          version: GAME_VERSION_CODE,
+          nick: playerProfile.getNick(),
+        };
+        const timeMs = Math.max(0, Math.floor(stats.timeMs));
+        const improved = runProgressStore.recordLevelResult(
+          runId,
+          stats.levelIndex,
+          timeMs,
+          stats.score,
+          meta,
+        );
+        if (improved) {
+          void submitHighscore({
+            campaignId: campaignIdFromRunId(runId),
+            levelIndex: stats.levelIndex,
+            hardcore: isHardcoreRun(runId),
+            time: timeMs,
+            score: stats.score,
+            ...meta,
+          });
+        }
+        const newlyComplete = runProgressStore.completeLevel(
+          runId,
+          stats.levelIndex,
+          finalLevelIndex,
+        );
+        if (newlyComplete && runId === normalRunId(campaignId)) {
+          game.setEndScreenTitle('Campaign complete!\nHardcore mode unlocked.');
+        }
       };
-      const timeMs = Math.max(0, Math.floor(stats.timeMs));
-      const improved = runProgressStore.recordLevelResult(
-        runId,
-        stats.levelIndex,
-        timeMs,
-        stats.score,
-        meta,
-      );
-      if (improved) {
-        void submitHighscore({
-          campaignId: campaignIdFromRunId(runId),
-          levelIndex: stats.levelIndex,
-          hardcore: isHardcoreRun(runId),
-          time: timeMs,
-          score: stats.score,
-          ...meta,
-        });
-      }
-      const newlyComplete = runProgressStore.completeLevel(
-        runId,
-        stats.levelIndex,
-        finalLevelIndex,
-      );
-      if (newlyComplete && runId === normalRunId(campaignId)) {
-        game.setEndScreenTitle('Campaign complete!\nHardcore mode unlocked.');
-      }
-    };
-    game.onLevelComplete = () =>
-      this.showCampaignViewFor(campaignId, isHardcoreRun(runId));
-    game.onRoundStarted = (state) => syncDevUrl(state);
+      game.onLevelComplete = () =>
+        this.showCampaignViewFor(campaignId, isHardcoreRun(runId));
+      game.onRoundStarted = (state) => syncDevUrl(state);
 
-    const bootstrap: DevBootstrap = devBootstrap ?? { levelIndex, roundIndex: 0 };
-    await game.loadLevel(pack, bootstrap.roundIndex, bootstrap);
-    if (this.touchUi) game.enableTouchControls();
+      const bootstrap: DevBootstrap = devBootstrap ?? { levelIndex, roundIndex: 0 };
+      await game.loadLevel(pack, bootstrap.roundIndex, bootstrap);
+      if (this.touchUi) game.enableTouchControls();
 
-    this.game = game;
-    this.setScene(game);
+      this.game = game;
+      this.setScene(game);
+    } catch (err) {
+      console.error('[startLevel] Failed to load level', err);
+      this.game = null;
+      this.showCampaignViewFor(this.activeCampaignId, isHardcoreRun(this.activeRunId));
+    }
   }
 
   private tick = (): void => {

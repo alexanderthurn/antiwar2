@@ -1,16 +1,25 @@
-import { Container, Particle, ParticleContainer, type Texture } from 'pixi.js';
+import { Container, Particle, ParticleContainer, Sprite, type Texture } from 'pixi.js';
 import { GROUND_SURFACE_Y } from '../../core/DesignSpace';
 import type { EffectQuality } from '../../core/GraphicsQuality';
 import { loadTexture } from '../../data/AssetLoader';
 import type { CombatEntity } from '../../entities/CombatEntity';
+import { napalmGroundLifeSec } from '../NapalmHazardManager';
+import { sliceFireSheet } from './sliceFireSheet';
 import { sliceParticleSheet } from './sliceParticleSheet';
 
 const SHEET_COLS = 4;
 const SHEET_ROWS = 4;
 const BLOOD_FRAME_START = 0;
 const BLOOD_FRAME_COUNT = 4;
-const FIRE_FRAME_START = 0;
-const FIRE_FRAME_COUNT = 4;
+const SPARK_FIRE_FRAME_START = 0;
+const SPARK_FIRE_FRAME_COUNT = 4;
+const NAPALM_FIRE_FRAME_COUNT = 5;
+const NAPALM_BLOB_ANIM_S = 0.1;
+/** human.png walk frame on screen: 344 × 0.2 ≈ 69px tall. */
+const CIVILIAN_DISPLAY_HEIGHT = 344 * 0.2;
+/** fire.png is 145×67, five frames → ~29×67 per frame. */
+const NAPALM_FRAME_H = 67;
+const NAPALM_BLOB_GRAVITY = 34;
 const CLOUD_FRAME_START = 4;
 const CLOUD_FRAME_COUNT = 8;
 /** Second row of particle.png — dark metal shrapnel. */
@@ -85,6 +94,8 @@ interface LiveParticle {
   animFrames?: Texture[];
   animFrameTime?: number;
   animTimer?: number;
+  napalmHazard?: boolean;
+  hazardDamage?: number;
 }
 
 interface TrailEmitter {
@@ -101,6 +112,33 @@ interface GroundFireEmitter {
   life: number;
   cooldown: number;
   radius: number;
+}
+
+interface NapalmBlob {
+  sprite: Sprite;
+  frames: Texture[];
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  maxLife: number;
+  animTimer: number;
+  frameIdx: number;
+  settled: boolean;
+}
+
+export interface NapalmParticleHitTarget {
+  id: number;
+  alive: boolean;
+  x: number;
+  feetY: number;
+  halfWidth: number;
+}
+
+export interface NapalmExplosionOpts {
+  lifetime?: number;
+  power?: number;
 }
 
 interface QualityProfile {
@@ -166,10 +204,12 @@ export class ParticleFxManager {
   private cloudFrames: Texture[] = [];
   private debrisFrames: Texture[] = [];
   private planeSmokeFrames: Texture[] = [];
-  private fireFrames: Texture[] = [];
+  private sparkFireFrames: Texture[] = [];
+  private napalmFireFrames: Texture[] = [];
   private bloodFrames: Texture[] = [];
   private readonly trailEmitters = new Map<number, TrailEmitter>();
   private readonly groundFires: GroundFireEmitter[] = [];
+  private readonly napalmBlobs: NapalmBlob[] = [];
   private trailLayer: Container | null = null;
   private fxLayer: Container | null = null;
   private loaded = false;
@@ -208,13 +248,15 @@ export class ParticleFxManager {
       BLOOD_FRAME_START,
       BLOOD_FRAME_COUNT,
     );
-    this.fireFrames = sliceParticleSheet(
+    this.sparkFireFrames = sliceParticleSheet(
       sheet,
       SHEET_COLS,
       SHEET_ROWS,
-      FIRE_FRAME_START,
-      FIRE_FRAME_COUNT,
+      SPARK_FIRE_FRAME_START,
+      SPARK_FIRE_FRAME_COUNT,
     );
+    const napalmSheet = await loadTexture('assets/gfx/fire.png');
+    this.napalmFireFrames = sliceFireSheet(napalmSheet, NAPALM_FIRE_FRAME_COUNT);
     this.cloudFrames = sliceParticleSheet(
       sheet,
       SHEET_COLS,
@@ -264,6 +306,8 @@ export class ParticleFxManager {
     }
     this.trailEmitters.clear();
     this.groundFires.length = 0;
+    for (const blob of this.napalmBlobs) blob.sprite.destroy();
+    this.napalmBlobs.length = 0;
   }
 
   clearBlood(): void {
@@ -282,6 +326,7 @@ export class ParticleFxManager {
     if (profile) {
       this.tickTrailEmitters(dt, buckets, profile);
       this.tickGroundFires(dt, profile);
+      this.tickNapalmBlobs(dt);
     }
     this.tickLiveParticles(dt);
     for (const pool of this.pools.values()) pool.container.update();
@@ -401,8 +446,39 @@ export class ParticleFxManager {
     }
   }
 
+  /** Mid-air / ground napalm blobs that can scorch civilians while falling. */
+  queryNapalmParticleHits(
+    civilians: NapalmParticleHitTarget[],
+  ): { civilianId: number; damage: number }[] {
+    const hits: { civilianId: number; damage: number }[] = [];
+
+    for (const blob of this.napalmBlobs) {
+      if (blob.life <= 0) continue;
+      const frame = blob.frames[blob.frameIdx];
+      const w = (frame?.width ?? 29) * blob.sprite.scale.x;
+      const h = (frame?.height ?? NAPALM_FRAME_H) * blob.sprite.scale.y;
+      const hazardR = Math.max(w, h) * 0.42;
+
+      for (const civilian of civilians) {
+        if (!civilian.alive) continue;
+        const dx = civilian.x - blob.x;
+        const dy = civilian.feetY - blob.y;
+        if (dx * dx + dy * dy > hazardR * hazardR) continue;
+        hits.push({ civilianId: civilian.id, damage: 12 });
+      }
+    }
+
+    return hits;
+  }
+
   /** type: 1=normal, 2=anthrax, 3=nuke, 4=napalm */
-  spawnExplosion(x: number, y: number, type: number, radius: number): void {
+  spawnExplosion(
+    x: number,
+    y: number,
+    type: number,
+    radius: number,
+    opts?: NapalmExplosionOpts,
+  ): void {
     const profile = QUALITY[this.quality];
     if (!profile) return;
 
@@ -437,15 +513,10 @@ export class ParticleFxManager {
     }
 
     if (type === 4) {
-      this.burstFire(x, y, scale * mul, 10, 0xff6622);
-      this.ringSmoke(x, y, radius * 0.7, scale * mul, 0xffaa66, 8);
-      this.groundFires.push({
-        x,
-        y: GROUND_SURFACE_Y - 4,
-        life: 2.4 + Math.random() * 0.8,
-        cooldown: 0,
-        radius: radius * 0.55,
-      });
+      const lifetime = opts?.lifetime ?? 40;
+      const groundLife = napalmGroundLifeSec(lifetime);
+      const airborne = y < GROUND_SURFACE_Y - 20;
+      this.spawnNapalmBlobs(x, y, radius, groundLife, airborne);
       return;
     }
 
@@ -739,6 +810,104 @@ export class ParticleFxManager {
     }
   }
 
+  private tickNapalmBlobs(dt: number): void {
+    for (let i = this.napalmBlobs.length - 1; i >= 0; i--) {
+      const blob = this.napalmBlobs[i]!;
+      blob.life -= dt;
+      if (blob.life <= 0) {
+        blob.sprite.destroy();
+        this.napalmBlobs.splice(i, 1);
+        continue;
+      }
+
+      if (!blob.settled) {
+        blob.x += blob.vx * dt;
+        blob.y += blob.vy * dt;
+        blob.vy += NAPALM_BLOB_GRAVITY * dt;
+        blob.vx *= 1 - dt * 0.35;
+
+        if (blob.y >= GROUND_SURFACE_Y) {
+          blob.y = GROUND_SURFACE_Y;
+          blob.vy = 0;
+          blob.vx *= 0.85;
+          blob.settled = true;
+        }
+      } else {
+        blob.vx *= 1 - dt * 0.5;
+        blob.x += blob.vx * dt;
+      }
+
+      blob.sprite.x = blob.x;
+      blob.sprite.y = blob.y;
+
+      blob.animTimer += dt;
+      if (blob.animTimer >= NAPALM_BLOB_ANIM_S) {
+        blob.animTimer = 0;
+        blob.frameIdx = (blob.frameIdx + 1) % blob.frames.length;
+        const frame = blob.frames[blob.frameIdx];
+        if (frame) blob.sprite.texture = frame;
+      }
+
+      const fade = Math.min(1, blob.life / Math.max(0.01, blob.maxLife * 0.4));
+      blob.sprite.alpha = 0.65 + fade * 0.3;
+    }
+  }
+
+  /**
+   * Few large fire.png blobs (~human height on screen), drifting down slowly.
+   * Frame source: 29×67px; at scale ~1.0 → ~29×67 on screen (civilian is ~51×69).
+   */
+  private spawnNapalmBlobs(
+    x: number,
+    y: number,
+    radius: number,
+    life: number,
+    airborne: boolean,
+  ): void {
+    if (!this.fxLayer || this.napalmFireFrames.length === 0) return;
+
+    const frame0 = this.napalmFireFrames[0];
+    if (!frame0) return;
+
+    const frameH = frame0.height || NAPALM_FRAME_H;
+    const humanScale = CIVILIAN_DISPLAY_HEIGHT / frameH;
+    const count = airborne
+      ? 3 + Math.floor(Math.random() * 2)
+      : Math.max(2, Math.min(4, Math.round(radius / 70)));
+
+    for (let i = 0; i < count; i++) {
+      const scale = humanScale * (1.05 + Math.random() * 0.45);
+      const sprite = new Sprite(frame0);
+      sprite.anchor.set(0.5, 1);
+
+      const spread = radius * (0.55 + Math.random() * 0.75);
+      const bx = x + (Math.random() - 0.5) * spread * 2;
+      const by = airborne
+        ? y + (Math.random() - 0.5) * Math.max(24, radius * 0.35)
+        : GROUND_SURFACE_Y - 80 - Math.random() * 120;
+
+      sprite.x = bx;
+      sprite.y = by;
+      sprite.scale.set(scale);
+      sprite.alpha = 0.9;
+      this.fxLayer.addChild(sprite);
+
+      this.napalmBlobs.push({
+        sprite,
+        frames: this.napalmFireFrames,
+        x: bx,
+        y: by,
+        vx: (Math.random() - 0.5) * 14,
+        vy: airborne ? 18 + Math.random() * 28 : 10 + Math.random() * 18,
+        life,
+        maxLife: life,
+        animTimer: Math.random() * NAPALM_BLOB_ANIM_S,
+        frameIdx: Math.floor(Math.random() * this.napalmFireFrames.length),
+        settled: false,
+      });
+    }
+  }
+
   private tickGroundFires(dt: number, profile: QualityProfile): void {
     for (let i = this.groundFires.length - 1; i >= 0; i--) {
       const fire = this.groundFires[i]!;
@@ -868,16 +1037,16 @@ export class ParticleFxManager {
     const useFire = bombType === 4 && Math.random() < 0.45;
 
     if (useFire) {
-      this.pushFire('fxFire', {
+      this.pushSmoke('trailSmoke', {
         x: bomb.x + (Math.random() - 0.5) * 8,
-        y: bomb.y + (Math.random() - 0.5) * 8,
-        vx: (Math.random() - 0.5) * 14,
-        vy: 8 + Math.random() * 18,
-        life: 0.2 + Math.random() * 0.15,
-        scale: 0.1 + Math.random() * 0.06,
-        grow: 0.04,
-        tint: 0xff6622,
-        peakAlpha: 0.6,
+        y: bomb.y + 6 + Math.random() * 4,
+        vx: (Math.random() - 0.5) * 10,
+        vy: 10 + Math.random() * 16,
+        life: 0.35 + Math.random() * 0.25,
+        scale: 0.12 + Math.random() * 0.08,
+        grow: 0.08,
+        tint: 0xffaa66,
+        peakAlpha: 0.42,
         gravity: 0,
       });
       return;
@@ -897,22 +1066,34 @@ export class ParticleFxManager {
     });
   }
 
-  private burstFire(x: number, y: number, scale: number, count: number, tint = 0xffffff): void {
+  private burstFire(
+    x: number,
+    y: number,
+    scale: number,
+    count: number,
+    tint = 0xffffff,
+    opts?: { napalmHazard?: boolean; hazardDamage?: number; shortLife?: boolean },
+  ): void {
     for (let i = 0; i < count; i++) {
       if (!this.hasBudget()) break;
       const angle = Math.random() * Math.PI * 2;
-      const speed = 40 + Math.random() * 90 * scale;
+      const speed = (opts?.shortLife ? 55 : 40) + Math.random() * (opts?.shortLife ? 110 : 90) * scale;
+      const life = opts?.shortLife
+        ? 0.12 + Math.random() * 0.22
+        : 0.15 + Math.random() * 0.25;
       this.pushFire('fxFire', {
         x,
         y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        life: 0.15 + Math.random() * 0.25,
+        life,
         scale: (0.1 + Math.random() * 0.12) * scale,
         grow: 0.05 * scale,
         tint,
         peakAlpha: 0.9,
-        gravity: 80,
+        gravity: opts?.shortLife ? 120 : 80,
+        napalmHazard: opts?.napalmHazard,
+        hazardDamage: opts?.hazardDamage,
       });
     }
   }
@@ -1058,11 +1239,16 @@ export class ParticleFxManager {
       tint: number;
       peakAlpha: number;
       gravity: number;
+      napalmHazard?: boolean;
+      hazardDamage?: number;
     },
   ): void {
-    const frame = this.pickFireFrame();
+    const frame = this.pickSparkFireFrame();
     if (!frame) return;
-    this.pushParticle(poolId, frame, opts);
+    this.pushParticle(poolId, frame, opts, false, {
+      napalmHazard: opts.napalmHazard,
+      hazardDamage: opts.hazardDamage,
+    });
   }
 
   private pushParticle(
@@ -1081,6 +1267,7 @@ export class ParticleFxManager {
       gravity: number;
     },
     bypassBudget = false,
+    extra?: Pick<LiveParticle, 'animFrames' | 'animFrameTime' | 'animTimer' | 'napalmHazard' | 'hazardDamage'>,
   ): void {
     if (!bypassBudget && !this.hasBudget()) return;
 
@@ -1107,6 +1294,11 @@ export class ParticleFxManager {
       baseScale: opts.scale,
       peakAlpha: opts.peakAlpha,
       gravity: opts.gravity,
+      animFrames: extra?.animFrames,
+      animFrameTime: extra?.animFrameTime,
+      animTimer: extra?.animTimer,
+      napalmHazard: extra?.napalmHazard,
+      hazardDamage: extra?.hazardDamage,
     });
   }
 
@@ -1176,9 +1368,9 @@ export class ParticleFxManager {
     return this.cloudFrames[Math.floor(Math.random() * this.cloudFrames.length)] ?? null;
   }
 
-  private pickFireFrame(): Texture | null {
-    if (this.fireFrames.length === 0) return null;
-    return this.fireFrames[Math.floor(Math.random() * this.fireFrames.length)] ?? null;
+  private pickSparkFireFrame(): Texture | null {
+    if (this.sparkFireFrames.length === 0) return null;
+    return this.sparkFireFrames[Math.floor(Math.random() * this.sparkFireFrames.length)] ?? null;
   }
 
   private pickBloodFrame(): Texture | null {

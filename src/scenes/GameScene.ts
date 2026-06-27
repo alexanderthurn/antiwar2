@@ -32,6 +32,7 @@ import { CloudLayer } from '../systems/CloudLayer';
 import { WeatherLayer } from '../systems/WeatherLayer';
 import { NightVisionLayer } from '../systems/NightVisionLayer';
 import { ExplosionManager } from '../systems/ExplosionManager';
+import { NapalmHazardManager } from '../systems/NapalmHazardManager';
 import { ParticleFxManager } from '../systems/particles/ParticleFxManager';
 import { KillStreakManager } from '../systems/KillStreakTracker';
 import {
@@ -88,6 +89,8 @@ interface CivilianDamageSource {
   explosionRange?: number;
   hitFrom?: { x: number; y: number };
   feeder?: number;
+  /** Napalm pool / ember tick — throttles repeated screams. */
+  lingeringBurn?: boolean;
 }
 
 interface Civilian {
@@ -99,6 +102,7 @@ interface Civilian {
   dir: 1 | -1;
   alive: boolean;
   walkDist: number;
+  lastBurnScreamMs: number;
 }
 
 export interface DevBootstrap {
@@ -133,6 +137,7 @@ export class GameScene extends Container implements MenuActionsHost {
   private entities = new EntityController();
   private explosionManager = new ExplosionManager();
   private particleFx = new ParticleFxManager();
+  private napalmHazards = new NapalmHazardManager();
   private entityHpBars = new EntityHpBarOverlay();
   private killStreaks = new KillStreakManager();
   private players = new PlayerManager();
@@ -366,6 +371,7 @@ export class GameScene extends Container implements MenuActionsHost {
     this.entities.clear();
     this.explosionManager.clear();
     this.particleFx.clear();
+    this.napalmHazards.clear();
     this.entityHpBars.clear();
     this.bossHpBar?.clear();
     for (const s of this.players.slots) s.rocketsInFlight = 0;
@@ -394,7 +400,18 @@ export class GameScene extends Container implements MenuActionsHost {
         explosionType: number,
         rumble: 'plane' | 'explosion' | 'none',
         hurtsCivilians = true,
-      ) => this.handleGroundExplosion(x, y, range, damage, explosionType, rumble, hurtsCivilians),
+        lifetime = 20,
+      ) =>
+        this.handleGroundExplosion(
+          x,
+          y,
+          range,
+          damage,
+          explosionType,
+          rumble,
+          hurtsCivilians,
+          lifetime,
+        ),
       onDropBomb: (
         _parent: CombatEntity,
         bombDef: BombDef,
@@ -466,6 +483,7 @@ export class GameScene extends Container implements MenuActionsHost {
         this.applyCivilianDamage(civilian, def.damage, {
           hitFrom: { x: hitX, y: hitY },
           feeder: def.feeder,
+          explosionType: def.explosion.type,
         });
         if (def.feeder && def.feeder > 0) {
           this.applyFeederKnockback(civilian, hitX, def.feeder);
@@ -481,9 +499,19 @@ export class GameScene extends Container implements MenuActionsHost {
     radius: number,
     rumble: 'plane' | 'explosion' | 'none' = 'none',
     playAudio = true,
+    fxOpts?: { lifetime?: number; power?: number },
   ): void {
     this.explosionManager.spawn(x, y, type, radius);
-    this.particleFx.spawnExplosion(x, y, type, radius);
+    this.particleFx.spawnExplosion(x, y, type, radius, fxOpts);
+    if (type === 4) {
+      this.napalmHazards.registerExplosion(
+        x,
+        y,
+        radius,
+        fxOpts?.power ?? 100,
+        fxOpts?.lifetime ?? 40,
+      );
+    }
     if (playAudio) this.levelAudio.playExplosion(type);
     if (rumble === 'plane') this.triggerRumble(true, explosionRadiusToIntensity(radius));
     else if (rumble === 'explosion') this.triggerRumble(false, explosionRadiusToIntensity(radius));
@@ -502,7 +530,14 @@ export class GameScene extends Container implements MenuActionsHost {
         ? planeExplosionRadius(entity)
         : bombExplosionRadius(entity.bombDef);
       const rumble = entity.traits.deathRumble;
-      this.spawnExplosionAt(entity.x, entity.y, expType, radius, rumble);
+      const fxOpts =
+        expType === 4 && entity.bombDef
+          ? {
+              lifetime: entity.bombDef.explosion.lifetime,
+              power: entity.bombDef.explosion.power,
+            }
+          : undefined;
+      this.spawnExplosionAt(entity.x, entity.y, expType, radius, rumble, true, fxOpts);
     }
 
     for (const p of this.players.active()) {
@@ -523,11 +558,15 @@ export class GameScene extends Container implements MenuActionsHost {
     explosionType: number,
     rumble: 'plane' | 'explosion' | 'none',
     hurtsCivilians = true,
+    lifetime = 20,
   ): void {
     if (hurtsCivilians) {
       this.damageCiviliansAt(x, GROUND_FEET_Y, range, damage, explosionType);
     }
-    this.spawnExplosionAt(x, y, explosionType, range, rumble);
+    this.spawnExplosionAt(x, y, explosionType, range, rumble, true, {
+      lifetime,
+      power: damage,
+    });
   }
 
   private async spawnChildAirplane(typeName: string, x: number, y: number): Promise<void> {
@@ -714,6 +753,7 @@ export class GameScene extends Container implements MenuActionsHost {
       dir,
       alive: true,
       walkDist: 0,
+      lastBurnScreamMs: 0,
     });
     sprite.label = `civilian#${this.civilians[this.civilians.length - 1]!.id}`;
   }
@@ -1131,6 +1171,7 @@ export class GameScene extends Container implements MenuActionsHost {
       this.entityCallbacks(),
       this.civilians,
     );
+    this.updateNapalmHazards(dt);
     this.checkWinLoss();
     this.updateHud();
   }
@@ -1341,6 +1382,43 @@ export class GameScene extends Container implements MenuActionsHost {
     };
   }
 
+  private napalmCivilianTargets() {
+    return this.civilians.map((c) => ({
+      id: c.id,
+      alive: c.alive,
+      x: c.x,
+      feetY: GROUND_FEET_Y,
+      halfWidth: c.sprite.width * 0.5,
+    }));
+  }
+
+  private updateNapalmHazards(dt: number): void {
+    const targets = this.napalmCivilianTargets();
+    const rain = this.round.weather[0] ?? 0;
+
+    this.napalmHazards.update(dt, rain, targets, {
+      onCivilianBurnDamage: (civilianId, damage) => {
+        const civilian = this.civilians.find((c) => c.id === civilianId);
+        if (!civilian?.alive) return;
+        this.applyCivilianDamage(civilian, damage, {
+          explosionType: 4,
+          lingeringBurn: true,
+          hitFrom: { x: civilian.x, y: GROUND_FEET_Y - 40 },
+        });
+      },
+    });
+
+    for (const hit of this.particleFx.queryNapalmParticleHits(targets)) {
+      const civilian = this.civilians.find((c) => c.id === hit.civilianId);
+      if (!civilian?.alive) continue;
+      this.applyCivilianDamage(civilian, hit.damage, {
+        explosionType: 4,
+        lingeringBurn: true,
+        hitFrom: { x: civilian.x, y: civilian.sprite.y },
+      });
+    }
+  }
+
   private applyFeederKnockback(c: Civilian, fromX: number, feeder: number): void {
     const push = feeder * 12;
     const dir = c.x >= fromX ? 1 : -1;
@@ -1360,7 +1438,15 @@ export class GameScene extends Container implements MenuActionsHost {
       this.killCivilian(c, damage, source);
     } else if (wasAlive) {
       this.entityHpBars.notifyCivilianHit(c);
-      this.levelAudio.playCivilianHit();
+      const expType = source?.explosionType ?? 1;
+      if (expType === 4 && source?.lingeringBurn) {
+        if (this.roundElapsedMs - c.lastBurnScreamMs >= 800) {
+          this.levelAudio.playCivilianHit(4);
+          c.lastBurnScreamMs = this.roundElapsedMs;
+        }
+      } else {
+        this.levelAudio.playCivilianHit(expType);
+      }
       this.spawnCivilianBloodFx(c, damage, source, true);
     }
   }
@@ -1423,7 +1509,7 @@ export class GameScene extends Container implements MenuActionsHost {
     c.alive = false;
     c.sprite.visible = false;
     this.spawnCivilianBloodFx(c, killingDamage, source);
-    this.levelAudio.playCivilianDeath();
+    this.levelAudio.playCivilianDeath(source?.explosionType ?? 1);
     this.levelCivilianDeaths += 1;
     const maxDeaths = this.storyLimits.maxHumanDeaths;
     if (maxDeaths !== undefined && maxDeaths >= 0 && this.levelCivilianDeaths > maxDeaths) {

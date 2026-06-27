@@ -18,9 +18,9 @@ export interface LevelSoundsConfig {
 }
 
 export const DEFAULT_LEVEL_SOUNDS: LevelSoundsConfig = {
-  explosion: ['explosion2.ogg', 'explosion3.ogg'],
-  scream: ['bloodscream.ogg'],
-  dieScream: 'bloodscream.ogg',
+  explosion: ['explosion1.ogg', 'explosion2.ogg', 'explosion4.ogg', 'explosion3.ogg'],
+  scream: ['scream1.ogg', 'scream2.ogg', 'scream3.ogg', 'scream4.ogg'],
+  dieScream: 'scream1.ogg',
   shoot: 'shoot.ogg',
   anthrax: 'anthrax.ogg',
   newRound: 'gong.ogg',
@@ -42,8 +42,18 @@ export function resolveLevelSounds(partial?: Partial<LevelSoundsConfig>): LevelS
   };
 }
 
-function pickRandom(paths: string[]): string {
-  return paths[Math.floor(Math.random() * paths.length)]!;
+function typeSoundIndex(explosionType: number): number {
+  return Math.max(1, Math.min(4, explosionType || 1));
+}
+
+function explosionForType(explosionType: number, sounds: LevelSoundsConfig): string {
+  const idx = typeSoundIndex(explosionType) - 1;
+  return sounds.explosion[idx] ?? `explosion${typeSoundIndex(explosionType)}.ogg`;
+}
+
+function screamForType(explosionType: number, sounds: LevelSoundsConfig): string {
+  const idx = typeSoundIndex(explosionType) - 1;
+  return sounds.scream[idx] ?? `scream${typeSoundIndex(explosionType)}.ogg`;
 }
 
 export class LevelAudio {
@@ -76,16 +86,16 @@ export class LevelAudio {
   }
 
   playExplosion(explosionType: number): void {
-    const file = explosionType === 2 ? this.sounds.anthrax : pickRandom(this.sounds.explosion);
-    playSound(sfxPath(file), 0.75);
+    if (explosionType <= 0) return;
+    playSound(sfxPath(explosionForType(explosionType, this.sounds)), 0.75);
   }
 
-  playCivilianHit(): void {
-    playSound(sfxPath(pickRandom(this.sounds.scream)), 0.7);
+  playCivilianHit(explosionType = 1): void {
+    playSound(sfxPath(screamForType(explosionType, this.sounds)), 0.7);
   }
 
-  playCivilianDeath(): void {
-    playSound(sfxPath(this.sounds.dieScream), 0.75);
+  playCivilianDeath(explosionType = 1): void {
+    playSound(sfxPath(screamForType(explosionType, this.sounds)), 0.75);
   }
 
   playNewRound(): void {
