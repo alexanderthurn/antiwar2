@@ -47,7 +47,7 @@ export interface AirplaneDef {
   /** v1 LAST_SCREAM — played when the plane is destroyed. */
   lastScream?: string;
   /** v1 IS_STEALTHED — seconds per stealth/visible phase (0 = off). */
-  stealthTicks?: number;
+  stealthPhaseSec?: number;
 }
 
 export interface SpawnDef {

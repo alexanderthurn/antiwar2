@@ -14,7 +14,7 @@
     "startHumanHp": 100,
     "startHumanMoney": 0,
     "startRocketPower": 50,
-    "startRocketSpeed": 5,
+    "startRocketSpeed": 300,
     "startAimTime": 1000,
     "aimPower": 2,
     "maxHumans": 100,
@@ -90,8 +90,8 @@
       ],
       "hp": 10,
       "damage": 100,
-      "speed": 2,
-      "rotationSpeed": 20,
+      "speed": 120,
+      "rotationSpeed": 1200,
       "explosion": {
         "type": 1,
         "power": 0,
@@ -109,8 +109,8 @@
       ],
       "hp": 10,
       "damage": 100,
-      "speed": 1.3,
-      "rotationSpeed": 5,
+      "speed": 78,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 300,
@@ -128,8 +128,8 @@
       ],
       "hp": 1,
       "damage": 20,
-      "speed": 5,
-      "rotationSpeed": 5,
+      "speed": 300,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 20,
@@ -143,8 +143,8 @@
   "airplanes": {
     "ENDMASTER_BARON": {
       "hp": 20000,
-      "speed": 5,
-      "rotationSpeed": 10,
+      "speed": 300,
+      "rotationSpeed": 600,
       "weapons": [
         "BOMB_OLD",
         "ROCKET_COLA"
@@ -153,7 +153,7 @@
       "aiParams": [
         0,
         422,
-        40
+        0.667
       ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/endmaster_baron.png",

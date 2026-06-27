@@ -14,7 +14,7 @@
     "startHumanHp": 10000,
     "startHumanMoney": 300,
     "startRocketPower": 50,
-    "startRocketSpeed": 4,
+    "startRocketSpeed": 240,
     "startAimTime": 100000,
     "aimPower": 0,
     "maxHumans": 10,
@@ -87,8 +87,8 @@
       ],
       "hp": 10,
       "damage": 100,
-      "speed": 0.7,
-      "rotationSpeed": 5,
+      "speed": 42,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 100,
@@ -106,8 +106,8 @@
       ],
       "hp": 10,
       "damage": 100,
-      "speed": 1,
-      "rotationSpeed": 40,
+      "speed": 60,
+      "rotationSpeed": 2400,
       "explosion": {
         "type": 0,
         "power": 0,
@@ -121,14 +121,14 @@
   "airplanes": {
     "SAEGEFISCH": {
       "hp": 1,
-      "speed": 2,
-      "rotationSpeed": 360,
+      "speed": 120,
+      "rotationSpeed": 21600,
       "weapons": [],
       "ai": "BOMBERSIMPLE",
       "aiParams": [
         211,
         422,
-        300000
+        5000
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/saegefisch.png",
@@ -140,14 +140,14 @@
     },
     "FISCHLI": {
       "hp": 1,
-      "speed": 4,
-      "rotationSpeed": 360,
+      "speed": 240,
+      "rotationSpeed": 21600,
       "weapons": [],
       "ai": "BOMBERSIMPLE",
       "aiParams": [
         211,
         422,
-        300000
+        5000
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/fischli_grins.png",
@@ -159,14 +159,14 @@
     },
     "HAI": {
       "hp": 1,
-      "speed": 6,
-      "rotationSpeed": 360,
+      "speed": 360,
+      "rotationSpeed": 21600,
       "weapons": [],
       "ai": "BOMBERSIMPLE",
       "aiParams": [
         211,
         422,
-        300000
+        5000
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/hai.png",

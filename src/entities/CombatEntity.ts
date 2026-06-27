@@ -81,7 +81,7 @@ export class CombatEntity {
     }
   }
 
-  steerHoming(dt: number, tickScale: number): void {
+  steerHoming(dt: number): void {
     const target = this.homingTarget;
     if (!target?.alive) return;
 
@@ -94,7 +94,7 @@ export class CombatEntity {
     while (diff > Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
 
-    const maxTurn = (this.turnRateDeg * Math.PI / 180) * dt * tickScale;
+    const maxTurn = (this.turnRateDeg * Math.PI / 180) * dt;
     current += Math.max(-maxTurn, Math.min(maxTurn, diff));
     this.vx = Math.cos(current) * speed;
     this.vy = Math.sin(current) * speed;

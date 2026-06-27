@@ -51,7 +51,6 @@ import type { UiAction } from '../input/UiMenuController';
 import type { UiMenuController } from '../input/UiMenuController';
 import { kewlString, kewlText } from '../ui/KewlFont';
 
-const TICK_SCALE = 60;
 const HUMAN_FRAME_W = 256;
 const HUMAN_FRAME_H = 344;
 const HUMAN_FRAME_COLS = 3;
@@ -1305,7 +1304,7 @@ export class GameScene extends Container implements MenuActionsHost {
 
     if (locked) sprite.tint = 0xff4444;
 
-    const speed = this.session.rocketSpeed * TICK_SCALE;
+    const speed = this.session.rocketSpeed;
     this.entities.spawnPlayerProjectile(
       sprite,
       def,

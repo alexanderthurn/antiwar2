@@ -26,7 +26,7 @@ export class LevelSession {
   humanMoney = 300;
   maxTeamRockets = 3;
   rocketPower = 50;
-  rocketSpeed = 6;
+  rocketSpeed = 360;
   aimTimeMs = 1000;
   /** Baseline aim time from level config (for guided-rocket damage ratio). */
   baseAimTimeMs = 1000;

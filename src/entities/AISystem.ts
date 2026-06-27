@@ -4,14 +4,23 @@ import type { AirplaneDef, BombDef, LevelPack } from '../data/types';
 import type { CombatEntity } from './CombatEntity';
 import type { PatrolMotion } from './EntityTraits';
 
-const TICK_SCALE = 60;
-
 function planeSpeed(def: AirplaneDef): number {
-  return def.speed * TICK_SCALE * combatSpeedMultiplier();
+  return def.speed * combatSpeedMultiplier();
 }
 
 function bombSpeed(def: BombDef): number {
-  return def.speed * TICK_SCALE * combatSpeedMultiplier();
+  return def.speed * combatSpeedMultiplier();
+}
+
+/** aiParams[2] — average seconds between weapon drops (Poisson-style roll each frame). */
+function dropIntervalSec(def: AirplaneDef, fallbackSec: number): number {
+  const interval = def.aiParams[2];
+  return interval > 0 ? interval : fallbackSec;
+}
+
+function rollDrop(dt: number, intervalSec: number): boolean {
+  if (intervalSec <= 0) return false;
+  return Math.random() < dt / intervalSec;
 }
 
 export interface AIUpdateContext {
@@ -67,8 +76,7 @@ function rollWeaponDrop(
   dt: number,
   ctx: AIUpdateContext,
 ): void {
-  const rand = def.aiParams[2] || 300;
-  if (Math.random() >= dt / (rand / TICK_SCALE)) return;
+  if (!rollDrop(dt, dropIntervalSec(def, 5))) return;
   tryDropWeapon(entity, def, ctx.level, 0, entity.x, entity.y + 20, ctx);
 }
 
@@ -170,8 +178,7 @@ function updateBomberHard(entity: CombatEntity, motion: PatrolMotion, def: Airpl
   driftY(motion, entity, ctx.dt, 1.5);
   maybeRetargetY(motion, def, ctx.dt, 0.2);
 
-  const rand = def.aiParams[2] || 300;
-  if (Math.random() < ctx.dt / (rand / TICK_SCALE)) {
+  if (rollDrop(ctx.dt, dropIntervalSec(def, 5))) {
     const bombDef = ctx.level.bombs[def.weapons[0] ?? ''];
     if (bombDef) {
       for (let i = -2; i <= 2; i++) {
@@ -232,7 +239,7 @@ function pickWaypointY(band: { min: number; max: number }, prefer: 'high' | 'low
   return band.min + Math.random() * span;
 }
 
-/** Turn toward waypoint, fly along the nose. rotationSpeed = deg/frame @ 60hz (same as rocket homing). */
+/** Turn toward waypoint, fly along the nose. rotationSpeed = degrees per second. */
 function steerFighterToward(
   entity: CombatEntity,
   def: AirplaneDef,
@@ -247,7 +254,7 @@ function steerFighterToward(
   if (dist < 50) return true;
 
   const targetAngle = Math.atan2(dy, dx);
-  const maxTurnRad = def.rotationSpeed * (Math.PI / 180) * dt * TICK_SCALE;
+  const maxTurnRad = def.rotationSpeed * (Math.PI / 180) * dt;
   entity.sprite.rotation = rotateToward(entity.sprite.rotation, targetAngle, maxTurnRad);
 
   const move = speed * dt;
@@ -291,8 +298,7 @@ function rollDirectionalWeaponDrop(
   ctx: AIUpdateContext,
   fireAngle?: number,
 ): void {
-  const rand = def.aiParams[2] || 5;
-  if (Math.random() >= dt / (rand / TICK_SCALE)) return;
+  if (!rollDrop(dt, dropIntervalSec(def, 5 / 60))) return;
   tryDropDirectionalWeapon(entity, def, ctx.level, 0, ctx, fireAngle);
 }
 

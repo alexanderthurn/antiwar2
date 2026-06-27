@@ -14,7 +14,7 @@
     "startHumanHp": 100,
     "startHumanMoney": 0,
     "startRocketPower": 50,
-    "startRocketSpeed": 5,
+    "startRocketSpeed": 300,
     "startAimTime": 1000,
     "aimPower": 2,
     "maxHumans": 100,
@@ -91,8 +91,8 @@
       ],
       "hp": 10,
       "damage": 100,
-      "speed": 2,
-      "rotationSpeed": 20,
+      "speed": 120,
+      "rotationSpeed": 1200,
       "explosion": {
         "type": 1,
         "power": 0,
@@ -110,8 +110,8 @@
       ],
       "hp": 10,
       "damage": 100,
-      "speed": 0.7,
-      "rotationSpeed": 5,
+      "speed": 42,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 300,
@@ -129,8 +129,8 @@
       ],
       "hp": 1,
       "damage": 100,
-      "speed": 2.5,
-      "rotationSpeed": 5,
+      "speed": 150,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 2,
@@ -144,8 +144,8 @@
   "airplanes": {
     "ENDMASTER_RICE": {
       "hp": 40000,
-      "speed": 5,
-      "rotationSpeed": 10,
+      "speed": 300,
+      "rotationSpeed": 600,
       "weapons": [
         "BOMB_OLD",
         "QUANTUM_TORPEDO"
@@ -154,7 +154,7 @@
       "aiParams": [
         141,
         422,
-        100
+        1.667
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/endmaster_rice.png",

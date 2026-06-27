@@ -20,9 +20,9 @@ Most bombers/fighters/helicopters use:
 
 | Param | Meaning |
 |-------|---------|
-| A | `startY` — lower bound of flight band |
-| B | `endY` — upper bound of flight band |
-| C | `randFactor` — 1/C chance per tick to fire weapon |
+| A | `startY` — lower bound of flight band (px) |
+| B | `endY` — upper bound of flight band (px) |
+| C | Average **seconds between weapon drops** (Poisson-style roll each frame) |
 
 Planes fly between waypoints generated in the Y band between A and B.
 
@@ -160,11 +160,13 @@ Data files are inconsistent. Map all aliases in `AIDispatcher`:
 
 ## Firing logic (shared)
 
-For standard AIs with `randFactor = C`:
+For standard AIs with drop interval `C` seconds:
 
 ```
-each tick: if random(0, C) === 0 → drop bomb from weapons[0]
+each frame: if random() < dt / C → drop bomb from weapons[0]
 ```
+
+When porting from v1, `C = KI_PARAM_C / 60`.
 
 Multi-weapon planes (Lizzard, Baron):
 

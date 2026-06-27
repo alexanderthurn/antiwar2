@@ -14,7 +14,7 @@
     "startHumanHp": 100,
     "startHumanMoney": 200,
     "startRocketPower": 50,
-    "startRocketSpeed": 5,
+    "startRocketSpeed": 300,
     "startAimTime": 1000,
     "aimPower": 3,
     "maxHumans": 10,
@@ -86,8 +86,8 @@
       ],
       "hp": 10,
       "damage": 100,
-      "speed": 0.7,
-      "rotationSpeed": 5,
+      "speed": 42,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 100,
@@ -105,8 +105,8 @@
       ],
       "hp": 10,
       "damage": 30,
-      "speed": 0.7,
-      "rotationSpeed": 5,
+      "speed": 42,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 50,
@@ -124,8 +124,8 @@
       ],
       "hp": 1,
       "damage": 500,
-      "speed": 0.2,
-      "rotationSpeed": 5,
+      "speed": 12,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 0,
@@ -147,8 +147,8 @@
       ],
       "hp": 1,
       "damage": 5000,
-      "speed": 3.6,
-      "rotationSpeed": 5,
+      "speed": 216,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 0,
@@ -170,8 +170,8 @@
       ],
       "hp": 1,
       "damage": 0,
-      "speed": 0.1,
-      "rotationSpeed": 5,
+      "speed": 6,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 0,
@@ -193,8 +193,8 @@
       ],
       "hp": 10,
       "damage": 20,
-      "speed": 8,
-      "rotationSpeed": 5,
+      "speed": 480,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 50,
@@ -212,8 +212,8 @@
       ],
       "hp": 1,
       "damage": 30,
-      "speed": 5,
-      "rotationSpeed": 5,
+      "speed": 300,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 20,
@@ -231,8 +231,8 @@
       ],
       "hp": 1,
       "damage": 20,
-      "speed": 5,
-      "rotationSpeed": 5,
+      "speed": 300,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 2,
@@ -250,8 +250,8 @@
       ],
       "hp": 400,
       "damage": 500,
-      "speed": 1.5,
-      "rotationSpeed": 5,
+      "speed": 90,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 500,
@@ -269,8 +269,8 @@
       ],
       "hp": 1,
       "damage": 2,
-      "speed": 0.8,
-      "rotationSpeed": 5,
+      "speed": 48,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 2,
         "power": 2,
@@ -288,8 +288,8 @@
       ],
       "hp": 200,
       "damage": 2,
-      "speed": 2,
-      "rotationSpeed": 5,
+      "speed": 120,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 2,
         "power": 2,
@@ -307,8 +307,8 @@
       ],
       "hp": 1,
       "damage": 10,
-      "speed": 12,
-      "rotationSpeed": 5,
+      "speed": 720,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 0,
         "power": 0,
@@ -326,8 +326,8 @@
       ],
       "hp": 1,
       "damage": 100,
-      "speed": 2.8,
-      "rotationSpeed": 5,
+      "speed": 168,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 4,
         "power": 300,
@@ -345,8 +345,8 @@
       ],
       "hp": 1,
       "damage": 3000,
-      "speed": 0.8,
-      "rotationSpeed": 5,
+      "speed": 48,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 3,
         "power": 30,
@@ -364,8 +364,8 @@
       ],
       "hp": 10,
       "damage": 100,
-      "speed": 2,
-      "rotationSpeed": 20,
+      "speed": 120,
+      "rotationSpeed": 1200,
       "explosion": {
         "type": 1,
         "power": 0,
@@ -383,8 +383,8 @@
       ],
       "hp": 10,
       "damage": 100,
-      "speed": 2,
-      "rotationSpeed": 360,
+      "speed": 120,
+      "rotationSpeed": 21600,
       "explosion": {
         "type": 1,
         "power": 200,
@@ -402,8 +402,8 @@
       ],
       "hp": 10,
       "damage": 100,
-      "speed": 4,
-      "rotationSpeed": 360,
+      "speed": 240,
+      "rotationSpeed": 21600,
       "explosion": {
         "type": 2,
         "power": 20,
@@ -421,8 +421,8 @@
       ],
       "hp": 10,
       "damage": 100,
-      "speed": 0.7,
-      "rotationSpeed": 5,
+      "speed": 42,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 300,
@@ -440,8 +440,8 @@
       ],
       "hp": 1,
       "damage": 20,
-      "speed": 5,
-      "rotationSpeed": 5,
+      "speed": 300,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 100,
@@ -459,8 +459,8 @@
       ],
       "hp": 1,
       "damage": 20,
-      "speed": 5,
-      "rotationSpeed": 5,
+      "speed": 300,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 0,
@@ -478,8 +478,8 @@
       ],
       "hp": 1,
       "damage": 10,
-      "speed": 6,
-      "rotationSpeed": 5,
+      "speed": 360,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 0,
         "power": 0,
@@ -497,8 +497,8 @@
       ],
       "hp": 1,
       "damage": 10,
-      "speed": 3,
-      "rotationSpeed": 5,
+      "speed": 180,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 10,
@@ -512,8 +512,8 @@
   "airplanes": {
     "PARACHUTE": {
       "hp": 50,
-      "speed": 3,
-      "rotationSpeed": 20,
+      "speed": 180,
+      "rotationSpeed": 1200,
       "weapons": [
         "BOMB_0"
       ],
@@ -521,7 +521,7 @@
       "aiParams": [
         0,
         422,
-        300
+        5
       ],
       "drawStyle": 0,
       "image": "assets/gfx/BOMBS/para_bomb.png",
@@ -532,8 +532,8 @@
     },
     "BOMBER": {
       "hp": 200,
-      "speed": 3,
-      "rotationSpeed": 360,
+      "speed": 180,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_0"
       ],
@@ -541,7 +541,7 @@
       "aiParams": [
         0,
         422,
-        300
+        5
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber.png",
@@ -552,8 +552,8 @@
     },
     "BOMBER_BETTER": {
       "hp": 2000,
-      "speed": 2,
-      "rotationSpeed": 360,
+      "speed": 120,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_0"
       ],
@@ -561,7 +561,7 @@
       "aiParams": [
         0,
         422,
-        200
+        3.333
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber.png",
@@ -572,8 +572,8 @@
     },
     "BOMBER_ANTHRAX": {
       "hp": 1500,
-      "speed": 3,
-      "rotationSpeed": 360,
+      "speed": 180,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_ANTHRAX"
       ],
@@ -581,7 +581,7 @@
       "aiParams": [
         70,
         141,
-        150
+        2.5
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_anthrax.png",
@@ -592,8 +592,8 @@
     },
     "BOMBER_BIGANTHRAX": {
       "hp": 5000,
-      "speed": 4,
-      "rotationSpeed": 360,
+      "speed": 240,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_BIGANTHRAX"
       ],
@@ -601,7 +601,7 @@
       "aiParams": [
         70,
         141,
-        100
+        1.667
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_anthrax.png",
@@ -612,8 +612,8 @@
     },
     "BOMBER_NUKE": {
       "hp": 500,
-      "speed": 4,
-      "rotationSpeed": 360,
+      "speed": 240,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_NUKE"
       ],
@@ -621,7 +621,7 @@
       "aiParams": [
         0,
         422,
-        300
+        5
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_nuke.png",
@@ -632,8 +632,8 @@
     },
     "BOMBER_HARD": {
       "hp": 20000,
-      "speed": 2,
-      "rotationSpeed": 360,
+      "speed": 120,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_0"
       ],
@@ -641,7 +641,7 @@
       "aiParams": [
         422,
         422,
-        400
+        6.667
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_hard.png",
@@ -652,8 +652,8 @@
     },
     "BOMBER_SPLITTER": {
       "hp": 500,
-      "speed": 3,
-      "rotationSpeed": 360,
+      "speed": 180,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_SPLITTER"
       ],
@@ -661,7 +661,7 @@
       "aiParams": [
         141,
         281,
-        140
+        2.333
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_splitter.png",
@@ -672,8 +672,8 @@
     },
     "BOMBER_BIG": {
       "hp": 50000,
-      "speed": 3,
-      "rotationSpeed": 360,
+      "speed": 180,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_BIG"
       ],
@@ -681,7 +681,7 @@
       "aiParams": [
         0,
         422,
-        100
+        1.667
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_big.png",
@@ -692,8 +692,8 @@
     },
     "BOMBER_STEALTH": {
       "hp": 7000,
-      "speed": 3,
-      "rotationSpeed": 360,
+      "speed": 180,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_0"
       ],
@@ -701,7 +701,7 @@
       "aiParams": [
         0,
         422,
-        200
+        3.333
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_stealth.png",
@@ -709,12 +709,12 @@
         0.48,
         1.12
       ],
-      "stealthTicks": 4
+      "stealthPhaseSec": 4
     },
     "BOMBER_STEALTH_NUKE": {
       "hp": 15000,
-      "speed": 3,
-      "rotationSpeed": 360,
+      "speed": 180,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_NUKE"
       ],
@@ -722,7 +722,7 @@
       "aiParams": [
         0,
         422,
-        300
+        5
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_stealthnuke.png",
@@ -730,12 +730,12 @@
         0.48,
         1.12
       ],
-      "stealthTicks": 4
+      "stealthPhaseSec": 4
     },
     "BOMBER_STEALTH_NUKE2": {
       "hp": 15000,
-      "speed": 5,
-      "rotationSpeed": 360,
+      "speed": 300,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_NUKE"
       ],
@@ -743,7 +743,7 @@
       "aiParams": [
         0,
         422,
-        100
+        1.667
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_stealthnuke.png",
@@ -751,12 +751,12 @@
         0.4,
         0.8
       ],
-      "stealthTicks": 4
+      "stealthPhaseSec": 4
     },
     "BOMBER_NAPALM": {
       "hp": 150000,
-      "speed": 3,
-      "rotationSpeed": 360,
+      "speed": 180,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_NAPALM"
       ],
@@ -764,7 +764,7 @@
       "aiParams": [
         0,
         422,
-        100
+        1.667
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_napalm.png",
@@ -775,8 +775,8 @@
     },
     "FIGHTER_JET": {
       "hp": 2000,
-      "speed": 7,
-      "rotationSpeed": 10,
+      "speed": 420,
+      "rotationSpeed": 600,
       "weapons": [
         "ROCKET_0"
       ],
@@ -784,7 +784,7 @@
       "aiParams": [
         0,
         422,
-        10
+        0.167
       ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/fighter.PNG",
@@ -795,8 +795,8 @@
     },
     "FIGHTER_MG": {
       "hp": 200,
-      "speed": 5,
-      "rotationSpeed": 5,
+      "speed": 300,
+      "rotationSpeed": 300,
       "weapons": [
         "BOMB_MG"
       ],
@@ -804,7 +804,7 @@
       "aiParams": [
         0,
         422,
-        5
+        0.083
       ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/fighter_mg.png",
@@ -815,8 +815,8 @@
     },
     "FIGHTER_LIZZARD": {
       "hp": 150,
-      "speed": 5,
-      "rotationSpeed": 10,
+      "speed": 300,
+      "rotationSpeed": 600,
       "weapons": [
         "BOMB_MG",
         "ROCKET_0"
@@ -825,7 +825,7 @@
       "aiParams": [
         -141,
         844,
-        20
+        0.333
       ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/fighter_lizzard.png",
@@ -836,8 +836,8 @@
     },
     "FIGHTER_CORSAIR": {
       "hp": 500,
-      "speed": 3,
-      "rotationSpeed": 10,
+      "speed": 180,
+      "rotationSpeed": 600,
       "weapons": [
         "BOMB_MG"
       ],
@@ -845,7 +845,7 @@
       "aiParams": [
         0,
         422,
-        20
+        0.333
       ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/fighter_corsair.png",
@@ -856,8 +856,8 @@
     },
     "HELI_BILLIG": {
       "hp": 2000,
-      "speed": 2,
-      "rotationSpeed": 20,
+      "speed": 120,
+      "rotationSpeed": 1200,
       "weapons": [
         "BOMB_0"
       ],
@@ -865,7 +865,7 @@
       "aiParams": [
         141,
         563,
-        50
+        0.833
       ],
       "drawStyle": 2,
       "image": "assets/gfx/AIRPLANES/helikopter.png",
@@ -876,8 +876,8 @@
     },
     "HELI_APACHE": {
       "hp": 10000,
-      "speed": 4,
-      "rotationSpeed": 20,
+      "speed": 240,
+      "rotationSpeed": 1200,
       "weapons": [
         "ROCKET_0"
       ],
@@ -885,7 +885,7 @@
       "aiParams": [
         281,
         844,
-        70
+        1.167
       ],
       "drawStyle": 2,
       "image": "assets/gfx/AIRPLANES/helikopter_apache.png",
@@ -896,8 +896,8 @@
     },
     "CARRIER": {
       "hp": 60000,
-      "speed": 1,
-      "rotationSpeed": 360,
+      "speed": 60,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMBER_CARRIER"
       ],
@@ -905,7 +905,7 @@
       "aiParams": [
         0,
         422,
-        100
+        1.667
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_troops.png",
@@ -916,8 +916,8 @@
     },
     "CARRIER2": {
       "hp": 300000,
-      "speed": 1,
-      "rotationSpeed": 360,
+      "speed": 60,
+      "rotationSpeed": 21600,
       "weapons": [
         "PARACHUTE"
       ],
@@ -925,7 +925,7 @@
       "aiParams": [
         0,
         281,
-        20
+        0.333
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_troops.png",
@@ -936,8 +936,8 @@
     },
     "BOMBER_SPLITTER2": {
       "hp": 300000,
-      "speed": 3,
-      "rotationSpeed": 360,
+      "speed": 180,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_SPLITTER2"
       ],
@@ -945,7 +945,7 @@
       "aiParams": [
         141,
         281,
-        140
+        2.333
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_splitter2.png",
@@ -956,8 +956,8 @@
     },
     "BOMBER_CARRIER": {
       "hp": 1,
-      "speed": 5,
-      "rotationSpeed": 360,
+      "speed": 300,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_CARRIER"
       ],
@@ -965,7 +965,7 @@
       "aiParams": [
         0,
         422,
-        500
+        8.333
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber.png",

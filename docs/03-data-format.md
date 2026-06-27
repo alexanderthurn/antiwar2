@@ -80,7 +80,7 @@ Maps from v1 `config.txt`.
   "startHumanHp": 100,
   "startHumanMoney": 300,
   "startRocketPower": 50,
-  "startRocketSpeed": 6.0,
+  "startRocketSpeed": 360,
   "startAimTime": 1000,
   "aimPower": 3.0,
 
@@ -157,7 +157,7 @@ Maps from v1 `config.txt`.
 | `START_HUMAN_HP` | `config.startHumanHp` |
 | `START_HUMAN_MONEY` | `config.startHumanMoney` |
 | `START_ROCKET_POWER` | `config.startRocketPower` |
-| `START_ROCKET_SPEED` | `config.startRocketSpeed` |
+| `START_ROCKET_SPEED` | `config.startRocketSpeed` (px/s; v1 × 60) |
 | `START_AIMTIME` | `config.startAimTime` |
 | `AIM_POWER` | `config.aimPower` |
 | `MAX_HUMANS` | `config.maxHumans` |
@@ -175,6 +175,8 @@ Maps from v1 `config.txt`.
 
 Keyed by bomb name. **`BOMB_PLAYER` is required** in every level pack.
 
+**Units:** `speed` is **pixels per second**; `rotationSpeed` is **degrees per second** (360 = one full turn per second).
+
 ```json
 {
   "BOMB_0": {
@@ -182,8 +184,8 @@ Keyed by bomb name. **`BOMB_PLAYER` is required** in every level pack.
     "scale": [0.8, 0.6],
     "hp": 10,
     "damage": 100,
-    "speed": 0.7,
-    "rotationSpeed": 5,
+    "speed": 42,
+    "rotationSpeed": 300,
     "explosion": {
       "type": 1,
       "power": 100,
@@ -201,8 +203,8 @@ Keyed by bomb name. **`BOMB_PLAYER` is required** in every level pack.
     "scale": [0.5, 0.2],
     "hp": 10,
     "damage": 100,
-    "speed": 2,
-    "rotationSpeed": 20,
+    "speed": 120,
+    "rotationSpeed": 1200,
     "explosion": { "type": 1, "power": 0, "range": 1.0, "lifetime": 20 },
     "trail": 1.0,
     "checkOutOfScreen": true
@@ -212,6 +214,8 @@ Keyed by bomb name. **`BOMB_PLAYER` is required** in every level pack.
 
 | Field | v1 key | Notes |
 |-------|--------|-------|
+| `speed` | `SPEED` | **px/s** (v1 value × 60 when porting) |
+| `rotationSpeed` | `ROTATION_SPEED` | **deg/s** (v1 value × 60 when porting) |
 | `damage` | `TP` | Direct hit damage |
 | `explosion.type` | `EXPLOSION_TYP` | 0=none, 1=normal, 2=anthrax, 3=nuke, 4=napalm |
 | `trail` | `DRAW_SCHWEIF` | Rocket exhaust length; >0 draws trail |
@@ -226,19 +230,21 @@ Player rocket **effective** speed and damage come from runtime upgrades (`startR
 
 ## `airplanes` — units
 
+**Units:** `speed` is **px/s**; `rotationSpeed` is **deg/s**; `aiParams[2]` is **average seconds between weapon drops** (for standard AIs).
+
 ```json
 {
   "BOMBER": {
     "hp": 50,
-    "speed": 2,
-    "rotationSpeed": 360,
+    "speed": 120,
+    "rotationSpeed": 21600,
     "weapons": ["BOMB_0"],
     "ai": "BOMBERSIMPLE",
-    "aiParams": [0, 300, 600],
+    "aiParams": [0, 300, 10],
     "drawStyle": 0,
     "image": "assets/gfx/AIRPLANES/bomber.png",
     "scale": [0.6, 0.6],
-    "stealthDuration": 0,
+    "stealthPhaseSec": 0,
     "explosion": { "type": 1, "power": 1, "range": 4.0, "lifetime": 50 },
     "isBloody": false,
     "carrier": false,
@@ -250,11 +256,13 @@ Player rocket **effective** speed and damage come from runtime upgrades (`startR
 
 | Field | v1 key | Notes |
 |-------|--------|-------|
+| `speed` | `SPEED` | **px/s** (v1 × 60) |
+| `rotationSpeed` | `ROTATION_SPEED` | **deg/s** (v1 × 60); unused for `drawStyle` 0 bombers |
 | `weapons` | `BOMB_TYP_0`, `BOMB_TYP_1`, … | Array of bomb names |
 | `ai` | `KI` | See [08-ai-types.md](./08-ai-types.md) |
-| `aiParams` | `KI_PARAM_A/B/C` | Meaning depends on AI |
+| `aiParams` | `KI_PARAM_A/B/C` | Meaning depends on AI; C is drop interval **seconds** (v1 C ÷ 60) |
 | `drawStyle` | `DRAWSTYLE` | 0=bomber flip, 1=fighter rotate, 2=heli tilt |
-| `stealthDuration` | `IS_STEALTHED` | 0 = no stealth |
+| `stealthPhaseSec` | `IS_STEALTHED` | Seconds per stealth/visible phase; 0 = off |
 | `carrier` | `CARRIER` | 0=bombs, 1=spawns child planes |
 
 Helpers use the same schema (v1 `HELPER_N` spawns — unused in shipped content but supported).
@@ -302,7 +310,7 @@ Each entry = one v1 `[ROUND_NAME]` section. **Array order = play order.** Sectio
 | `music` | `CHANGE_MUSIC` | — | Track under `assets/sfx/` |
 | `musicVolume` | `CHANGE_VOLUME` | — | Level music gain (sticky) |
 | `sounds` | — | — | Partial SFX bank override (sticky) |
-| `intro.time` | `INTRO_TIME` | 0 | Frames/ticks (~300 ≈ few seconds at 60fps) |
+| `intro.time` | `INTRO_TIME` | 0 | **Milliseconds** intro overlay duration |
 | `maxAirplanes` | `MAX_AIRPLANES` | 0 | 0 = spawn all; N = concurrent limit + queue |
 | `endmaster` | `ENDMASTER` | -1 | Spawn index for boss HP bar (≥0) |
 | `rumble` | `RUMBLE` | 2 | 0=off, 1=planes only, 2=all explosions |

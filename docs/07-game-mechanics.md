@@ -38,12 +38,12 @@ Base stats from `BOMB_PLAYER` in level JSON, modified by runtime upgrades:
 
 | Stat | Source |
 |------|--------|
-| Speed | `config.startRocketSpeed` × speed upgrade factor |
+| Speed | `config.startRocketSpeed` × speed upgrade factor (**px/s**) |
 | Damage | `config.startRocketPower` × power upgrade factor |
 | Max in air | Fair split of `config.maxRockets` across active players (e.g. 5÷2 → 3+2) |
-| Rotation | `BOMB_PLAYER.rotationSpeed` — turns toward target |
+| Rotation | `BOMB_PLAYER.rotationSpeed` — **deg/s**, turns toward homing target |
 
-Rockets fly **slowly** (v1 base speed ~2, upgrades up to ~10+). `checkOutOfScreen: true` — rockets can leave sides of screen.
+Rockets start around **120–420 px/s** depending on level (`startRocketSpeed`). `checkOutOfScreen: true` — rockets can leave sides of screen.
 
 **Speed cap:** v1.5 added max velocity on all objects to prevent tunneling / stuck rockets.
 
@@ -62,8 +62,8 @@ damage = baseDamage × aimPower × (startAimTime / currentAimTime)
 
 ### Bombs (enemy)
 
-- Dropped by airplanes per AI `randFactor` (1/N chance per tick)
-- Fall slowly (`speed` 0.3–1.3 typical)
+- Dropped by airplanes per AI drop interval (`aiParams[2]` seconds)
+- Fall at `speed` **px/s** (typical enemy bombs: ~18–78 px/s)
 - `checkOutOfScreen: false` — fall straight down
 - On ground impact: damage civilians in `explosion.range`
 
@@ -75,7 +75,7 @@ damage = baseDamage × aimPower × (startAimTime / currentAimTime)
 - On death: explosion, possibly submunitions (`onDeath.bomb`)
 - **Crashing:** after `crashingRockets` hits, plane falls and explodes on ground
 - **Carrier:** spawns child planes; children die when parent dies
-- **Stealth:** invisible for `stealthDuration` ticks periodically
+- **Stealth:** invisible for `stealthPhaseSec` seconds per phase, then visible for the same duration
 
 ### Civilians
 

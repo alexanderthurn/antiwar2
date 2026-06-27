@@ -75,7 +75,17 @@ Omit fields on rounds that should keep the previous value — keeps JSON small.
 
 ### Other common round fields
 
-`weather`, `maxAirplanes`, `endmaster`, `rumble`, `spawns`, `intro.text`, `intro.image`, `intro.time` — see `docs/03-data-format.md`.
+`weather`, `maxAirplanes`, `endmaster`, `rumble`, `spawns`, `intro.text`, `intro.image`, `intro.time` (ms) — see `docs/03-data-format.md`.
+
+### Time units in level JSON
+
+| Field | Unit |
+|-------|------|
+| `speed`, `startRocketSpeed` | pixels per second |
+| `rotationSpeed` | degrees per second (360 = one full turn/s) |
+| `aiParams[2]` | seconds between weapon drops |
+| `stealthPhaseSec` | seconds per stealth/visible phase |
+| `intro.time`, `startAimTime`, `storyLimits.*Time` | milliseconds |
 
 ---
 

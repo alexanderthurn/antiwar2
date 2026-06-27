@@ -8,6 +8,8 @@ import { join, basename } from 'node:path';
 
 const X_SCALE = 1920 / 1024;
 const Y_SCALE = 1080 / 768;
+/** v1 speeds and drop intervals are frame-based @ 60 Hz; JSON stores per-second units. */
+const V1_FRAME_RATE = 60;
 
 function parseIniSections(text) {
   const sections = new Map();
@@ -139,7 +141,7 @@ function parseConfig(cfg) {
     startHumanHp: num(cfg.START_HUMAN_HP, 100),
     startHumanMoney: num(cfg.START_HUMAN_MONEY, 300),
     startRocketPower: num(cfg.START_ROCKET_POWER, 50),
-    startRocketSpeed: num(cfg.START_ROCKET_SPEED, 6),
+    startRocketSpeed: num(cfg.START_ROCKET_SPEED, 6) * V1_FRAME_RATE,
     startAimTime: num(cfg.START_AIMTIME, 1000),
     aimPower: num(cfg.AIM_POWER, 2),
     maxHumans: num(cfg.MAX_HUMANS, 10),
@@ -171,8 +173,8 @@ function parseBombs(sections) {
       scale: [num(s.SCALE_X, 1), num(s.SCALE_Y, 1)],
       hp: num(s.HP, 10),
       damage: num(s.TP, 100),
-      speed: num(s.SPEED, 1),
-      rotationSpeed: num(s.ROTATION_SPEED, 5),
+      speed: num(s.SPEED, 1) * V1_FRAME_RATE,
+      rotationSpeed: num(s.ROTATION_SPEED, 5) * V1_FRAME_RATE,
       explosion: {
         type: num(s.EXPLOSION_TYP, 1),
         power: num(s.EXPLOSION_POWER, 0),
@@ -206,15 +208,19 @@ function parseAirplanes(sections) {
     }
     airplanes[renamePlaneType(name)] = {
       hp: num(s.HP, 50),
-      speed: num(s.SPEED, 2),
-      rotationSpeed: num(s.ROTATION_SPEED, 360),
+      speed: num(s.SPEED, 2) * V1_FRAME_RATE,
+      rotationSpeed: num(s.ROTATION_SPEED, 360) * V1_FRAME_RATE,
       weapons,
       ai: s.KI,
-      aiParams: [num(s.KI_PARAM_A, 0), num(s.KI_PARAM_B, 300), num(s.KI_PARAM_C, 300)],
+      aiParams: [
+        num(s.KI_PARAM_A, 0),
+        num(s.KI_PARAM_B, 300),
+        num(s.KI_PARAM_C, 300) / V1_FRAME_RATE,
+      ],
       drawStyle: num(s.DRAWSTYLE, 0),
       image: gfxPath(s.IMAGE, 'plane'),
       scale: [num(s.SCALE_X, 1), num(s.SCALE_Y, 1)],
-      stealthTicks: s.IS_STEALTHED ? num(s.IS_STEALTHED, 0) : undefined,
+      stealthPhaseSec: s.IS_STEALTHED ? num(s.IS_STEALTHED, 0) : undefined,
       scream: s.SCREAM ? sfxPath(s.SCREAM) : undefined,
       lastScream: s.LAST_SCREAM ? sfxPath(s.LAST_SCREAM) : undefined,
     };

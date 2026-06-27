@@ -15,7 +15,7 @@
     "startHumanHp": 100,
     "startHumanMoney": 300,
     "startRocketPower": 50,
-    "startRocketSpeed": 20,
+    "startRocketSpeed": 1200,
     "startAimTime": 1000,
     "aimPower": 1,
     "maxHumans": 10,
@@ -87,8 +87,8 @@
       ],
       "hp": 10,
       "damage": 100,
-      "speed": 0.7,
-      "rotationSpeed": 5,
+      "speed": 42,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 100,
@@ -106,8 +106,8 @@
       ],
       "hp": 10,
       "damage": 500,
-      "speed": 3,
-      "rotationSpeed": 5,
+      "speed": 180,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 5,
@@ -125,8 +125,8 @@
       ],
       "hp": 10,
       "damage": 100,
-      "speed": 2,
-      "rotationSpeed": 40,
+      "speed": 120,
+      "rotationSpeed": 2400,
       "explosion": {
         "type": 0,
         "power": 0,
@@ -140,8 +140,8 @@
   "airplanes": {
     "DRAGI": {
       "hp": 500,
-      "speed": 4,
-      "rotationSpeed": 360,
+      "speed": 240,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_EI"
       ],
@@ -149,7 +149,7 @@
       "aiParams": [
         0,
         300,
-        300
+        5
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/dragi.png",
@@ -157,13 +157,13 @@
         0.5,
         0.5
       ],
-      "stealthTicks": 0,
-      "scream": "bloodscream.ogg"
+      "scream": "bloodscream.ogg",
+      "stealthPhaseSec": 0
     },
     "DRAGI2": {
       "hp": 2000,
-      "speed": 6,
-      "rotationSpeed": 20,
+      "speed": 360,
+      "rotationSpeed": 1200,
       "weapons": [
         "BOMB_EI2"
       ],
@@ -171,7 +171,7 @@
       "aiParams": [
         0,
         500,
-        50
+        0.833
       ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/dragi2.png",
@@ -179,13 +179,13 @@
         0.5,
         0.5
       ],
-      "stealthTicks": 0,
-      "scream": "bloodscream.ogg"
+      "scream": "bloodscream.ogg",
+      "stealthPhaseSec": 0
     },
     "DRAGI3": {
       "hp": 600000,
-      "speed": 5,
-      "rotationSpeed": 20,
+      "speed": 300,
+      "rotationSpeed": 1200,
       "weapons": [
         "BOMB_EI2"
       ],
@@ -193,7 +193,7 @@
       "aiParams": [
         -200,
         400,
-        20
+        0.333
       ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/dragi3.png",
@@ -201,8 +201,8 @@
         2,
         2
       ],
-      "stealthTicks": 0,
-      "scream": "bloodscream.ogg"
+      "scream": "bloodscream.ogg",
+      "stealthPhaseSec": 0
     }
   },
   "rounds": [

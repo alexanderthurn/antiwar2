@@ -14,7 +14,7 @@
     "startHumanHp": 50,
     "startHumanMoney": 300,
     "startRocketPower": 50,
-    "startRocketSpeed": 20,
+    "startRocketSpeed": 1200,
     "startAimTime": 1000,
     "aimPower": 1,
     "maxHumans": 10,
@@ -86,8 +86,8 @@
       ],
       "hp": 10,
       "damage": 80,
-      "speed": 1.4,
-      "rotationSpeed": 5,
+      "speed": 84,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 3,
         "power": 15,
@@ -105,8 +105,8 @@
       ],
       "hp": 10,
       "damage": 49,
-      "speed": 5,
-      "rotationSpeed": 5,
+      "speed": 300,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 5,
@@ -124,8 +124,8 @@
       ],
       "hp": 10,
       "damage": 700,
-      "speed": 4.5,
-      "rotationSpeed": 5,
+      "speed": 270,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 1,
@@ -143,8 +143,8 @@
       ],
       "hp": 100,
       "damage": 100,
-      "speed": 2,
-      "rotationSpeed": 40,
+      "speed": 120,
+      "rotationSpeed": 2400,
       "explosion": {
         "type": 0,
         "power": 0,
@@ -158,8 +158,8 @@
   "airplanes": {
     "DRAGI": {
       "hp": 500,
-      "speed": 4,
-      "rotationSpeed": 360,
+      "speed": 240,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_EI"
       ],
@@ -167,7 +167,7 @@
       "aiParams": [
         0,
         422,
-        200
+        3.333
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/satelit2.png",
@@ -179,8 +179,8 @@
     },
     "DRAGI2": {
       "hp": 2000,
-      "speed": 6,
-      "rotationSpeed": 20,
+      "speed": 360,
+      "rotationSpeed": 1200,
       "weapons": [
         "BOMB_EI2"
       ],
@@ -188,7 +188,7 @@
       "aiParams": [
         0,
         703,
-        50
+        0.833
       ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/satelit.png",
@@ -200,8 +200,8 @@
     },
     "DRAGI3": {
       "hp": 600000,
-      "speed": 7,
-      "rotationSpeed": 30,
+      "speed": 420,
+      "rotationSpeed": 1800,
       "weapons": [
         "BOMB_EI3"
       ],
@@ -209,7 +209,7 @@
       "aiParams": [
         -281,
         422,
-        10
+        0.167
       ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/direktor.png",

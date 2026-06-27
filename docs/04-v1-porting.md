@@ -60,7 +60,18 @@ Apply to:
 - AI params that are Y coordinates (`KI_PARAM_A/B` for most AIs)
 - AI params that are X coordinates (`KIPARACHUTE` uses Start_x, End_x)
 
-**Do not scale:** speeds, HP, timers, angles, explosion ranges (tune separately if needed).
+**Do not scale:** HP, explosion ranges (tune separately if needed).
+
+**Convert to per-second units** (v1 used 60 Hz frame ticks):
+
+| v1 field | JSON field | Conversion |
+|----------|------------|------------|
+| `SPEED` | `speed` | × 60 → **px/s** |
+| `ROTATION_SPEED` | `rotationSpeed` | × 60 → **deg/s** |
+| `START_ROCKET_SPEED` | `startRocketSpeed` | × 60 → **px/s** |
+| `KI_PARAM_C` | `aiParams[2]` | ÷ 60 → **seconds** between drops |
+
+`scripts/convert-v1.mjs` applies these automatically. One-time migration for existing JSON: `node scripts/migrate-per-second.mjs`.
 
 ### Step 3 — Remap paths
 

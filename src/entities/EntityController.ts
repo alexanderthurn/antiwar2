@@ -22,7 +22,6 @@ import {
 import { traitsForAirplane, traitsForEnemyBomb, traitsForPlayerProjectile } from './entityProfiles';
 import { shapeKeyFromImagePath } from '../data/CollisionShapes';
 
-const TICK_SCALE = 60;
 const MAX_SUBMUNITION_DEPTH = 4;
 
 function tagCombatSprite(sprite: Sprite, kind: string, name: string, id: number): void {
@@ -201,8 +200,8 @@ export class EntityController {
     if (def.drawStyle === 1 && motion.kind === 'patrol') {
       entity.sprite.rotation = motion.dir > 0 ? 0 : Math.PI;
     }
-    if (def.stealthTicks && def.stealthTicks > 0) {
-      entity.stealthPhaseTimer = def.stealthTicks;
+    if (def.stealthPhaseSec && def.stealthPhaseSec > 0) {
+      entity.stealthPhaseTimer = def.stealthPhaseSec;
       entity.stealthHidden = false;
       entity.sprite.alpha = 1;
     }
@@ -262,7 +261,7 @@ export class EntityController {
     bindSpriteCollisionPath(sprite, def.image, def.scale);
     layer.addChild(sprite);
 
-    const bulletSpeed = def.speed * TICK_SCALE * combatSpeedMultiplier();
+    const bulletSpeed = def.speed * combatSpeedMultiplier();
     const entity = new CombatEntity(sprite, traitsForEnemyBomb(def), { kind: 'fall' }, {
       x,
       y,
@@ -399,8 +398,8 @@ export class EntityController {
 
   private updateStealth(dt: number): void {
     for (const e of this.entities) {
-      if (!e.alive || e.motion.kind !== 'patrol' || !e.airplaneDef?.stealthTicks) continue;
-      const period = e.airplaneDef.stealthTicks;
+      if (!e.alive || e.motion.kind !== 'patrol' || !e.airplaneDef?.stealthPhaseSec) continue;
+      const period = e.airplaneDef.stealthPhaseSec;
       e.stealthPhaseTimer -= dt;
       if (e.stealthPhaseTimer > 0) continue;
       e.stealthHidden = !e.stealthHidden;
@@ -640,7 +639,7 @@ export class EntityController {
       const proj = this.entities[i]!;
       if (!proj.alive || !proj.traits.isPlayerProjectile) continue;
 
-      proj.steerHoming(dt, TICK_SCALE);
+      proj.steerHoming(dt);
 
       const startX = proj.x;
       const startY = proj.y;

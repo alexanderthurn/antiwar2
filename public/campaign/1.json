@@ -14,7 +14,7 @@
     "startHumanHp": 100,
     "startHumanMoney": 300,
     "startRocketPower": 50,
-    "startRocketSpeed": 6,
+    "startRocketSpeed": 360,
     "startAimTime": 1000,
     "aimPower": 3,
     "maxHumans": 10,
@@ -78,8 +78,8 @@
       ],
       "hp": 10,
       "damage": 100,
-      "speed": 0.7,
-      "rotationSpeed": 5,
+      "speed": 42,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 100,
@@ -97,8 +97,8 @@
       ],
       "hp": 10,
       "damage": 50,
-      "speed": 2,
-      "rotationSpeed": 20,
+      "speed": 120,
+      "rotationSpeed": 1200,
       "explosion": {
         "type": 1,
         "power": 0,
@@ -112,8 +112,8 @@
   "airplanes": {
     "BOMBER": {
       "hp": 50,
-      "speed": 2,
-      "rotationSpeed": 360,
+      "speed": 120,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_0"
       ],
@@ -121,7 +121,7 @@
       "aiParams": [
         0,
         422,
-        600
+        10
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber.png",
@@ -132,8 +132,8 @@
     },
     "BOMBER2": {
       "hp": 200,
-      "speed": 3,
-      "rotationSpeed": 360,
+      "speed": 180,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_0"
       ],
@@ -141,7 +141,7 @@
       "aiParams": [
         281,
         563,
-        600
+        10
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber.png",
@@ -152,8 +152,8 @@
     },
     "BOMBER3": {
       "hp": 100000,
-      "speed": 3,
-      "rotationSpeed": 360,
+      "speed": 180,
+      "rotationSpeed": 21600,
       "weapons": [
         "BOMB_0"
       ],
@@ -161,7 +161,7 @@
       "aiParams": [
         281,
         563,
-        600
+        10
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/bomber_big.png",

@@ -14,7 +14,7 @@
     "startHumanHp": 100,
     "startHumanMoney": 0,
     "startRocketPower": 50,
-    "startRocketSpeed": 5,
+    "startRocketSpeed": 300,
     "startAimTime": 1000,
     "aimPower": 2,
     "maxHumans": 100,
@@ -92,8 +92,8 @@
       ],
       "hp": 10,
       "damage": 100,
-      "speed": 2,
-      "rotationSpeed": 20,
+      "speed": 120,
+      "rotationSpeed": 1200,
       "explosion": {
         "type": 1,
         "power": 0,
@@ -111,8 +111,8 @@
       ],
       "hp": 1,
       "damage": 150,
-      "speed": 3,
-      "rotationSpeed": 5,
+      "speed": 180,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 1,
         "power": 150,
@@ -130,8 +130,8 @@
       ],
       "hp": 1,
       "damage": 60,
-      "speed": 6,
-      "rotationSpeed": 5,
+      "speed": 360,
+      "rotationSpeed": 300,
       "explosion": {
         "type": 0,
         "power": 60,
@@ -145,8 +145,8 @@
   "airplanes": {
     "ENDMASTER_BUSH": {
       "hp": 160000,
-      "speed": 5,
-      "rotationSpeed": 10,
+      "speed": 300,
+      "rotationSpeed": 600,
       "weapons": [
         "UFO",
         "MG_BUSH"
@@ -155,7 +155,7 @@
       "aiParams": [
         42,
         14,
-        10
+        0.167
       ],
       "drawStyle": 0,
       "image": "assets/gfx/AIRPLANES/endmaster_bush.png",
@@ -166,8 +166,8 @@
     },
     "UFO": {
       "hp": 100,
-      "speed": 5,
-      "rotationSpeed": 15,
+      "speed": 300,
+      "rotationSpeed": 900,
       "weapons": [
         "PHASER"
       ],
@@ -175,7 +175,7 @@
       "aiParams": [
         422,
         703,
-        100
+        1.667
       ],
       "drawStyle": 1,
       "image": "assets/gfx/AIRPLANES/endmaster_bush.png",
