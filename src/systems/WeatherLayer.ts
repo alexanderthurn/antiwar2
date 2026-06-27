@@ -1,5 +1,6 @@
 import { Container, Particle, ParticleContainer, type Texture } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
+import { WEATHER_QUALITY, type WeatherQualityProfile } from '../core/GraphicsQuality';
 import { loadTexture } from '../data/AssetLoader';
 
 const RAINDROP_PATH = 'assets/gfx/raindrop.png';
@@ -45,6 +46,7 @@ export class WeatherLayer extends Container {
   private rain = 0;
   private snow = 0;
   private wind = 0;
+  private quality: WeatherQualityProfile = WEATHER_QUALITY.high;
 
   constructor() {
     super();
@@ -65,8 +67,20 @@ export class WeatherLayer extends Container {
     this.snowTex = snowTex;
     this.rainReady = true;
     this.snowReady = true;
-    if (this.rain > 0) this.rebuildRain();
-    if (this.snow > 0) this.rebuildSnow();
+    if (this.rain > 0 && this.quality.rain > 0) this.rebuildRain();
+    if (this.snow > 0 && this.quality.snow > 0) this.rebuildSnow();
+  }
+
+  setEffectQuality(profile: WeatherQualityProfile): void {
+    this.quality = profile;
+    if (this.rainReady) {
+      if (this.rain > 0 && profile.rain > 0) this.rebuildRain();
+      else this.clearRain();
+    }
+    if (this.snowReady) {
+      if (this.snow > 0 && profile.snow > 0) this.rebuildSnow();
+      else this.clearSnow();
+    }
   }
 
   setWeather(values: number[]): void {
@@ -76,20 +90,24 @@ export class WeatherLayer extends Container {
     this.clearRain();
     this.clearSnow();
 
-    if (this.rain > 0 && this.rainReady) {
+    if (this.rain > 0 && this.rainReady && this.quality.rain > 0) {
       this.rebuildRain();
     }
-    if (this.snow > 0 && this.snowReady) {
+    if (this.snow > 0 && this.snowReady && this.quality.snow > 0) {
       this.rebuildSnow();
     }
   }
 
   private rainCount(): number {
-    return this.rain > 0 ? Math.min(MAX_RAIN, Math.round(this.rain * 1040 + 96)) : 0;
+    if (this.rain <= 0 || this.quality.rain <= 0) return 0;
+    const base = Math.min(MAX_RAIN, Math.round(this.rain * 1040 + 96));
+    return Math.round(base * this.quality.rain);
   }
 
   private snowCount(): number {
-    return this.snow > 0 ? Math.min(MAX_SNOW, Math.round(this.snow * 220 + 32)) : 0;
+    if (this.snow <= 0 || this.quality.snow <= 0) return 0;
+    const base = Math.min(MAX_SNOW, Math.round(this.snow * 220 + 32));
+    return Math.round(base * this.quality.snow);
   }
 
   private clearRain(): void {

@@ -2,7 +2,7 @@ import { BitmapText, Container, Graphics, Rectangle, Sprite, Texture, type Textu
 import { playKillStreakSound, playSound, sfxPath } from '../audio/SoundManager';
 import { createLevelAudio, type LevelAudio } from '../audio/LevelSounds';
 import { DESIGN, V1_SPRITES, towerXForSlot } from '../core/DesignSpace';
-import { effectQualityForGraphics } from '../core/GraphicsQuality';
+import { effectQualityForGraphics, weatherQualityForGraphics } from '../core/GraphicsQuality';
 import { settingsStore } from '../core/SettingsStore';
 import { LevelSession, UPGRADE_KEYS, type UpgradeKey } from '../core/LevelSession';
 import { computeLevelScore, type LevelWonStats } from '../core/CampaignRun';
@@ -248,8 +248,11 @@ export class GameScene extends Container implements MenuActionsHost {
 
   private applySettingsEffects(): void {
     const quality = effectQualityForGraphics(settingsStore.get().graphicsQuality);
+    const weather = weatherQualityForGraphics(settingsStore.get().graphicsQuality);
     this.explosionManager.setEffectQuality(quality);
     this.particleFx.setEffectQuality(quality);
+    this.weatherLayer.setEffectQuality(weather);
+    this.cloudLayer.setEffectQuality(weather);
   }
 
   async loadLevel(pack: LevelPack, roundIndex = 0, devBootstrap?: DevBootstrap): Promise<void> {
@@ -347,6 +350,7 @@ export class GameScene extends Container implements MenuActionsHost {
   }
 
   private applyRoundWeather(): void {
+    this.applySettingsEffects();
     this.cloudLayer.setWeather(this.round.weather);
     this.weatherLayer.setWeather(this.round.weather);
   }

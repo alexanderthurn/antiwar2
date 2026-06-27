@@ -1,5 +1,6 @@
 import { Container, Sprite, type Texture } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
+import { WEATHER_QUALITY, type WeatherQualityProfile } from '../core/GraphicsQuality';
 import { loadTexture } from '../data/AssetLoader';
 
 const CLOUD_TEX_PATH = 'assets/gfx/clouds_background.png';
@@ -22,6 +23,7 @@ export class CloudLayer {
   private backDrifters: DriftingCloud[] = [];
   private frontDrifters: DriftingCloud[] = [];
   private hazeSprites: Sprite[] = [];
+  private quality: WeatherQualityProfile = WEATHER_QUALITY.high;
 
   constructor() {
     this.backLayer.eventMode = 'none';
@@ -33,13 +35,22 @@ export class CloudLayer {
     this.cloudTex = await loadTexture(CLOUD_TEX_PATH);
     if (this.backLayer.destroyed) return;
     this.ready = true;
-    if (this.clouds > 0) this.rebuild();
+    if (this.clouds > 0 && this.quality.clouds > 0) this.rebuild();
+  }
+
+  setEffectQuality(profile: WeatherQualityProfile): void {
+    this.quality = profile;
+    if (!this.ready || this.clouds <= 0 || profile.clouds <= 0) {
+      this.clear();
+      return;
+    }
+    this.rebuild();
   }
 
   setWeather(values: number[]): void {
     this.clouds = values[1] ?? 0;
     this.wind = values[3] ?? 0;
-    if (!this.ready || this.clouds <= 0) {
+    if (!this.ready || this.clouds <= 0 || this.quality.clouds <= 0) {
       this.clear();
       return;
     }
@@ -56,11 +67,12 @@ export class CloudLayer {
 
   private rebuild(): void {
     this.clear();
-    if (!this.cloudTex || this.clouds <= 0) return;
+    if (!this.cloudTex || this.clouds <= 0 || this.quality.clouds <= 0) return;
 
+    const cloudMul = this.quality.clouds;
     const intensity = Math.min(1, this.clouds / 4);
     const hazeAlpha = Math.min(0.55, 0.08 + this.clouds * 0.12);
-    const hazeCount = Math.round(6 + intensity * 10);
+    const hazeCount = Math.round((6 + intensity * 10) * cloudMul);
 
     for (let i = 0; i < hazeCount; i++) {
       const sprite = this.makeCloudSprite({
@@ -73,14 +85,14 @@ export class CloudLayer {
       this.backLayer.addChild(sprite);
     }
 
-    const backCount = Math.round(Math.min(22, this.clouds * 5));
+    const backCount = Math.round(Math.min(22, this.clouds * 5) * cloudMul);
     for (let i = 0; i < backCount; i++) {
       const drift = this.makeBackDrifter();
       this.backDrifters.push(drift);
       this.backLayer.addChild(drift.sprite);
     }
 
-    const frontCount = Math.round(Math.min(14, Math.max(0, this.clouds - 0.25) * 3.5));
+    const frontCount = Math.round(Math.min(14, Math.max(0, this.clouds - 0.25) * 3.5) * cloudMul);
     for (let i = 0; i < frontCount; i++) {
       const drift = this.makeFrontDrifter();
       this.frontDrifters.push(drift);
