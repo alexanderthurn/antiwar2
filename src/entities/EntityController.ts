@@ -20,9 +20,14 @@ import {
   planeExplosionType,
 } from './ExplosionRadius';
 import { traitsForAirplane, traitsForEnemyBomb, traitsForPlayerProjectile } from './entityProfiles';
+import { shapeKeyFromImagePath } from '../data/CollisionShapes';
 
 const TICK_SCALE = 60;
 const MAX_SUBMUNITION_DEPTH = 4;
+
+function tagCombatSprite(sprite: Sprite, kind: string, name: string, id: number): void {
+  sprite.label = `${kind}:${name}#${id}`;
+}
 
 export interface BombSpawnContext {
   loadTex: (path: string) => Promise<import('pixi.js').Texture>;
@@ -95,6 +100,7 @@ export class EntityController {
   private crashingRockets = 0;
 
   attachHomingLines(layer: Container): void {
+    this.homingLines.label = 'homingLines';
     layer.addChildAt(this.homingLines, 0);
   }
 
@@ -163,6 +169,7 @@ export class EntityController {
   }
 
   async spawnAirplane(
+    typeName: string,
     def: AirplaneDef,
     x: number,
     y: number,
@@ -200,6 +207,7 @@ export class EntityController {
       entity.sprite.alpha = 1;
     }
     this.entities.push(entity);
+    tagCombatSprite(sprite, 'plane', typeName, entity.id);
     return entity;
   }
 
@@ -234,6 +242,7 @@ export class EntityController {
     entity.homingTarget = stats.homingTarget;
     entity.guidedShot = stats.guidedShot ?? false;
     this.entities.push(entity);
+    tagCombatSprite(sprite, 'rocket', shapeKeyFromImagePath(def.image), entity.id);
     return entity;
   }
 
@@ -269,10 +278,9 @@ export class EntityController {
     }
     entity.submunitionDepth = submunitionDepth;
     this.entities.push(entity);
+    tagCombatSprite(sprite, 'bomb', shapeKeyFromImagePath(def.image), entity.id);
     return entity;
   }
-
-  /** Instantly destroy all on-screen targets the player can shoot (planes, bombs). */
   killVisibleEnemies(
     level: LevelPack,
     spawnCtx: BombSpawnContext,

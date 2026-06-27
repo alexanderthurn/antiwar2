@@ -1,71 +1,72 @@
 {
   "schemaVersion": 1,
-  "id": 13,
+  "id": 12,
   "meta": {
-    "name": "Boss Four",
+    "name": "Dragi",
     "author": "Mangoo",
-    "description": "The Godfather of Evil. Its time for revenge. If you can make this round we will be very proud.",
-    "thumbnail": "assets/gfx/thumbs/whitehouse.png"
+    "description": "Little crocodile wants revenge. Shoot it down!",
+    "thumbnail": "assets/gfx/thumbs/dragi.png",
+    "difficulty": "easy"
   },
   "config": {
-    "startMoney": 2500,
+    "startMoney": 500,
     "startHumans": 3,
-    "startRockets": 5,
+    "startRockets": 10,
     "startHumanHp": 100,
-    "startHumanMoney": 0,
+    "startHumanMoney": 300,
     "startRocketPower": 50,
-    "startRocketSpeed": 5,
+    "startRocketSpeed": 20,
     "startAimTime": 1000,
-    "aimPower": 2,
-    "maxHumans": 100,
-    "maxRockets": 100,
+    "aimPower": 1,
+    "maxHumans": 10,
+    "maxRockets": 10,
     "humanHpRefresh": 1,
     "moneyFactor": 1,
-    "crashingRockets": 2,
+    "crashingRockets": 0,
+    "bloody": 5,
     "buttonsDisabled": {
-      "human": false,
-      "humanHp": false,
+      "human": true,
+      "humanHp": true,
       "humanMoney": true,
-      "rocket": false,
-      "rocketSpeed": false,
-      "rocketPower": false,
-      "aim": false
+      "rocket": true,
+      "rocketSpeed": true,
+      "aim": true
     },
     "upgrades": {
       "human": {
-        "price": 25,
+        "price": 100,
         "priceFactor": 1,
         "statFactor": null
       },
       "humanHp": {
-        "price": 50,
-        "priceFactor": 1,
-        "statFactor": 1.3
+        "price": 100,
+        "priceFactor": 1.05,
+        "statFactor": 1.1
       },
       "humanMoney": {
         "price": 100,
-        "priceFactor": 1,
-        "statFactor": 1.15
+        "priceFactor": 1.1,
+        "statFactor": 1.1
       },
       "rocket": {
-        "price": 200,
-        "priceFactor": 1,
+        "price": 100,
+        "priceFactor": 3,
         "statFactor": null
       },
       "rocketSpeed": {
         "price": 100,
-        "priceFactor": 1,
+        "priceFactor": 1.5,
         "statFactor": 1.1
       },
       "rocketPower": {
         "price": 100,
-        "priceFactor": 1,
+        "priceFactor": 1.1,
         "statFactor": 1.1
       },
       "aim": {
         "price": 100,
         "priceFactor": 1,
-        "statFactor": 0.9
+        "statFactor": 0.5
       }
     },
     "assets": {
@@ -74,68 +75,62 @@
       "crosshair": "assets/gfx/crosshair1.png",
       "human": "assets/gfx/human.png",
       "ground": "assets/gfx/backgrounds/ground2.png",
-      "background": "assets/gfx/backgrounds/whitehouse.jpg"
-    },
-    "sounds": {
-      "music": "boss.ogg",
-      "musicVolume": 0.8,
-      "winner": "ultimate_winner.ogg",
-      "win": "ultimate_winner.ogg"
+      "background": "assets/gfx/backgrounds/bonus.jpg"
     }
   },
   "bombs": {
-    "BOMB_PLAYER": {
-      "image": "assets/gfx/BOMBS/player_rocket.png",
+    "BOMB_EI": {
+      "image": "assets/gfx/BOMBS/ei.png",
       "scale": [
-        0.8,
-        0.8
+        0.5,
+        0.5
       ],
       "hp": 10,
       "damage": 100,
-      "speed": 2,
-      "rotationSpeed": 20,
-      "explosion": {
-        "type": 1,
-        "power": 0,
-        "range": 1,
-        "lifetime": 20
-      },
-      "trail": 1,
-      "checkOutOfScreen": true
-    },
-    "MG_BUSH": {
-      "image": "assets/gfx/BOMBS/bush_rocket.png",
-      "scale": [
-        1.6,
-        1.6
-      ],
-      "hp": 1,
-      "damage": 150,
-      "speed": 3,
+      "speed": 0.7,
       "rotationSpeed": 5,
       "explosion": {
         "type": 1,
-        "power": 150,
-        "range": 3,
-        "lifetime": 30
+        "power": 100,
+        "range": 2,
+        "lifetime": 20
       },
       "trail": 0,
       "checkOutOfScreen": false
     },
-    "PHASER": {
-      "image": "assets/gfx/BOMBS/phaser.png",
+    "BOMB_EI2": {
+      "image": "assets/gfx/BOMBS/ei.png",
       "scale": [
-        1.6,
-        1.6
+        0.3,
+        0.3
       ],
-      "hp": 1,
-      "damage": 60,
-      "speed": 6,
+      "hp": 10,
+      "damage": 500,
+      "speed": 3,
       "rotationSpeed": 5,
       "explosion": {
+        "type": 1,
+        "power": 5,
+        "range": 1,
+        "lifetime": 20
+      },
+      "trail": 3,
+      "checkOutOfScreen": true
+    },
+    "BOMB_PLAYER": {
+      "image": "assets/gfx/BOMBS/messer.png",
+      "scale": [
+        0.4,
+        0.4
+      ],
+      "hp": 10,
+      "damage": 100,
+      "speed": 2,
+      "rotationSpeed": 40,
+      "explosion": {
         "type": 0,
-        "power": 60,
-        "range": 2,
+        "power": 0,
+        "range": 0,
         "lifetime": 0
       },
       "trail": 0,
@@ -143,51 +138,76 @@
     }
   },
   "airplanes": {
-    "ENDMASTER_BUSH": {
-      "hp": 160000,
-      "speed": 5,
-      "rotationSpeed": 10,
+    "DRAGI": {
+      "hp": 500,
+      "speed": 4,
+      "rotationSpeed": 360,
       "weapons": [
-        "UFO",
-        "MG_BUSH"
+        "BOMB_EI"
       ],
-      "ai": "BUSH",
+      "ai": "BOMBERSIMPLE",
       "aiParams": [
-        42,
-        14,
-        10
+        0,
+        300,
+        300
       ],
       "drawStyle": 0,
-      "image": "assets/gfx/AIRPLANES/endmaster_bush.png",
+      "image": "assets/gfx/AIRPLANES/dragi.png",
       "scale": [
-        0.64,
-        0.64
-      ]
+        0.5,
+        0.5
+      ],
+      "stealthTicks": 0,
+      "scream": "bloodscream.ogg"
     },
-    "UFO": {
-      "hp": 100,
-      "speed": 5,
-      "rotationSpeed": 15,
+    "DRAGI2": {
+      "hp": 2000,
+      "speed": 6,
+      "rotationSpeed": 20,
       "weapons": [
-        "PHASER"
+        "BOMB_EI2"
       ],
       "ai": "FIGHTERSIMPLE",
       "aiParams": [
-        422,
-        703,
-        100
+        0,
+        500,
+        50
       ],
       "drawStyle": 1,
-      "image": "assets/gfx/AIRPLANES/endmaster_bush.png",
+      "image": "assets/gfx/AIRPLANES/dragi2.png",
       "scale": [
-        0.144,
-        0.144
-      ]
+        0.5,
+        0.5
+      ],
+      "stealthTicks": 0,
+      "scream": "bloodscream.ogg"
+    },
+    "DRAGI3": {
+      "hp": 600000,
+      "speed": 5,
+      "rotationSpeed": 20,
+      "weapons": [
+        "BOMB_EI2"
+      ],
+      "ai": "FIGHTERSIMPLE",
+      "aiParams": [
+        -200,
+        400,
+        20
+      ],
+      "drawStyle": 1,
+      "image": "assets/gfx/AIRPLANES/dragi3.png",
+      "scale": [
+        2,
+        2
+      ],
+      "stealthTicks": 0,
+      "scream": "bloodscream.ogg"
     }
   },
   "rounds": [
     {
-      "name": "TUTORIAL",
+      "name": "LEVEL1_TUTORIAL",
       "weather": [
         0,
         0,
@@ -198,10 +218,20 @@
       "maxAirplanes": 0,
       "endmaster": -1,
       "rumble": 2,
-      "spawns": []
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        }
+      ],
+      "background": "assets/gfx/backgrounds/bonus.jpg",
+      "ground": "assets/gfx/backgrounds/ground2.png"
     },
     {
-      "name": "TUTORIAL",
+      "name": "LEVEL1_TUTORIAL",
       "weather": [
         0,
         0,
@@ -210,24 +240,1821 @@
         0
       ],
       "maxAirplanes": 0,
-      "endmaster": 0,
+      "endmaster": -1,
       "rumble": 2,
       "spawns": [
         {
           "kind": "airplane",
-          "type": "ENDMASTER_BUSH",
+          "type": "DRAGI",
           "x": -187,
-          "y": 141,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2063,
+          "y": -422,
           "angle": 0
         }
+      ]
+    },
+    {
+      "name": "LEVEL1_TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
       ],
-      "intro": {
-        "text": "You are dead",
-        "image": "assets/gfx/AIRPLANES/endmaster_bush.png",
-        "time": 5000,
-        "sound": "yeahbaby.ogg"
-      },
-      "winSound": "ultimate_winner.ogg"
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": 2063,
+          "y": -422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": 2063,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "LEVEL1_TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2063,
+          "y": -422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2063,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2063,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2063,
+          "y": -984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2063,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 938,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 938,
+          "y": -380,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "LEVEL1_TUTORIAL",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 5,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": 2063,
+          "y": -422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": 2063,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": 2063,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": 2063,
+          "y": -984,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": 2063,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": 938,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": -281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": 938,
+          "y": -380,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": 938,
+          "y": -422,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI2",
+          "x": -187,
+          "y": 281,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 40,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2250,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2250,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2250,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2250,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2250,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2250,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -1312,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -1312,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -1312,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -1312,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 3563,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 3563,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 3563,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 3563,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 3563,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 3563,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 3563,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 3563,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2250,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2250,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2250,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2250,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2250,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2250,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2250,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -562,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 2813,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -187,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -1312,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -1312,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -1312,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -1312,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -1312,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 3563,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 3563,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 3563,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 3563,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 3563,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 3563,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 3563,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 3563,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -2437,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 492,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": 4688,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 70,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 211,
+          "angle": 0
+        },
+        {
+          "kind": "airplane",
+          "type": "DRAGI",
+          "x": -937,
+          "y": 352,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "name": "MISSION",
+      "weather": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": [
+        {
+          "kind": "airplane",
+          "type": "DRAGI3",
+          "x": 750,
+          "y": -422,
+          "angle": 0
+        }
+      ]
     }
   ]
 }

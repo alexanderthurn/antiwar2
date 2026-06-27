@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Convert v1 data/<pack>/ text files to public/campaign/N.json
- * Usage: node scripts/convert-v1.mjs --source data/schnappi --out public/campaign/13.json --id 12
+ * Usage: node scripts/convert-v1.mjs --source data/schnappi --out public/campaign/12.json --id 12
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, basename } from 'node:path';
@@ -276,7 +276,7 @@ function main() {
   const outIdx = args.indexOf('--out');
   const idIdx = args.indexOf('--id');
   if (srcIdx < 0 || outIdx < 0 || idIdx < 0) {
-    console.error('Usage: node scripts/convert-v1.mjs --source data/schnappi --out public/campaign/13.json --id 12');
+    console.error('Usage: node scripts/convert-v1.mjs --source data/schnappi --out public/campaign/12.json --id 12');
     process.exit(1);
   }
   const source = args[srcIdx + 1];

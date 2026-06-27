@@ -195,6 +195,19 @@ export class GameScene extends Container implements MenuActionsHost {
 
   constructor() {
     super();
+    this.label = 'GameScene';
+    this.worldLayer.label = 'worldLayer';
+    this.uiLayer.label = 'uiLayer';
+    this.bgLayer.label = 'bgLayer';
+    this.weatherLayer.label = 'weatherLayer';
+    this.trailLayer.label = 'trailLayer';
+    this.entityLayer.label = 'entityLayer';
+    this.fxLayer.label = 'fxLayer';
+    this.groundLayer.label = 'groundLayer';
+    this.groundEntityLayer.label = 'groundEntityLayer';
+    this.nightVisionLayer.label = 'nightVisionLayer';
+    this.cloudLayer.backLayer.label = 'cloudBackLayer';
+    this.cloudLayer.frontLayer.label = 'cloudFrontLayer';
     this.groundLayer.eventMode = 'none';
     this.groundEntityLayer.eventMode = 'none';
     this.worldLayer.addChild(
@@ -514,7 +527,7 @@ export class GameScene extends Container implements MenuActionsHost {
   private async spawnChildAirplane(typeName: string, x: number, y: number): Promise<void> {
     const def = this.level.airplanes[typeName];
     if (!def) return;
-    await this.entities.spawnAirplane(def, x, y, -1, false, (p) => this.tex(p), this.entityLayer);
+    await this.entities.spawnAirplane(typeName, def, x, y, -1, false, (p) => this.tex(p), this.entityLayer);
   }
 
   private spawnAirplaneAt(
@@ -529,7 +542,7 @@ export class GameScene extends Container implements MenuActionsHost {
     const generation = this.airplaneSpawnGeneration;
     this.pendingAirplaneSpawns += 1;
     return this.entities
-      .spawnAirplane(def, x, y, spawnIndex, isBoss, (p) => this.tex(p), this.entityLayer)
+      .spawnAirplane(type, def, x, y, spawnIndex, isBoss, (p) => this.tex(p), this.entityLayer)
       .then((entity) => {
         if (generation !== this.airplaneSpawnGeneration) return;
         if (isBoss) {
@@ -601,6 +614,12 @@ export class GameScene extends Container implements MenuActionsHost {
     const footY = GROUND_FEET_Y;
 
     for (const slot of this.players.slots) {
+      const p = `p${slot.index + 1}`;
+      slot.crosshair.label = `${p}:crosshair`;
+      slot.leftBase.label = `${p}:towerL`;
+      slot.rightBase.label = `${p}:towerR`;
+      slot.leftCannon.label = `${p}:cannonL`;
+      slot.rightCannon.label = `${p}:cannonR`;
       slot.crosshair.texture = crosshairTex;
       slot.crosshair.anchor.set(0.5);
       slot.crosshair.tint = slot.color();
@@ -690,6 +709,7 @@ export class GameScene extends Container implements MenuActionsHost {
       alive: true,
       walkDist: 0,
     });
+    sprite.label = `civilian#${this.civilians[this.civilians.length - 1]!.id}`;
   }
 
   private async spawnOneCivilian(x: number): Promise<void> {
