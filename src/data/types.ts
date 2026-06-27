@@ -141,19 +141,54 @@ export interface LevelPack {
   rounds: RoundDef[];
 }
 
+export interface CampaignMapEntryBase {
+  name: string;
+  mapX: number;
+  mapY: number;
+  pathType: number;
+}
+
+/** Playable level node — loads a level pack JSON. */
+export interface CampaignLevelMapEntry extends CampaignMapEntryBase {
+  type?: 'level';
+  file: string;
+}
+
+/** Campaign portal node — opens another campaign map. */
+export interface CampaignLinkMapEntry extends CampaignMapEntryBase {
+  type: 'campaign';
+  campaignId: string;
+  description?: string;
+  thumbnail?: string;
+}
+
+export type CampaignMapEntry = CampaignLevelMapEntry | CampaignLinkMapEntry;
+
+export function isCampaignLinkEntry(entry: CampaignMapEntry): entry is CampaignLinkMapEntry {
+  return entry.type === 'campaign';
+}
+
+export function isLevelMapEntry(entry: CampaignMapEntry): entry is CampaignLevelMapEntry {
+  return !isCampaignLinkEntry(entry);
+}
+
+/** Last level node index — ignores trailing campaign portals (hardcore / campaign complete). */
+export function lastPlayableLevelIndex(index: CampaignIndex): number {
+  for (let i = index.levels.length - 1; i >= 0; i--) {
+    if (isLevelMapEntry(index.levels[i]!)) return i;
+  }
+  return Math.max(0, index.levels.length - 1);
+}
+
 export interface CampaignIndex {
   schemaVersion: number;
   /** Stable campaign id for save keys, e.g. `aw` → runs `aw_` / `aw_h`. */
   id: string;
   campaignName: string;
   mapImage: string;
-  levels: Array<{
-    file: string;
-    name: string;
-    mapX: number;
-    mapY: number;
-    pathType: number;
-  }>;
+  /** Every map node is selectable regardless of save progress. */
+  freeSelect?: boolean;
+  levels: CampaignMapEntry[];
 }
 
 export interface CampaignRegistryEntry {

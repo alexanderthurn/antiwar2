@@ -1,4 +1,4 @@
-import { BitmapText, Container, Graphics, Sprite, type Texture } from 'pixi.js';
+import { BitmapText, Container, Graphics, Sprite, Texture, type Texture as Tex } from 'pixi.js';
 import { formatHighscoreLine, type LevelRecord } from '../core/CampaignRun';
 import { DESIGN } from '../core/DesignSpace';
 import type { LevelPack } from '../data/types';
@@ -196,8 +196,12 @@ export class CampaignLevelPreview extends Container {
     for (const pack of packs) {
       paths.add(pack.meta.thumbnail ?? 'assets/gfx/thumbs/desert.png');
     }
+    await this.preloadTexturePaths([...paths]);
+  }
+
+  async preloadTexturePaths(paths: string[]): Promise<void> {
     await Promise.all(
-      [...paths].map(async (path) => {
+      paths.map(async (path) => {
         if (!this.thumbTextures.has(path)) {
           this.thumbTextures.set(path, await loadTexture(path));
         }
@@ -214,11 +218,75 @@ export class CampaignLevelPreview extends Container {
     this.activeLevelIndex = levelIndex;
     const thumbPath = pack.meta.thumbnail ?? 'assets/gfx/thumbs/desert.png';
     const tex = this.thumbTextures.get(thumbPath);
+    this.thumbSprite.visible = true;
+    this.difficultyLine.visible = true;
+    this.authorLine.visible = true;
     this.layoutCard(pack, tex, record);
 
     const pos = placeCard(anchor);
     this.card.position.set(pos.x, pos.y);
     this.visible = true;
+  }
+
+  showCampaign(
+    nodeIndex: number,
+    name: string,
+    description: string,
+    anchor: CampaignPreviewAnchor,
+    thumbnailPath?: string,
+  ): void {
+    this.activeLevelIndex = nodeIndex;
+    const tex = thumbnailPath ? this.thumbTextures.get(thumbnailPath) : undefined;
+    this.thumbSprite.visible = !!tex;
+    this.difficultyLine.visible = false;
+    this.authorLine.visible = false;
+    this.highscoreLine.visible = false;
+    this.layoutCampaignCard(name, description, tex);
+
+    const pos = placeCard(anchor);
+    this.card.position.set(pos.x, pos.y);
+    this.visible = true;
+  }
+
+  private layoutCampaignCard(name: string, description: string, tex?: Tex): void {
+    const midY = CARD_H / 2;
+    const descW = CARD_W - PAD * 2;
+    const descAreaTop = midY + PAD;
+    const descAreaH = CARD_H - descAreaTop - PAD;
+    const descLineH = kewlLineHeight(DESC_SIZE);
+    const maxDescLines = Math.max(1, Math.floor(descAreaH / descLineH));
+
+    this.divider.clear();
+    this.divider.moveTo(PAD, midY).lineTo(CARD_W - PAD, midY).stroke({ color: DIVIDER_COLOR, width: 2 });
+
+    const upperTop = PAD;
+    const upperBottom = midY - 12;
+    const upperH = upperBottom - upperTop;
+    const thumbW = CARD_W - PAD * 2 - RIGHT_COL_W - UPPER_GAP;
+    const thumbH = upperH;
+    const thumbX = PAD;
+    const thumbY = upperTop;
+
+    let thumbDisplayW = thumbW;
+    if (tex) {
+      const scale = Math.min(thumbW / tex.width, thumbH / tex.height);
+      thumbDisplayW = tex.width * scale;
+      this.thumbSprite.texture = tex;
+      this.thumbSprite.scale.set(scale);
+      this.thumbSprite.position.set(
+        thumbX,
+        thumbY + (thumbH - tex.height * scale) / 2,
+      );
+    } else {
+      this.thumbSprite.texture = Texture.EMPTY;
+    }
+
+    const infoX = tex ? thumbX + thumbDisplayW + UPPER_GAP : PAD;
+    this.titleText.text = name;
+    this.titleText.position.set(infoX, upperTop);
+
+    this.descriptionText.text = wrapKewlText(description, descW, DESC_SIZE, maxDescLines);
+    this.descriptionText.position.set(PAD, descAreaTop);
   }
 
   hideIfLevel(levelIndex: number): void {

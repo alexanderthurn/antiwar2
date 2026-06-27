@@ -3,6 +3,7 @@ import {
   campaignIdFromRunId,
   DEFAULT_CAMPAIGN_ID,
   hardcoreRunId,
+  HUB_CAMPAIGN_ID,
   isHardcoreRun,
   normalRunId,
   runProgressStore,
@@ -31,7 +32,7 @@ import { blurBackdropEnabled } from './core/GraphicsQuality';
 import { settingsStore } from './core/SettingsStore';
 import { watchViewportResize } from './core/ViewportResize';
 import { preloadRound } from './data/AssetLoader';
-import { loadCampaignIndex, loadLevelPack } from './data/types';
+import { isLevelMapEntry, lastPlayableLevelIndex, loadCampaignIndex, loadLevelPack } from './data/types';
 import { stopMusic } from './audio/SoundManager';
 import { playMenuMusic } from './audio/UiSounds';
 import { InputSystem } from './input/InputSystem';
@@ -135,7 +136,7 @@ export class App {
   private async bootFromDevUrl(dev: DevGameState): Promise<void> {
     const index = await loadCampaignIndex(DEFAULT_CAMPAIGN_ID);
     const entry = index.levels[dev.levelIndex];
-    if (!entry) {
+    if (!entry || !isLevelMapEntry(entry)) {
       console.warn(`[dev-url] Campaign level ${dev.levelIndex + 1} not found`);
       this.showMainMenu(true);
       return;
@@ -258,7 +259,7 @@ export class App {
     this.mode = 'menu';
     this.game = null;
     const menu = new MainMenuScene(
-      (campaignId) => this.showCampaignViewFor(campaignId, false),
+      () => this.showCampaignViewFor(HUB_CAMPAIGN_ID, false, { returnTo: 'menu' }),
       () => this.showCredits(),
       () => menu.showSettings(),
     );
@@ -279,24 +280,34 @@ export class App {
     this.activeRunId = hardcore ? hardcoreRunId(campaignId) : normalRunId(campaignId);
   }
 
-  private showCampaignViewFor(campaignId: string, hardcore: boolean, newRun = false): void {
+  private showCampaignViewFor(
+    campaignId: string,
+    hardcore: boolean,
+    opts?: { newRun?: boolean; returnTo?: string | 'menu' },
+  ): void {
     this.setActiveRun(campaignId, hardcore);
-    if (newRun) runProgressStore.reset(this.activeRunId);
+    if (opts?.newRun) runProgressStore.reset(this.activeRunId);
     clearDevUrl();
     setRunHardcore(false);
     this.mode = 'campaign';
     this.game = null;
     const activeCampaignId = campaignId;
     const activeRunId = this.activeRunId;
+    const returnTo = opts?.returnTo ?? HUB_CAMPAIGN_ID;
     const hardcoreUnlocked = runProgressStore.isNormalCampaignComplete(campaignId);
     this.setScene(
       new CampaignViewScene(
         activeCampaignId,
         activeRunId,
         hardcoreUnlocked,
-        () => this.showMainMenu(false),
-        () => this.showCampaignViewFor(activeCampaignId, !isHardcoreRun(activeRunId)),
+        () => {
+          if (returnTo === 'menu') this.showMainMenu(false);
+          else this.showCampaignViewFor(returnTo, false, { returnTo: 'menu' });
+        },
+        () => this.showCampaignViewFor(activeCampaignId, !isHardcoreRun(activeRunId), { returnTo }),
         (file, levelIndex) => void this.startLevel(file, levelIndex),
+        (targetCampaignId) =>
+          this.showCampaignViewFor(targetCampaignId, false, { returnTo: activeCampaignId }),
       ),
     );
     playMenuMusic();
@@ -317,7 +328,7 @@ export class App {
     this.mode = 'game';
     setRunHardcore(isHardcoreRun(this.activeRunId));
     const index = await loadCampaignIndex(this.activeCampaignId);
-    const finalLevelIndex = index.levels.length - 1;
+    const finalLevelIndex = lastPlayableLevelIndex(index);
     const pack = await loadLevelPack(this.activeCampaignId, file);
     const roundIndex = devBootstrap?.roundIndex ?? 0;
     await preloadRound(pack, roundIndex);

@@ -1,6 +1,9 @@
 /** Default campaign id — dev URLs and save keys. */
 export const DEFAULT_CAMPAIGN_ID = 'aw';
 
+/** Top-level campaign picker map (Play from main menu). */
+export const HUB_CAMPAIGN_ID = 'hub';
+
 /** Saved playthrough key, e.g. `aw_`, `aw_h`, `iraq_2004_`, `iraq_2004_h`. */
 export type CampaignRunId = string;
 

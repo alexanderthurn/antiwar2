@@ -10,9 +10,12 @@ import type { MenuActionsHost } from '../input/MenuActionsHost';
 import type { UiAction } from '../input/UiMenuController';
 import { loadTexture } from '../data/AssetLoader';
 import {
+  isCampaignLinkEntry,
+  isLevelMapEntry,
   loadCampaignIndex,
   loadLevelPack,
   type CampaignIndex,
+  type CampaignLinkMapEntry,
   type LevelPack,
 } from '../data/types';
 import { MENU_POINTER_CURSOR } from '../ui/MenuPointer';
@@ -35,8 +38,10 @@ const MAP_LEVEL_LABEL_OFFSET = { x: -8, y: -6 };
 export class CampaignViewScene extends Container implements MenuActionsHost {
   private menuActions: UiAction[] = [];
   private onBack: () => void;
-  private levelPacks: LevelPack[] = [];
+  private levelPacks: Array<LevelPack | null> = [];
+  private campaignLinks: Array<CampaignLinkMapEntry | null> = [];
   private preview: CampaignLevelPreview | null = null;
+  private campaignIndex!: CampaignIndex;
 
   constructor(
     private readonly campaignId: string,
@@ -45,10 +50,11 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
     onBack: () => void,
     onToggleHardcore: () => void,
     onStartLevel: (file: string, levelIndex: number) => void,
+    onOpenCampaign: (campaignId: string) => void,
   ) {
     super();
     this.onBack = onBack;
-    void this.build(onToggleHardcore, onStartLevel);
+    void this.build(onToggleHardcore, onStartLevel, onOpenCampaign);
   }
 
   getMenuActions(): UiAction[] {
@@ -62,11 +68,22 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
   private async build(
     onToggleHardcore: () => void,
     onStartLevel: (file: string, levelIndex: number) => void,
+    onOpenCampaign: (campaignId: string) => void,
   ): Promise<void> {
     const index = await loadCampaignIndex(this.campaignId);
-    this.levelPacks = await Promise.all(
-      index.levels.map((entry) => loadLevelPack(this.campaignId, entry.file)),
-    );
+    this.campaignIndex = index;
+    this.levelPacks = [];
+    this.campaignLinks = [];
+
+    for (const entry of index.levels) {
+      if (isLevelMapEntry(entry)) {
+        this.levelPacks.push(await loadLevelPack(this.campaignId, entry.file));
+        this.campaignLinks.push(null);
+      } else {
+        this.levelPacks.push(null);
+        this.campaignLinks.push(entry);
+      }
+    }
 
     this.addChild(await createMenuBackground());
     const mapTex = await loadTexture(index.mapImage);
@@ -76,7 +93,16 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
     this.addChild(map);
 
     this.preview = new CampaignLevelPreview();
-    await this.preview.preloadThumbnails(this.levelPacks);
+    const thumbPaths = this.levelPacks
+      .map((pack) => pack?.meta.thumbnail ?? 'assets/gfx/thumbs/desert.png')
+      .filter(Boolean);
+    for (const link of this.campaignLinks) {
+      if (link?.thumbnail) thumbPaths.push(link.thumbnail);
+    }
+    await this.preview.preloadThumbnails(
+      this.levelPacks.filter((pack): pack is LevelPack => pack !== null),
+    );
+    await this.preview.preloadTexturePaths(thumbPaths);
 
     const dim = new Graphics();
     dim.rect(0, 0, DESIGN.width, 72).fill({ color: 0x000000, alpha: 0.55 });
@@ -102,7 +128,8 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
     title.position.set(DESIGN.width / 2, 36);
     this.addChild(title);
 
-    if (this.hardcoreUnlocked) {
+    const hasPlayableLevels = index.levels.some(isLevelMapEntry);
+    if (this.hardcoreUnlocked && hasPlayableLevels) {
       const modeLabel = isHardcoreRun(this.runId) ? 'Hardcore' : 'Normal';
       const modeFont = 18;
       const modePadX = 14;
@@ -128,21 +155,30 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
     }
 
     for (let i = 0; i < index.levels.length; i++) {
-      this.addChild(this.makeNode(index, i, onStartLevel, buttonTex));
+      this.addChild(
+        this.makeNode(index, i, onStartLevel, onOpenCampaign, buttonTex),
+      );
     }
 
     this.addChild(this.preview);
+  }
+
+  private isNodeUnlocked(levelIndex: number): boolean {
+    if (this.campaignIndex.freeSelect) return true;
+    return runProgressStore.isUnlocked(this.runId, levelIndex);
   }
 
   private makeNode(
     index: CampaignIndex,
     levelIndex: number,
     onStartLevel: (file: string, levelIndex: number) => void,
+    onOpenCampaign: (campaignId: string) => void,
     buttonTex: Map<number, Awaited<ReturnType<typeof loadTexture>>>,
   ): Container {
     const entry = index.levels[levelIndex]!;
-    const unlocked = runProgressStore.isUnlocked(this.runId, levelIndex);
-    const completed = runProgressStore.isCompleted(this.runId, levelIndex);
+    const isLink = isCampaignLinkEntry(entry);
+    const unlocked = this.isNodeUnlocked(levelIndex);
+    const completed = !isLink && runProgressStore.isCompleted(this.runId, levelIndex);
 
     const node = new Container();
     node.position.set(entry.mapX, entry.mapY);
@@ -157,16 +193,21 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
     else if (completed) icon.alpha = 0.85;
     node.addChild(icon);
 
+    const labelText = isLink
+      ? String(levelIndex + 1)
+      : String(this.levelNumber(index, levelIndex));
     const levelNum = kewlTextAtCenter({
-      text: String(levelIndex + 1),
+      text: labelText,
       size: 18,
     });
     levelNum.position.set(MAP_LEVEL_LABEL_OFFSET.x, MAP_LEVEL_LABEL_OFFSET.y);
     node.addChild(levelNum);
 
     if (unlocked) {
-      const pack = this.levelPacks[levelIndex]!;
-      const activate = () => onStartLevel(entry.file, levelIndex);
+      const activate = () => {
+        if (isCampaignLinkEntry(entry)) onOpenCampaign(entry.campaignId);
+        else onStartLevel(entry.file, levelIndex);
+      };
       node.on('pointertap', activate);
 
       const w = icon.width;
@@ -180,13 +221,34 @@ export class CampaignViewScene extends Container implements MenuActionsHost {
           if (node.destroyed) return;
           node.scale.set(focused ? FOCUS_SCALE : 1);
           if (focused) {
-            const record = runProgressStore.getLevelStats(this.runId, levelIndex);
-            this.preview?.show(levelIndex, pack, { x: entry.mapX, y: entry.mapY }, record);
+            const anchor = { x: entry.mapX, y: entry.mapY };
+            if (isCampaignLinkEntry(entry)) {
+              this.preview?.showCampaign(
+                levelIndex,
+                entry.name,
+                entry.description ?? '',
+                anchor,
+                entry.thumbnail,
+              );
+            } else {
+              const pack = this.levelPacks[levelIndex]!;
+              const record = runProgressStore.getLevelStats(this.runId, levelIndex);
+              this.preview?.show(levelIndex, pack, anchor, record);
+            }
           } else this.preview?.hideIfLevel(levelIndex);
         },
       });
     }
 
     return node;
+  }
+
+  /** 1-based index among playable level nodes only (ignores campaign portals). */
+  private levelNumber(index: CampaignIndex, levelIndex: number): number {
+    let n = 0;
+    for (let i = 0; i <= levelIndex; i++) {
+      if (isLevelMapEntry(index.levels[i]!)) n += 1;
+    }
+    return n;
   }
 }
