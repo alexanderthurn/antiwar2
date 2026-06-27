@@ -4,6 +4,12 @@ Browser remake of **Antiwar v1.5** (Vite + TypeScript + Pixi.js).
 
 **New session?** Start with **[PLAN.md](./PLAN.md)** — what’s done and what’s left.
 
+## Modder guide (shipped with the game)
+
+**[public/web/level-authoring.md](../public/web/level-authoring.md)** — English successor to v1 `levels_selbermachen.txt`. How to create a **new campaign**, add levels, define bombs/planes, and use `aiConfig`. Served at `/web/level-authoring.md` in dev and production builds.
+
+Round sticky overrides: [public/campaign/format.md](../public/campaign/format.md).
+
 ## Reference
 
 | Doc | Topic |
@@ -14,7 +20,7 @@ Browser remake of **Antiwar v1.5** (Vite + TypeScript + Pixi.js).
 | [04-v1-porting.md](./04-v1-porting.md) | `old/data/` → JSON converter |
 | [06-multiplayer.md](./06-multiplayer.md) | Co-op players, input, rocket caps |
 | [07-game-mechanics.md](./07-game-mechanics.md) | Combat, economy, upgrades |
-| [08-ai-types.md](./08-ai-types.md) | Enemy AI behaviors |
+| [08-ai-types.md](./08-ai-types.md) | Enemy AI behaviors (`aiConfig`) |
 | [09-architecture.md](./09-architecture.md) | Code layout (approximate) |
 | [10-decisions.md](./10-decisions.md) | Locked design decisions |
 

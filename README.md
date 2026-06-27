@@ -11,7 +11,19 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173 — campaign, local co-op (mouse + gamepads), 12 levels.
+Open http://localhost:5173 — multiple campaigns from the main menu, local co-op (mouse + gamepads).
+
+## Level & campaign authoring
+
+**[Level authoring guide](public/web/level-authoring.md)** — English successor to the v1 `levels_selbermachen.txt` SDK. Covers:
+
+- Creating a **new campaign** (`registry.json`, folder, `index.json`, first level pack)
+- Adding levels, bombs, airplanes, rounds, and `aiConfig`
+- Per-second units and v1 porting (`scripts/convert-v1.mjs`)
+
+Campaign data: `public/campaign/` (`aw/`, `aw2/`, …). Round override reference: [`public/campaign/format.md`](public/campaign/format.md).
+
+Developer schema notes: [`docs/03-data-format.md`](docs/03-data-format.md).
 
 ## Debug
 
@@ -25,11 +37,10 @@ Shows FPS, graphics preset, renderer, viewport size, device pixel ratio, canvas 
 
 ## Docs
 
-See [docs/PLAN.md](docs/PLAN.md) for status and remaining work.
+- **[Level authoring](public/web/level-authoring.md)** — modder guide (campaigns, levels, units)
+- [docs/PLAN.md](docs/PLAN.md) — implementation status
+- [docs/03-data-format.md](docs/03-data-format.md) — JSON schema reference
 
 ## Assets
 
 Graphics and audio live in `public/assets/gfx` and `public/assets/sfx`.
-
-
-Please visually upgrade this uploaded reference image into a premium, stylized painterly 3D hybrid art style. Keep the exact shapes and layout of the original assets entirely intact. Do not add any new elements. You are explicitly authorized and required to remove all black borders, frame lines, dark edges, and dividing lines from the original image to ensure a clean, seamless output. Redefine the core shapes with visible, artistic digital brushstrokes and soft volumetric shading for 3.5D depth. Use atmospheric lighting with sharp rim-light highlights and deep, soft shadows. The final output must be a clean, edge-to-edge graphical remaster without any artificial frames or borders.

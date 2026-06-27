@@ -1,6 +1,8 @@
 # Antiwar — Level authoring guide
 
-Create your own campaigns: economy, rounds, enemy planes, and weapons. This guide replaces the classic v1 SDK readme (`levels_selbermachen.txt`) for the **JSON format** used by Antiwar 2.
+Create your own campaigns, levels, enemy planes, and weapons. This is the English successor to the classic v1 modder readme (`data/levels_selbermachen.txt`), updated for **Antiwar 2** (JSON, multiple campaigns, per-second units, named `aiConfig`).
+
+**In-game URL:** `/web/level-authoring.md` (with the dev server or deployed build).
 
 **Design space:** all positions are in pixels on a **1920×1080** canvas (letterboxed in the browser).
 
@@ -10,97 +12,243 @@ Create your own campaigns: economy, rounds, enemy planes, and weapons. This guid
 
 ## Contents
 
-1. [How a campaign is built](#1-how-a-campaign-is-built)
-2. [Level config (`config`)](#2-level-config-config)
-3. [Rounds (`rounds`)](#3-rounds-rounds)
-4. [Bombs & player rockets (`bombs`)](#4-bombs--player-rockets-bombs)
-5. [Airplanes (`airplanes`)](#5-airplanes-airplanes)
-6. [AI types](#6-ai-types)
-7. [Tips & checklist](#7-tips--checklist)
+1. [v1 → Antiwar 2](#1-v1--antiwar-2)
+2. [Creating a new campaign](#2-creating-a-new-campaign)
+3. [Adding a level to a campaign](#3-adding-a-level-to-a-campaign)
+4. [Level config (`config`)](#4-level-config-config)
+5. [Rounds (`rounds`)](#5-rounds-rounds)
+6. [Bombs & player rockets (`bombs`)](#6-bombs--player-rockets-bombs)
+7. [Airplanes (`airplanes`)](#7-airplanes-airplanes)
+8. [AI types](#8-ai-types)
+9. [Tips & checklist](#9-tips--checklist)
 
 ---
 
-## 1. How a campaign is built
+## 1. v1 → Antiwar 2
 
-### Files
+In v1, one campaign was a **folder** with four text files. In Antiwar 2, campaigns live under `public/campaign/<id>/` and each level is a single JSON file.
 
-| File | Purpose |
-|------|---------|
-| `public/campaign/registry.json` | Menu list — which campaigns exist (`id`, `menuTitle`) |
-| `public/campaign/<id>/index.json` | Level order, map positions, display names for one campaign |
-| `public/campaign/<id>/N.json` | One **level pack** — everything for that level |
+| v1 (`data/mypack/`) | Antiwar 2 |
+|---------------------|-----------|
+| Entire `data/mypack/` folder | `public/campaign/<id>/` folder |
+| `config.txt` | `N.json` → `config` (+ `meta` for title/author/thumbnail) |
+| `levels.txt` | `N.json` → `rounds[]` |
+| `bombs.txt` | `N.json` → `bombs` |
+| `airplanes.txt` | `N.json` → `airplanes` |
+| Campaign list (manual) | `public/campaign/registry.json` |
+| Level order on map | `<id>/index.json` |
+| `KI_PARAM_A/B/C` | `aiConfig.flightBand`, `dropIntervalSec`, or `glideTarget` |
+| `SPEED: 2` (per frame @ 60 Hz) | `"speed": 120` (px/s) |
 
-Example layout:
+**Multiple campaigns:** the main menu reads `registry.json`. Each campaign has its own folder, map, levels, and **separate save progress** (`aw_` / `aw_h` for normal/hardcore on campaign `aw`).
 
-```
-public/campaign/
-  registry.json
-  format.md              # round override quick reference
-  aw/                      # campaign id "aw" (Antiwar 1)
-    index.json
-    1.json … 13.json
-  aw2/                     # campaign id "aw2" (Antiwar 2)
-    index.json
-    1.json
-```
+---
 
-Each campaign folder is self-contained. Saves are keyed by campaign id (`aw_` / `aw_h` for normal/hardcore).
+## 2. Creating a new campaign
 
-### Top-level shape
+This is the full checklist when you want a **new entry on the main menu**, not just another level in an existing campaign.
+
+### Step 1 — Pick a campaign id
+
+Choose a short, unique id (letters/numbers, no spaces). Examples: `aw`, `aw2`, `desert`.
+
+This id is used in:
+
+- Folder name: `public/campaign/desert/`
+- Save games: `desert_` (normal), `desert_h` (hardcore)
+- Loader paths: `campaign/desert/1.json`
+
+### Step 2 — Register on the main menu
+
+Edit `public/campaign/registry.json`:
 
 ```json
 {
   "schemaVersion": 1,
-  "id": 2,
+  "campaigns": [
+    { "id": "aw", "menuTitle": "Antiwar 1" },
+    { "id": "aw2", "menuTitle": "Antiwar 2" },
+    { "id": "desert", "menuTitle": "Desert Storm" }
+  ]
+}
+```
+
+`menuTitle` is the label on the main menu. Order in the array = order on screen.
+
+Restart or reload the game — the new button appears. Selecting it opens that campaign's map (once `index.json` exists).
+
+### Step 3 — Create the campaign folder
+
+```
+public/campaign/desert/
+  index.json    ← map + level list (required)
+  1.json        ← first level pack
+```
+
+Copy `public/campaign/aw2/` as a template if you want a minimal starting point.
+
+### Step 4 — Write `index.json`
+
+Defines the **campaign map**: display name, background image, and where each level sits on the map.
+
+```json
+{
+  "schemaVersion": 1,
+  "id": "desert",
+  "campaignName": "Desert Storm",
+  "mapImage": "assets/gfx/map.png",
+  "levels": [
+    {
+      "file": "1.json",
+      "name": "First Strike",
+      "mapX": 400,
+      "mapY": 500,
+      "pathType": 1
+    },
+    {
+      "file": "2.json",
+      "name": "Sandstorm",
+      "mapX": 900,
+      "mapY": 500,
+      "pathType": 2
+    }
+  ]
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `id` | Must match folder name and `registry.json` entry |
+| `campaignName` | Title on the campaign map screen |
+| `mapImage` | Full path to map backdrop (`1920×1080` works best) |
+| `levels[].file` | Level pack filename in this folder |
+| `levels[].name` | Short label under the map button |
+| `levels[].mapX`, `mapY` | Button position on the map (design pixels) |
+| `levels[].pathType` | Map button art — see table below |
+
+**`pathType` (map button style):**
+
+| Value | Button art |
+|-------|----------------|
+| `0` | Training |
+| `1` | Desert / standard |
+| `2` | Bonus |
+| `3` | Boss / white house |
+
+Array order = play order. Level 1 must be unlocked first; completing a level unlocks the next.
+
+### Step 5 — Create the first level pack (`1.json`)
+
+Each `N.json` is self-contained: economy, bombs, airplanes, and all rounds for that level.
+
+```json
+{
+  "schemaVersion": 1,
+  "id": 1,
   "meta": {
-    "name": "Desert Strike",
+    "name": "First Strike",
     "author": "Your Name",
-    "description": "Short blurb for the campaign map",
+    "description": "One line shown on the level preview card",
     "thumbnail": "assets/gfx/thumbs/desert.png",
     "difficulty": "easy"
   },
   "config": { },
-  "bombs": { },
+  "bombs": {
+    "BOMB_PLAYER": { }
+  },
   "airplanes": { },
-  "rounds": [ ]
+  "rounds": [
+    {
+      "name": "WAVE ONE",
+      "weather": [0, 0, 0, 0, 0],
+      "maxAirplanes": 0,
+      "endmaster": -1,
+      "rumble": 2,
+      "spawns": []
+    }
+  ]
 }
 ```
 
-Add an entry to `public/campaign/registry.json` so the campaign appears on the main menu:
+- `meta.thumbnail` — preview image on the campaign map (hover/select).
+- `BOMB_PLAYER` is **required** in every level pack (see [§6](#6-bombs--player-rockets-bombs)).
+- Start with one round and one bomber spawn; expand from there.
 
-```json
-{ "id": "aw2", "menuTitle": "Antiwar 2" }
+### Step 6 — Add graphics & audio (optional)
+
+Put new images under `public/assets/gfx/` and sounds under `public/assets/sfx/`. Reference them with full paths in `config.assets` and `config.sounds`, or per-round overrides (see [`format.md`](../campaign/format.md)).
+
+### Step 7 — Test
+
+```bash
+npm run dev
 ```
 
-Add levels in `public/campaign/<id>/index.json`:
+Main menu → your campaign → map → level 1. Fix JSON errors in the browser console if a pack fails to load.
+
+### Porting an old v1 text pack
+
+If you still have `config.txt`, `levels.txt`, `bombs.txt`, `airplanes.txt`:
+
+```bash
+node scripts/convert-v1.mjs --source data/mypack --campaign desert --out 1.json --id 1
+```
+
+Then add the level to `desert/index.json` and register `desert` in `registry.json`. The converter outputs per-second units and `aiConfig` automatically.
+
+---
+
+## 3. Adding a level to a campaign
+
+When the campaign **already exists** (e.g. adding level `2.json` to `aw2`):
+
+1. Copy a nearby level pack: `public/campaign/aw2/1.json` → `2.json`.
+2. Change `"id": 2` and `meta` (name, description, thumbnail).
+3. Edit `rounds`, `airplanes`, `bombs` as needed.
+4. Append to `public/campaign/aw2/index.json`:
 
 ```json
 {
   "file": "2.json",
-  "name": "Desert Strike",
-  "mapX": 640,
-  "mapY": 400,
+  "name": "Sector Two",
+  "mapX": 1200,
+  "mapY": 580,
   "pathType": 1
 }
 ```
 
-### Where things live
+5. Reload and play from the campaign map.
+
+You do **not** need to touch `registry.json` when adding levels to an existing campaign.
+
+### Folder layout (reference)
 
 ```
-registry.json       → main menu campaign list
-<id>/index.json     → level order & map for that campaign
+public/campaign/
+  registry.json          # main menu campaigns
+  format.md              # round override quick reference
+  aw/
+    index.json
+    1.json … 13.json
+  aw2/
+    index.json
+    1.json
+```
+
+```
+registry.json       → main menu
+<id>/index.json     → map + level list
 <id>/N.json
-  ├─ config         → start money, upgrades, default art & audio
-  ├─ bombs          → all projectiles (including BOMB_PLAYER)
-  ├─ airplanes      → enemy (and helper) unit types
-  └─ rounds[]       → stages played in order
+  ├─ config         → economy, upgrades, default art & audio
+  ├─ bombs          → projectiles (including BOMB_PLAYER)
+  ├─ airplanes      → enemy unit types
+  └─ rounds[]       → stages in play order
 ```
 
-Round-specific overrides (background, music, intro) are documented in [`public/campaign/format.md`](../campaign/format.md).
+Round-specific overrides (background, music, intro) are documented in [`format.md`](../campaign/format.md).
 
 ---
-
-## 2. Level config (`config`)
+## 4. Level config (`config`)
 
 Maps from v1 `config.txt`. Shared for the whole level unless a round overrides something.
 
@@ -208,7 +356,7 @@ Paths under `sounds` are relative to `assets/sfx/`. Graphics use full paths unde
 
 ---
 
-## 3. Rounds (`rounds`)
+## 5. Rounds (`rounds`)
 
 Each array entry is one stage (old v1 `[SECTION]` in `levels.txt`). **Order = play order.**
 
@@ -283,7 +431,7 @@ See [`format.md`](../campaign/format.md) for examples.
 
 ---
 
-## 4. Bombs & player rockets (`bombs`)
+## 6. Bombs & player rockets (`bombs`)
 
 Keyed by name. **`BOMB_PLAYER` is required** in every level pack (player rocket template).
 
@@ -346,7 +494,7 @@ Effective rocket speed/damage in play = `config.startRocketSpeed` / `startRocket
 
 ---
 
-## 5. Airplanes (`airplanes`)
+## 7. Airplanes (`airplanes`)
 
 Define enemy types referenced by `spawns[].type`.
 
@@ -377,7 +525,7 @@ Define enemy types referenced by `spawns[].type`.
 | `speed` | **px/s** | Patrol speed (typical bombers: `120`–`240`) |
 | `rotationSpeed` | **deg/s** | Turn rate for fighters (`drawStyle: 1`); ignored for flipping bombers |
 | `weapons` | names | Bomb types from `bombs` (index 0 = primary) |
-| `ai` | — | Behavior name — see [§6](#6-ai-types) |
+| `ai` | — | Behavior name — see [§8](#8-ai-types) |
 | `aiConfig` | — | AI tuning — see below |
 | `drawStyle` | — | `0` flip left/right, `1` rotate (fighter), `2` heli tilt |
 | `image`, `scale` | — | Sprite path and scale |
@@ -458,7 +606,7 @@ Alternates **4 s** invisible / **4 s** visible.
 
 ---
 
-## 6. AI types
+## 8. AI types
 
 Built into the engine — you **pick a name**, not write scripts.
 
@@ -494,15 +642,15 @@ Each frame the engine rolls: `random() < dt / dropIntervalSec`. So `10` ≈ one 
 
 ---
 
-## 7. Tips & checklist
+## 9. Tips & checklist
 
-### Minimal new level
+### Minimal new level (existing campaign)
 
-1. Copy an existing pack from `public/campaign/aw/` or `public/campaign/aw2/`.
-2. Register the campaign in `registry.json` (if new) and add levels to `<id>/index.json`.
+1. Copy a pack in `public/campaign/<id>/`.
+2. Add an entry to `<id>/index.json` with `file`, `name`, `mapX`, `mapY`, `pathType`.
 3. Tweak `rounds[].spawns` and `maxAirplanes`.
 4. Adjust `airplanes.*.aiConfig.dropIntervalSec` for pressure.
-5. Test in dev: `npm run dev` → campaign map → your level.
+5. Test: `npm run dev` → main menu → campaign → your level.
 
 ### Coordinates
 
@@ -524,7 +672,8 @@ Use `node scripts/convert-v1.mjs --source data/pack --campaign aw2 --out 1.json 
 
 ### Validate before shipping
 
-- [ ] `BOMB_PLAYER` exists
+- [ ] Registry entry exists in `registry.json` (new campaigns only)
+- [ ] `index.json` `id` matches folder and registry
 - [ ] Every `spawns[].type` exists in `airplanes`
 - [ ] Every `weapons[]` entry exists in `bombs`
 - [ ] `aiConfig` matches AI type (parachute → `glideTarget`, patrol → `flightBand`)
