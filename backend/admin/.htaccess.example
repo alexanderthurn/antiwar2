@@ -1,4 +1,21 @@
-# Copy to .htaccess and set your credentials with: htpasswd -c .htpasswd admin
+# Copy to .htaccess on the server (not committed).
+#
+# 1. Create credentials (run in this admin/ folder):
+#      htpasswd -c .htpasswd admin
+#
+# 2. Set AuthUserFile to the ABSOLUTE filesystem path of .htpasswd on the server.
+#    URL paths do NOT work. Example:
+#      AuthUserFile /home/USER/html/2025/antiwar2/backend/admin/.htpasswd
+#
+#    To discover the path, temporarily upload a file with:
+#      <?php echo __DIR__ . '/.htpasswd'; ?>
+#    then delete it after copying the path.
+#
+# 3. Upload both .htaccess and .htpasswd to admin/ on the server.
+#
+# Symptom: login prompt appears (401) but entering any password → 500 Internal Server Error
+# Cause:   AuthUserFile path wrong, or .htpasswd missing / unreadable.
+
 AuthType Basic
 AuthName "Antiwar 2 Highscore Admin"
 AuthUserFile /absolute/path/to/backend/admin/.htpasswd
