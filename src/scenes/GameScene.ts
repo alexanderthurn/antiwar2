@@ -405,6 +405,9 @@ export class GameScene extends Container implements MenuActionsHost {
     if (this.phase === 'shop') {
       if (this.replayDriver.peekShopEvent()) {
         await this.processReplayShopAsync();
+      } else {
+        const hasMore = this.roundIndex + 1 < this.level.rounds.length;
+        await this.continueFromShop(hasMore);
       }
       return;
     }
@@ -1456,7 +1459,11 @@ export class GameScene extends Container implements MenuActionsHost {
       this.replayRecorder.onCombatTick(this.players.active(), recordedEdgeL, recordedEdgeR);
     }
 
-    if (this.replayDriver?.isPlaying() && this.phase === 'playing') {
+    if (
+      this.replayDriver &&
+      this.phase === 'playing' &&
+      (this.replayDriver.isPlaying() || this.replaySeeking)
+    ) {
       this.replayDriver.advanceTick();
     }
   }

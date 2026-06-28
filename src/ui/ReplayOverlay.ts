@@ -55,9 +55,8 @@ export class ReplayOverlay extends Container {
       e.stopPropagation();
       this.commitScrub();
     });
-    this.scrubHit.on('pointertap', (e) => {
+    this.scrubHit.on('pointerupoutside', (e) => {
       e.stopPropagation();
-      this.previewProgress = this.fractionFromEvent(e.globalX, e.globalY);
       this.commitScrub();
     });
     this.addChild(this.scrubHit);
