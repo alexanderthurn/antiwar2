@@ -32,7 +32,7 @@ export class ReplayDriver {
   }
 
   setSpeed(s: number): void {
-    this.speed = Math.max(0.25, Math.min(8, s));
+    this.speed = Math.max(0.25, Math.min(16, s));
   }
 
   cycleSpeed(): void {
@@ -41,7 +41,7 @@ export class ReplayDriver {
     this.speed = steps[(i + 1) % steps.length] ?? 1;
   }
 
-  static readonly SPEEDS = [0.25, 0.5, 1, 2, 4, 8] as const;
+  static readonly SPEEDS = [0.25, 0.5, 1, 2, 4, 8, 16] as const;
 
   getGlobalTick(): number {
     return this.globalTick;

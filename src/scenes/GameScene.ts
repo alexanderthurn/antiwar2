@@ -201,7 +201,7 @@ export class GameScene extends Container implements MenuActionsHost {
   private seekBatchInFlight = false;
   private seekGeneration = 0;
   private seekCompleteResolvers: Array<() => void> = [];
-  private static readonly SEEK_TICKS_PER_FRAME = 900;
+  private static readonly SEEK_TICKS_PER_FRAME = 1800;
   private replayShopBusy = false;
   private onReplayFinished?: (blob: Uint8Array) => void;
 
@@ -271,22 +271,11 @@ export class GameScene extends Container implements MenuActionsHost {
 
   private handleReplaySeekRequest(tick: number): void {
     if (!this.replayDriver) return;
-    const current = this.replayDriver.getGlobalTick();
-    if (tick === current && !this.replaySeeking) {
+    if (tick === this.replayDriver.getGlobalTick() && !this.replaySeeking) {
       this.replayDriver.setPlaying(this.replayDriver.wasPlayingBeforeSeek());
       return;
     }
-
-    if (tick < current) {
-      void this.prepareSeekReplay(tick);
-      return;
-    }
-
-    this.replaySeekTargetTick = tick;
-    if (this.replaySeeking) return;
-
-    this.replaySeeking = true;
-    this.replaySeekReady = true;
+    void this.prepareSeekReplay(tick);
   }
 
   private renderSeekFrame(dt: number, input: InputSystem): void {
@@ -362,7 +351,7 @@ export class GameScene extends Container implements MenuActionsHost {
       this.replayDriver.setPlaying(true);
       this.replaySeekInitial = false;
     } else {
-      this.replayDriver.setPlaying(this.replayDriver.wasPlayingBeforeSeek());
+      this.replayDriver.setPlaying(false);
     }
     this.replayOverlay?.refresh({ seeking: this.replaySeeking });
     for (const resolve of this.seekCompleteResolvers) resolve();
@@ -383,6 +372,7 @@ export class GameScene extends Container implements MenuActionsHost {
         this.replayDriver.getGlobalTick() < target
       ) {
         await this.replaySimStep(false);
+        await new Promise<void>((resolve) => queueMicrotask(resolve));
         steps++;
         const now = this.replayDriver.getGlobalTick();
         if (now === lastTick) {
@@ -1307,7 +1297,7 @@ export class GameScene extends Container implements MenuActionsHost {
         if (this.replaySeekReady && this.round) {
           this.renderSeekFrame(dt, input);
         }
-        this.replayOverlay?.refresh({ seeking: true });
+        this.replayOverlay?.refresh({ seeking: true, fastForward: true });
       }
       this.syncHudVisibility();
       return;

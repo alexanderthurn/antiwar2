@@ -540,7 +540,12 @@ export class App {
       }
 
       if (this.game.isReplaySeeking() || driver?.isSeeking()) {
-        this.game.update(SIM_DT, this.input, this.menuController, { visuals: true });
+        if (!this.replaySimBusy) {
+          this.replaySimBusy = true;
+          void this.runReplaySeekFrame(frameDt).finally(() => {
+            this.replaySimBusy = false;
+          });
+        }
       } else if (this.game.isReplayMode()) {
         if (!this.replaySimBusy) {
           this.replaySimBusy = true;
@@ -595,6 +600,10 @@ export class App {
       devicePixelRatio: window.devicePixelRatio,
     });
   };
+
+  private async runReplaySeekFrame(_frameDt: number): Promise<void> {
+    this.game?.update(SIM_DT, this.input, this.menuController, { visuals: true });
+  }
 
   private async runReplaySimBatch(frameDt: number): Promise<void> {
     if (!this.game?.isReplayMode()) return;

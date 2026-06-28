@@ -10,12 +10,13 @@ const BAR_X = 80;
 const BAR_W = DESIGN.width - 160;
 const CTRL_Y = BAR_Y - 44;
 const BTN_H = 30;
-const SPEED_BTN_W = 68;
-const SPEED_GAP = 8;
+const SPEED_BTN_W = 58;
+const SPEED_GAP = 6;
 const PLAY_BTN_W = 56;
 
 export class ReplayOverlay extends Container {
   private bar = new Graphics();
+  private scrubHit = new Graphics();
   private timeText: BitmapText;
   private playBtn = new Container();
   private playBg = new Graphics();
@@ -24,6 +25,7 @@ export class ReplayOverlay extends Container {
   private speedBgs: Graphics[] = [];
   private driver: ReplayDriver;
   private onExit: () => void;
+  private previewProgress: number | null = null;
 
   constructor(driver: ReplayDriver, _nick: string, onExit: () => void) {
     super();
@@ -34,6 +36,31 @@ export class ReplayOverlay extends Container {
 
     this.bar.eventMode = 'none';
     this.addChild(this.bar);
+
+    this.scrubHit.eventMode = 'static';
+    this.scrubHit.cursor = 'pointer';
+    this.scrubHit.position.set(BAR_X, BAR_Y);
+    this.scrubHit.hitArea = new Rectangle(0, 0, BAR_W, BAR_H);
+    this.scrubHit.on('pointerdown', (e) => {
+      e.stopPropagation();
+      this.previewProgress = this.fractionFromEvent(e.globalX, e.globalY);
+      this.refresh();
+    });
+    this.scrubHit.on('globalpointermove', (e) => {
+      if (!e.buttons) return;
+      this.previewProgress = this.fractionFromEvent(e.globalX, e.globalY);
+      this.refresh();
+    });
+    this.scrubHit.on('pointerup', (e) => {
+      e.stopPropagation();
+      this.commitScrub();
+    });
+    this.scrubHit.on('pointertap', (e) => {
+      e.stopPropagation();
+      this.previewProgress = this.fractionFromEvent(e.globalX, e.globalY);
+      this.commitScrub();
+    });
+    this.addChild(this.scrubHit);
 
     this.timeText = kewlText({
       text: '',
@@ -60,7 +87,7 @@ export class ReplayOverlay extends Container {
     });
     this.addChild(this.playBtn);
 
-    let speedX = BAR_X + PLAY_BTN_W + 16;
+    let speedX = BAR_X + PLAY_BTN_W + 12;
     for (const speed of ReplayDriver.SPEEDS) {
       const btn = new Container();
       btn.position.set(speedX + SPEED_BTN_W / 2, CTRL_Y);
@@ -70,8 +97,8 @@ export class ReplayOverlay extends Container {
 
       const bg = new Graphics();
       const label = kewlText({
-        text: speed < 1 ? `${speed}x` : `${speed}x`,
-        size: 13,
+        text: `${speed}x`,
+        size: 12,
         anchorX: 0.5,
         anchorY: 0.5,
       });
@@ -91,15 +118,35 @@ export class ReplayOverlay extends Container {
     this.refresh();
   }
 
-  refresh(opts?: { seeking?: boolean }): void {
+  private fractionFromEvent(globalX: number, globalY: number): number {
+    const local = this.scrubHit.toLocal({ x: globalX, y: globalY });
+    return Math.max(0, Math.min(1, local.x / BAR_W));
+  }
+
+  private commitScrub(): void {
+    if (this.previewProgress === null) return;
+    const tick = Math.floor(this.previewProgress * this.driver.getTotalTicks());
+    this.previewProgress = null;
+    this.driver.requestSeek(tick);
+    this.refresh({ seeking: true, fastForward: true });
+  }
+
+  refresh(opts?: { seeking?: boolean; fastForward?: boolean }): void {
     const total = this.driver.getTotalTicks();
     const tick = this.driver.getGlobalTick();
-    const progress = total > 0 ? tick / total : 0;
+    const progress =
+      this.previewProgress ?? (total > 0 ? tick / total : 0);
     const cur = formatLevelTimeHms(this.driver.getTimeMs());
     const end = formatLevelTimeHms(this.driver.getFooterTimeMs());
     const playing = this.driver.isPlaying();
 
-    this.timeText.text = opts?.seeking ? `${cur} / ${end} …` : `${cur} / ${end}`;
+    if (opts?.fastForward) {
+      this.timeText.text = `${cur} / ${end}  >>`;
+    } else if (opts?.seeking) {
+      this.timeText.text = `${cur} / ${end} …`;
+    } else {
+      this.timeText.text = `${cur} / ${end}`;
+    }
     this.playLabel.text = playing ? '>' : '||';
     this.drawBtn(this.playBg, PLAY_BTN_W, playing ? 0x226633 : 0x333333);
 
@@ -111,10 +158,11 @@ export class ReplayOverlay extends Container {
 
     this.bar.clear();
     this.bar.roundRect(BAR_X, BAR_Y, BAR_W, BAR_H, 4).fill({ color: 0x222222, alpha: 0.85 });
+    const fillAlpha = opts?.fastForward ? 0.55 : opts?.seeking ? 0.65 : 0.9;
     if (progress > 0) {
       this.bar
         .roundRect(BAR_X, BAR_Y, BAR_W * progress, BAR_H, 4)
-        .fill({ color: 0x44aaff, alpha: opts?.seeking ? 0.65 : 0.9 });
+        .fill({ color: 0x44aaff, alpha: fillAlpha });
     }
     const knobX = BAR_X + BAR_W * progress;
     this.bar.circle(knobX, BAR_Y + BAR_H / 2, 8).fill(0xffffff);
