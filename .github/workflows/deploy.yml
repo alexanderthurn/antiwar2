@@ -24,9 +24,7 @@ concurrency:
 
 # FTP folder names used by the live PHP highscore API — never mirror game dist/ here.
 # Do not create git branches with these names (branch previews deploy to /<branch>/).
-env:
-  RESERVED_FTP_FOLDERS: '["backend"]'
-
+# Job-level `if` cannot use workflow env; keep this list in sync with RESERVED_FTP_FOLDERS below.
 jobs:
   build:
     name: Build site
@@ -34,7 +32,7 @@ jobs:
       github.event_name != 'delete' &&
       (
         github.event_name == 'workflow_dispatch' ||
-        !contains(fromJSON(env.RESERVED_FTP_FOLDERS), github.ref_name)
+        !contains(fromJSON('["backend"]'), github.ref_name)
       )
     runs-on: ubuntu-latest
     steps:
@@ -67,7 +65,7 @@ jobs:
       github.event_name != 'delete' &&
       (
         (github.event_name == 'workflow_dispatch' && inputs.target == 'production') ||
-        !contains(fromJSON(env.RESERVED_FTP_FOLDERS), github.ref_name)
+        !contains(fromJSON('["backend"]'), github.ref_name)
       )
     runs-on: ubuntu-latest
     steps:
@@ -116,7 +114,7 @@ jobs:
       github.event.ref_type == 'branch' &&
       github.event.ref != 'main' &&
       github.event.ref != 'master' &&
-      !contains(fromJSON(env.RESERVED_FTP_FOLDERS), github.event.ref)
+      !contains(fromJSON('["backend"]'), github.event.ref)
     runs-on: ubuntu-latest
     steps:
       - name: Remove branch folder from FTP
