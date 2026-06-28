@@ -89,8 +89,8 @@ export class HttpHighscoreProvider implements HighscoreProvider {
     }
   }
 
-  async fetchPlayerScores(clientId: string): Promise<PlayerScoreEntry[]> {
-    const url = `${this.base}/player_scores.php?clientId=${encodeURIComponent(clientId)}`;
+  async fetchPlayerScores(nick: string): Promise<PlayerScoreEntry[]> {
+    const url = `${this.base}/player_scores.php?nick=${encodeURIComponent(nick)}`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
     try {

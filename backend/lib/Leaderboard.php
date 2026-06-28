@@ -95,19 +95,19 @@ final class AwLeaderboard
     }
 
     /**
-     * Best non-deleted score per board for a browser client id.
+     * Best non-deleted score per board for a player nick.
      *
      * @return list<array<string, mixed>>
      */
-    public static function fetchByClientId(PDO $db, string $clientId): array
+    public static function fetchByNick(PDO $db, string $nick): array
     {
         $stmt = $db->prepare(
             'SELECT board_id, nick, time_ms, score, version, submitted_at, run_started_at
              FROM scores
-             WHERE client_id = ? AND deleted = 0 AND flagged = 0
+             WHERE nick = ? AND deleted = 0 AND flagged = 0
              ORDER BY board_id ASC, time_ms ASC, score DESC',
         );
-        $stmt->execute([$clientId]);
+        $stmt->execute([$nick]);
         $rows = $stmt->fetchAll();
 
         $bestByBoard = [];

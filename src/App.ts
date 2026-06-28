@@ -27,6 +27,7 @@ import {
   screenToDesign,
   type ViewportLayout,
 } from './core/Viewport';
+import { setViewportContext } from './core/ViewportContext';
 import { blurBackdropEnabled } from './core/GraphicsQuality';
 import { settingsStore } from './core/SettingsStore';
 import { watchViewportResize } from './core/ViewportResize';
@@ -173,6 +174,12 @@ export class App {
       this.pixi.canvas,
       height,
     );
+    setViewportContext({
+      layout: this.layout,
+      canvas: this.pixi.canvas,
+      stageWidth: width,
+      stageHeight: height,
+    });
     this.gameRoot.scale.set(this.layout.scale);
     this.gameRoot.position.set(this.layout.offsetX, this.layout.offsetY);
     this.blurBackdrop.sync(width, height);
@@ -407,8 +414,11 @@ export class App {
           this.menuActionsKey = key;
           this.menuController.setActions(actions);
         }
-        this.menuController.update(this.input);
-        if (this.input.cancelPressed()) scene.onMenuCancel?.();
+        const handled = scene.handleMenuInput?.(this.input) === true;
+        if (!handled) {
+          this.menuController.update(this.input);
+          if (this.input.cancelPressed()) scene.onMenuCancel?.();
+        }
       }
 
       if (scene && 'update' in scene && typeof scene.update === 'function') {

@@ -98,6 +98,18 @@ export function screenToDesign(
   return { x, y, inGame };
 }
 
+/** Map design-space coords to viewport client (CSS) pixels. */
+export function designToClient(
+  designX: number,
+  designY: number,
+  layout: ViewportLayout,
+): { x: number; y: number } {
+  return {
+    x: designX * layout.scale + layout.offsetX,
+    y: designY * layout.scale + layout.offsetY,
+  };
+}
+
 export function stickToDesign(
   stickX: number,
   stickY: number,

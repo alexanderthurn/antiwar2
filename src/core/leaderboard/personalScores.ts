@@ -4,9 +4,9 @@ import {
   normalRunId,
   runProgressStore,
 } from '../CampaignRun';
+import { playerProfile } from '../PlayerProfile';
 import { isLevelMapEntry, loadCampaignIndex, loadCampaignRegistry } from '../../data/types';
 import { buildBoardId } from './boardId';
-import { getClientId } from './clientId';
 import { createHttpProvider } from './HttpHighscoreProvider';
 import type { PlayerScoreEntry } from './types';
 
@@ -22,12 +22,13 @@ export interface PersonalScoreRow {
 }
 
 export async function loadPersonalScoreRows(): Promise<PersonalScoreRow[]> {
+  const nick = playerProfile.getNick();
   const registry = await loadCampaignRegistry();
   const onlineByBoard = new Map<string, PlayerScoreEntry>();
 
   const http = createHttpProvider();
   if (http) {
-    for (const entry of await http.fetchPlayerScores(getClientId())) {
+    for (const entry of await http.fetchPlayerScores(nick)) {
       onlineByBoard.set(entry.boardId, entry);
     }
   }
@@ -67,7 +68,7 @@ export async function loadPersonalScoreRows(): Promise<PersonalScoreRow[]> {
             rank: online.rank,
             source: 'online',
           });
-        } else if (local) {
+        } else if (local && local.nick === nick) {
           rows.push({
             boardId,
             campaignName: index.campaignName,

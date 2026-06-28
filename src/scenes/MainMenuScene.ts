@@ -1,9 +1,10 @@
-import { Container } from 'pixi.js';
+import { Container, type BitmapText } from 'pixi.js';
 import packageJson from '../../package.json';
 import { playSound, sfxPath } from '../audio/SoundManager';
 import { DESIGN } from '../core/DesignSpace';
 import { playerProfile } from '../core/PlayerProfile';
 import { loadTexture } from '../data/AssetLoader';
+import type { InputSystem } from '../input/InputSystem';
 import { createFocusableButton } from '../input/FocusableButton';
 import type { MenuActionsHost } from '../input/MenuActionsHost';
 import type { UiAction } from '../input/UiMenuController';
@@ -12,7 +13,7 @@ import { MenuLogo } from '../ui/MenuLogo';
 import { HowToPlayOverlay } from '../ui/HowToPlayOverlay';
 import { PersonalScoresOverlay } from '../ui/PersonalScoresOverlay';
 import { SettingsOverlay } from '../ui/SettingsOverlay';
-import { kewlLineHeight, kewlMeasuredSize, kewlTextLeftInset, MENU_BTN_START_Y, MENU_BTN_WIDTH, MENU_FOOTER_FONT_SIZE, MENU_ITEM_FONT_SIZE, menuRowStep, UI_TITLE_MAIN_MENU_Y } from '../ui/KewlFont';
+import { kewlLineHeight, kewlMeasuredSize, kewlString, kewlTextLeftInset, MENU_BTN_START_Y, MENU_BTN_WIDTH, MENU_FOOTER_FONT_SIZE, MENU_ITEM_FONT_SIZE, menuRowStep, UI_TITLE_MAIN_MENU_Y } from '../ui/KewlFont';
 
 const LOGO_PATH = 'assets/gfx/logo.png';
 const LOGO_HEIGHT = 200;
@@ -29,6 +30,8 @@ export class MainMenuScene extends Container implements MenuActionsHost {
   private howToPlayOverlay: HowToPlayOverlay | null = null;
   private personalScoresOverlay: PersonalScoresOverlay | null = null;
   private logo: MenuLogo | null = null;
+  private playerNameText: BitmapText | null = null;
+  private unsubNick: (() => void) | null = null;
 
   constructor(
     onPlay: () => void,
@@ -41,12 +44,25 @@ export class MainMenuScene extends Container implements MenuActionsHost {
 
   update(dt: number): void {
     this.logo?.update(dt);
+    this.settingsOverlay?.update(dt);
   }
 
-  showSettings(): void {
+  handleMenuInput(input: InputSystem): boolean {
+    return this.settingsOverlay?.handleMenuInput(input) ?? false;
+  }
+
+  destroy(options?: Parameters<Container['destroy']>[0]): void {
+    this.unsubNick?.();
+    this.unsubNick = null;
+    super.destroy(options);
+  }
+
+  showSettings(opts?: { editUsernameOnOpen?: boolean }): void {
     if (this.settingsOverlay) return;
-    this.menuContent.visible = false;
-    this.settingsOverlay = new SettingsOverlay(() => this.closeSettings());
+    if (!this.personalScoresOverlay && !this.howToPlayOverlay) {
+      this.menuContent.visible = false;
+    }
+    this.settingsOverlay = new SettingsOverlay(() => this.closeSettings(), opts);
     this.addChild(this.settingsOverlay);
   }
 
@@ -54,7 +70,9 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     if (this.settingsOverlay) {
       this.settingsOverlay.destroy({ children: true });
       this.settingsOverlay = null;
-      this.menuContent.visible = true;
+      if (!this.personalScoresOverlay && !this.howToPlayOverlay) {
+        this.menuContent.visible = true;
+      }
     }
   }
 
@@ -76,7 +94,10 @@ export class MainMenuScene extends Container implements MenuActionsHost {
   showPersonalScores(): void {
     if (this.personalScoresOverlay) return;
     this.menuContent.visible = false;
-    this.personalScoresOverlay = new PersonalScoresOverlay(() => this.closePersonalScores());
+    this.personalScoresOverlay = new PersonalScoresOverlay(
+      () => this.closePersonalScores(),
+      () => this.showSettings({ editUsernameOnOpen: true }),
+    );
     this.addChild(this.personalScoresOverlay);
   }
 
@@ -90,17 +111,25 @@ export class MainMenuScene extends Container implements MenuActionsHost {
 
   getMenuActions(): UiAction[] {
     return (
-      this.personalScoresOverlay?.getMenuActions()
+      this.settingsOverlay?.getMenuActions()
+      ?? this.personalScoresOverlay?.getMenuActions()
       ?? this.howToPlayOverlay?.getMenuActions()
-      ?? this.settingsOverlay?.getMenuActions()
       ?? this.mainActions
     );
   }
 
   onMenuCancel(): void {
+    if (this.settingsOverlay) {
+      this.settingsOverlay.onMenuCancel();
+      return;
+    }
     if (this.personalScoresOverlay) this.closePersonalScores();
     else if (this.howToPlayOverlay) this.closeHowToPlay();
-    else if (this.settingsOverlay) this.closeSettings();
+  }
+
+  private refreshPlayerName(): void {
+    if (!this.playerNameText) return;
+    this.playerNameText.text = kewlString(playerProfile.getNick());
   }
 
   private async build(
@@ -149,18 +178,19 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     );
 
     const playerName = playerProfile.getNick();
-    const playerNameW = kewlMeasuredSize(playerName, MENU_FOOTER_FONT_SIZE).width;
-    this.menuContent.addChild(
-      this.makeFooterButton(
-        'menu-player',
-        playerName,
-        DESIGN.width - FOOTER_MARGIN - playerNameW - 20,
-        footerY,
-        () => this.showPersonalScores(),
-        'right',
-        playerNameW,
-      ),
+    const playerNameW = Math.max(kewlMeasuredSize(playerName, MENU_FOOTER_FONT_SIZE).width, 120);
+    const playerFooter = this.makeFooterButton(
+      'menu-player',
+      playerName,
+      DESIGN.width - FOOTER_MARGIN - playerNameW - 20,
+      footerY,
+      () => this.showPersonalScores(),
+      'right',
+      playerNameW,
     );
+    this.menuContent.addChild(playerFooter);
+    this.playerNameText = playerFooter.children[0] as BitmapText;
+    this.unsubNick = playerProfile.subscribe(() => this.refreshPlayerName());
 
     this.mainActions = [...this.menuActions];
   }

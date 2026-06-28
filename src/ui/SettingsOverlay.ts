@@ -1,6 +1,5 @@
 import { BitmapText, Container } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
-import { clearAllGameData } from '../core/SavedData';
 import {
   settingsStore,
   type GameSettings,
@@ -8,8 +7,10 @@ import {
 import { GRAPHICS_LABELS } from '../core/GraphicsQuality';
 import { createFocusableButton } from '../input/FocusableButton';
 import type { MenuActionsHost } from '../input/MenuActionsHost';
+import type { InputSystem } from '../input/InputSystem';
 import type { UiAction } from '../input/UiMenuController';
 import { playMenuClick } from '../audio/UiSounds';
+import { NickNameField } from './NickNameField';
 import { createMenuBackground } from './MenuBackground';
 import {
   kewlLineHeight,
@@ -25,28 +26,63 @@ import {
   menuRowStep,
   UI_TITLE_Y,
 } from './KewlFont';
+import { clearAllGameData } from '../core/SavedData';
 
 const FOOTER_MARGIN = 21;
+
+export interface SettingsOverlayOptions {
+  editUsernameOnOpen?: boolean;
+}
 
 export class SettingsOverlay extends Container implements MenuActionsHost {
   private menuActions: UiAction[] = [];
   private rowLabels = new Map<string, { prefix: string; text: BitmapText }>();
+  private nickField: NickNameField | null = null;
   private onBack: () => void;
   private unsub: (() => void) | null = null;
 
-  constructor(onBack: () => void) {
+  constructor(onBack: () => void, opts?: SettingsOverlayOptions) {
     super();
     this.onBack = onBack;
-    void this.build();
+    void this.build(opts);
   }
 
-  private async build(): Promise<void> {
+  getMenuActions(): UiAction[] {
+    return this.menuActions;
+  }
+
+  onMenuCancel(): void {
+    if (this.nickField?.cancelEditIfActive()) return;
+    this.onBack();
+  }
+
+  handleMenuInput(input: InputSystem): boolean {
+    return this.nickField?.handleMenuInput(input) ?? false;
+  }
+
+  update(dt: number): void {
+    this.nickField?.update(dt);
+  }
+
+  destroy(options?: Parameters<Container['destroy']>[0]): void {
+    this.unsub?.();
+    this.unsub = null;
+    this.nickField?.destroy();
+    this.nickField = null;
+    super.destroy(options);
+  }
+
+  private async build(opts?: SettingsOverlayOptions): Promise<void> {
     this.addChild(await createMenuBackground());
 
     const centerX = DESIGN.width / 2;
     const title = kewlText({ text: 'Options', size: MENU_TITLE_FONT_SIZE, anchorX: 0.5 });
     title.position.set(centerX, UI_TITLE_Y);
     this.addChild(title);
+
+    const btnX = centerX - MENU_BTN_WIDTH / 2;
+    const rowStep = menuRowStep(MENU_ITEM_FONT_SIZE);
+    let rowY = MENU_BTN_START_Y;
 
     const rows = [
       {
@@ -77,14 +113,23 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
       },
     ] as const;
 
-    const btnX = centerX - MENU_BTN_WIDTH / 2;
-    const rowStep = menuRowStep(MENU_ITEM_FONT_SIZE);
-    let rowY = MENU_BTN_START_Y;
-
     for (const row of rows) {
       this.addRow(row.id, row.label, btnX, rowY, row.onPress);
       rowY += rowStep;
     }
+
+    this.nickField = new NickNameField({
+      id: 'settings-username',
+      x: btnX,
+      y: rowY,
+      w: MENU_BTN_WIDTH,
+      fontSize: MENU_ITEM_FONT_SIZE,
+      prefix: 'Username: ',
+      center: true,
+    });
+    this.addChild(this.nickField.view);
+    this.menuActions.push(this.nickField.action);
+    rowY += rowStep;
 
     const back = createFocusableButton({
       id: 'settings-back',
@@ -103,6 +148,10 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
 
     this.unsub = settingsStore.subscribe(() => this.refresh());
     this.refresh();
+
+    if (opts?.editUsernameOnOpen) {
+      this.nickField.beginEdit();
+    }
   }
 
   private addFooterActions(): void {
@@ -160,20 +209,6 @@ export class SettingsOverlay extends Container implements MenuActionsHost {
     });
     this.menuActions.push(action);
     return view;
-  }
-
-  destroy(options?: Parameters<Container['destroy']>[0]): void {
-    this.unsub?.();
-    this.unsub = null;
-    super.destroy(options);
-  }
-
-  getMenuActions(): UiAction[] {
-    return this.menuActions;
-  }
-
-  onMenuCancel(): void {
-    this.onBack();
   }
 
   private addRow(

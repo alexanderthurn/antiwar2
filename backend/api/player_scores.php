@@ -8,16 +8,16 @@ require_once dirname(__DIR__) . '/lib/Leaderboard.php';
 
 aw_apply_cors();
 
-$clientId = trim((string) ($_GET['clientId'] ?? ''));
-if ($clientId === '' || strlen($clientId) > 64) {
-    aw_json_response(['error' => 'invalid_client_id'], 400);
+$nick = aw_sanitize_nick((string) ($_GET['nick'] ?? ''));
+if ($nick === '') {
+    aw_json_response(['error' => 'invalid_nick'], 400);
 }
 
 $db = aw_db();
-$entries = AwLeaderboard::fetchByClientId($db, $clientId);
+$entries = AwLeaderboard::fetchByNick($db, $nick);
 
 aw_json_response([
-    'clientId' => $clientId,
+    'nick' => $nick,
     'entries' => array_map(static function (array $row): array {
         $submittedAt = (int) $row['submitted_at'];
         $runStartedAt = (int) $row['run_started_at'];
