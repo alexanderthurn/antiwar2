@@ -9,7 +9,10 @@ import {
   type CampaignRunId,
 } from './core/CampaignRun';
 import { GAME_VERSION_CODE } from './core/GameVersion';
-import { buildBoardId, highscoreService, submitHighscore } from './core/HighscoreClient';
+import { buildBoardId, fetchReplay, fetchScoreMeta, highscoreService, submitHighscore } from './core/HighscoreClient';
+import { hashLevelFile } from './core/levelHash';
+import { parseBoardId } from './core/leaderboard/boardId';
+import { MAX_SIM_STEPS_PER_FRAME, SIM_DT } from './core/SimClock';
 import { playerProfile } from './core/PlayerProfile';
 import { setRunHardcore } from './core/RunMode';
 import { shopDigitFromKeyboard } from './core/BuyScript';
@@ -20,6 +23,8 @@ import {
   syncDevUrl,
   type DevGameState,
 } from './core/DevDeepLink';
+import { clearReplayUrl, parseReplayUrl, syncReplayUrl } from './replay/ReplayDeepLink';
+import { decodeReplay } from './replay/ReplayFormat';
 import {
   computeLayout,
   clientToStage,
@@ -83,6 +88,7 @@ export class App {
   private pointerOverGame = true;
 
   private mouseButtons = { left: false, right: false };
+  private simAccumulator = 0;
   /** Only one touch finger drives aim/fire; ignores extra touches that confuse input. */
   private activeTouchPointerId: number | null = null;
 
@@ -124,6 +130,12 @@ export class App {
   init(): void {
     this.applyLayout();
     watchViewportResize(this.host, () => this.applyLayout());
+
+    const replayId = parseReplayUrl();
+    if (replayId) {
+      void this.startReplayById(replayId);
+      return;
+    }
 
     const dev = parseDevUrl();
     if (dev) {
@@ -259,6 +271,7 @@ export class App {
   private showMainMenu(resetCampaign = false): void {
     if (resetCampaign) runProgressStore.reset(normalRunId(DEFAULT_CAMPAIGN_ID));
     clearDevUrl();
+    clearReplayUrl();
     setRunHardcore(false);
     this.activeCampaignId = DEFAULT_CAMPAIGN_ID;
     this.activeRunId = normalRunId(DEFAULT_CAMPAIGN_ID);
@@ -268,6 +281,7 @@ export class App {
       () => this.showCampaignViewFor(HUB_CAMPAIGN_ID, false, { returnTo: 'menu' }),
       () => this.showCredits(),
       () => menu.showSettings(),
+      (scoreId, nick) => void this.startReplayById(scoreId, nick),
     );
     this.setScene(menu);
     playMenuMusic();
@@ -332,6 +346,7 @@ export class App {
 
   private async startLevel(file: string, levelIndex: number, devBootstrap?: DevBootstrap): Promise<void> {
     this.mode = 'game';
+    this.simAccumulator = 0;
     setRunHardcore(isHardcoreRun(this.activeRunId));
     try {
       const index = await loadCampaignIndex(this.activeCampaignId);
@@ -344,8 +359,20 @@ export class App {
       const runId = this.activeRunId;
       const campaignId = this.activeCampaignId;
       const boardId = buildBoardId(runId, levelIndex);
+      const levelHash = await hashLevelFile(campaignId, file);
       if (highscoreService.enabled) {
         await highscoreService.prepareForLevel(boardId);
+      }
+      let replayBlob: Uint8Array | null = null;
+      if (!devBootstrap) {
+        game.beginRecording({
+          gameVersion: GAME_VERSION_CODE,
+          levelHash,
+          boardId,
+        });
+        game.onReplayEncoded((blob) => {
+          replayBlob = blob;
+        });
       }
       game.onReturnToCampaign = () =>
         this.showCampaignViewFor(campaignId, isHardcoreRun(runId));
@@ -367,6 +394,7 @@ export class App {
           boardId,
           time: timeMs,
           score: stats.score,
+          replay: replayBlob ?? undefined,
           ...meta,
         });
         const newlyComplete = runProgressStore.completeLevel(
@@ -395,16 +423,118 @@ export class App {
     }
   }
 
+  private async startReplayById(scoreId: number, nickHint?: string): Promise<void> {
+    const meta = (await fetchScoreMeta(scoreId)) ?? {
+      id: scoreId,
+      boardId: '',
+      nick: nickHint ?? 'Player',
+      time: 0,
+      score: 0,
+      hasReplay: true,
+    };
+    if (!meta.hasReplay) {
+      console.warn(`[replay] score ${scoreId} has no replay`);
+      this.showMainMenu(true);
+      return;
+    }
+
+    const blob = await fetchReplay(scoreId);
+    if (!blob) {
+      console.warn(`[replay] failed to load replay ${scoreId}`);
+      this.showMainMenu(true);
+      return;
+    }
+
+    let replay;
+    try {
+      replay = await decodeReplay(blob);
+    } catch (err) {
+      console.warn('[replay] decode failed', err);
+      this.showMainMenu(true);
+      return;
+    }
+
+    const boardId = replay.header.boardId || meta.boardId;
+    const parsed = parseBoardId(boardId);
+    if (!parsed) {
+      console.warn(`[replay] invalid boardId ${boardId}`);
+      this.showMainMenu(true);
+      return;
+    }
+
+    const { campaignId, levelIndex, hardcore } = parsed;
+    const index = await loadCampaignIndex(campaignId);
+    const entry = index.levels[levelIndex];
+    if (!entry || !isLevelMapEntry(entry)) {
+      console.warn(`[replay] level ${levelIndex} not found`);
+      this.showMainMenu(true);
+      return;
+    }
+
+    const packHash = await hashLevelFile(campaignId, entry.file);
+    if (packHash !== replay.header.levelHash) {
+      console.warn('[replay] level hash mismatch — level data may have changed');
+    }
+
+    this.mode = 'game';
+    setRunHardcore(hardcore);
+    this.activeCampaignId = campaignId;
+    this.activeRunId = hardcore ? hardcoreRunId(campaignId) : normalRunId(campaignId);
+    this.simAccumulator = 0;
+
+    try {
+      const pack = await loadLevelPack(campaignId, entry.file);
+      await preloadRound(pack, 0);
+
+      const game = new GameScene();
+      const nick = meta.nick || nickHint || 'Player';
+      game.onReturnToCampaign = () => {
+        clearReplayUrl();
+        this.showMainMenu(false);
+      };
+
+      const bootstrap: DevBootstrap = { levelIndex, roundIndex: 0, skipIntro: true };
+      await game.loadLevel(pack, 0, bootstrap);
+      await game.beginReplay(replay, nick, () => {
+        clearReplayUrl();
+        this.showMainMenu(false);
+      });
+
+      syncReplayUrl(scoreId);
+      this.game = game;
+      this.setScene(game);
+    } catch (err) {
+      console.error('[replay] failed to start', err);
+      this.game = null;
+      this.showMainMenu(true);
+    }
+  }
+
   private tick = (): void => {
-    const dt = this.pixi.ticker.deltaTime / 60;
+    const frameDt = this.pixi.ticker.deltaTime / 60;
     this.input.setLayout(this.layout);
-    this.input.beginFrame(dt);
+    this.input.beginFrame(frameDt);
 
     if (this.mode === 'game' && this.game) {
-      this.game.update(dt, this.input, this.menuController);
+      const driver = this.game.getReplayDriver();
+      if (driver?.isPlaying() && !driver.isSeeking() && !driver.isAtEnd()) {
+        this.simAccumulator += frameDt * driver.getSpeed();
+      } else if (!this.game.isReplayMode()) {
+        this.simAccumulator += frameDt;
+      }
+
+      let steps = 0;
+      while (this.simAccumulator >= SIM_DT && steps < MAX_SIM_STEPS_PER_FRAME) {
+        this.simAccumulator -= SIM_DT;
+        steps++;
+        const isLast = steps >= MAX_SIM_STEPS_PER_FRAME || this.simAccumulator < SIM_DT;
+        this.game.update(SIM_DT, this.input, this.menuController, { visuals: isLast });
+      }
+
       this.syncMenuCursor();
       this.syncBackdrop();
     } else {
+      this.simAccumulator = 0;
       this.input.setMode('menu');
       const scene = this.gameRoot.children[0];
       if (isMenuActionsHost(scene)) {
@@ -422,7 +552,7 @@ export class App {
       }
 
       if (scene && 'update' in scene && typeof scene.update === 'function') {
-        scene.update(dt);
+        scene.update(frameDt);
       }
 
       this.syncMenuCursor();
@@ -539,6 +669,10 @@ export class App {
 
     window.addEventListener('keydown', (e) => {
       if (e.repeat) return;
+      if (this.mode === 'game' && this.game?.handleReplayKey(e.key, e.code)) {
+        e.preventDefault();
+        return;
+      }
       if (e.key === 'Escape') {
         if (this.mode === 'game') {
           this.game?.togglePause();

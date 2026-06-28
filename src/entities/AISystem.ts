@@ -1,4 +1,5 @@
 import { DESIGN } from '../core/DesignSpace';
+import { simRng } from '../core/SimRng';
 import { combatSpeedMultiplier } from '../core/RunMode';
 import type { AirplaneDef, BombDef, LevelPack } from '../data/types';
 import { normalizeAI, resolveAiConfig } from './AiConfig';
@@ -23,7 +24,7 @@ function dropIntervalSec(def: AirplaneDef, fallbackSec: number): number {
 
 function rollDrop(dt: number, intervalSec: number): boolean {
   if (intervalSec <= 0) return false;
-  return Math.random() < dt / intervalSec;
+  return simRng().next() < dt / intervalSec;
 }
 
 export interface AIUpdateContext {
@@ -90,8 +91,8 @@ function driftY(motion: PatrolMotion, entity: CombatEntity, dt: number, rate = 2
 
 function maybeRetargetY(motion: PatrolMotion, def: AirplaneDef, dt: number, chance = 0.3): void {
   const { minY, maxY } = resolveAiConfig(def).flightBand;
-  if (Math.random() < dt * chance) {
-    motion.targetY = minY + Math.random() * (maxY - minY);
+  if (simRng().next() < dt * chance) {
+    motion.targetY = minY + simRng().next() * (maxY - minY);
     motion.altChanges += 1;
   }
 }
@@ -141,7 +142,7 @@ function fireHeliBottomBurst(
 
 function retargetAltitude(motion: PatrolMotion, def: AirplaneDef): void {
   const { minY, maxY } = resolveAiConfig(def).flightBand;
-  motion.targetY = minY + Math.random() * Math.max(1, maxY - minY);
+  motion.targetY = minY + simRng().next() * Math.max(1, maxY - minY);
 }
 
 function updateBomberSimple(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef, ctx: AIUpdateContext): void {
@@ -208,11 +209,11 @@ function pickFighterMgTargetX(currentX: number): number {
   const margin = 160;
   const minX = margin;
   const maxX = DESIGN.width - margin;
-  let x = minX + Math.random() * (maxX - minX);
+  let x = minX + simRng().next() * (maxX - minX);
   if (Math.abs(x - currentX) < 220) {
     x = currentX < DESIGN.width / 2
-      ? maxX - Math.random() * 280
-      : minX + Math.random() * 280;
+      ? maxX - simRng().next() * 280
+      : minX + simRng().next() * 280;
   }
   return x;
 }
@@ -225,9 +226,9 @@ function aiYBand(def: AirplaneDef): { min: number; max: number } {
 /** Pick a waypoint Y inside the KI_PARAM_A..B band (already in design-space coords). */
 function pickWaypointY(band: { min: number; max: number }, prefer: 'high' | 'low' | 'any'): number {
   const span = Math.max(1, band.max - band.min);
-  if (prefer === 'high') return band.min + Math.random() * span * 0.35;
-  if (prefer === 'low') return band.min + span * 0.65 + Math.random() * span * 0.35;
-  return band.min + Math.random() * span;
+  if (prefer === 'high') return band.min + simRng().next() * span * 0.35;
+  if (prefer === 'low') return band.min + span * 0.65 + simRng().next() * span * 0.35;
+  return band.min + simRng().next() * span;
 }
 
 /** Turn toward waypoint, fly along the nose. rotationSpeed = degrees per second. */
@@ -366,7 +367,7 @@ function updateFighterLizzard(entity: CombatEntity, motion: PatrolMotion, def: A
   if (motion.phase === 0) {
     entity.x += motion.dir * speed * ctx.dt;
     entity.y += (minY - entity.y) * Math.min(1, ctx.dt * 1.5);
-    if (Math.random() < ctx.dt * 0.15) motion.phase = 1;
+    if (simRng().next() < ctx.dt * 0.15) motion.phase = 1;
     patrolEdges(motion, entity, 0, ctx.dt);
   } else if (motion.phase === 1) {
     entity.y += (maxY - entity.y) * Math.min(1, ctx.dt * 4);
@@ -448,7 +449,7 @@ function updateBoss(entity: CombatEntity, motion: PatrolMotion, def: AirplaneDef
       motion.phaseT = 0;
       const bombName = def.weapons[0];
       const bombDef = bombName ? ctx.level.bombs[bombName] : undefined;
-      if (bombDef) ctx.skyBomb(bombDef, 120 + Math.random() * (DESIGN.width - 240));
+      if (bombDef) ctx.skyBomb(bombDef, 120 + simRng().next() * (DESIGN.width - 240));
     }
   }
 
@@ -519,7 +520,7 @@ export function createPatrolMotion(
   const targetY =
     ai === 'FIGHTERMG'
       ? pickWaypointY(band, 'high')
-      : minY + Math.random() * Math.max(1, maxY - minY);
+      : minY + simRng().next() * Math.max(1, maxY - minY);
   return {
     kind: 'patrol',
     ai,

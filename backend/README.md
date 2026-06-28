@@ -40,6 +40,8 @@ htpasswd -c .htpasswd admin
 
 `.htpasswd` and `.htaccess` with real paths should not be committed.
 
+Optional in `config.php`: set `game_url` (e.g. `https://your-host/production`) so admin **watch** links open the game replay viewer. Without it, links use `../../production/?replay=<id>` (sibling folder layout).
+
 ## API
 
 ### `GET api/prepare.php?boardId=aw_h_5&clientId=...`
@@ -53,6 +55,14 @@ Form fields:
 - `payload` — hex-encoded XOR blob (includes checksum, board_id, time_ms, nick, score, date, version)
 - `clientId` — stable browser id
 - `replay` — optional file upload
+
+### `GET api/replay.php?id=123`
+
+Returns raw replay blob (`application/octet-stream`) for a score row that has a replay attached.
+
+### `GET api/score.php?id=123`
+
+Returns score metadata JSON (`id`, `boardId`, `nick`, `time`, `score`, `hasReplay`).
 
 ### `GET api/leaderboard.php?boardId=aw_h_5&distinct=1&limit=25`
 

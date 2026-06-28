@@ -68,3 +68,13 @@ function aw_cache_dir(): string
     }
     return $dir;
 }
+
+/** URL to open the game client in replay mode for a score row. */
+function aw_game_replay_url(int $scoreId): string
+{
+    $base = trim((string) (aw_config()['game_url'] ?? ''));
+    if ($base === '') {
+        return '../../production/?replay=' . $scoreId;
+    }
+    return rtrim($base, '/') . '/?replay=' . $scoreId;
+}

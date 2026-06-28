@@ -160,6 +160,7 @@ $rows = $stmt->fetchAll();
             <td><?= (int) $row['deleted'] ?></td>
             <td>
               <?php if ((int) $row['has_replay']): ?>
+                <a href="<?= h(aw_game_replay_url((int) $row['id'])) ?>" target="_blank" rel="noopener">watch</a>
                 <a href="action.php?download=<?= (int) $row['id'] ?>">dl</a>
               <?php endif; ?>
             </td>

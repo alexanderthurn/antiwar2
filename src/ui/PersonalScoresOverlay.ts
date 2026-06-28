@@ -1,9 +1,11 @@
 import { BitmapText, Container, Graphics } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
+import { formatLevelTimeHms } from '../core/CampaignRun';
 import { playerProfile } from '../core/PlayerProfile';
 import {
   formatPersonalScoreRows,
   loadPersonalScoreRows,
+  type PersonalScoreRow,
 } from '../core/leaderboard/personalScores';
 import { createFocusableButton } from '../input/FocusableButton';
 import type { MenuActionsHost } from '../input/MenuActionsHost';
@@ -36,12 +38,14 @@ export class PersonalScoresOverlay extends Container implements MenuActionsHost 
   private scrollLayer = new Container();
   private onBack: () => void;
   private onChangeUsername: () => void;
+  private onWatchReplay?: (scoreId: number, nick: string) => void;
   private unsubNick: (() => void) | null = null;
 
-  constructor(onBack: () => void, onChangeUsername: () => void) {
+  constructor(onBack: () => void, onChangeUsername: () => void, onWatchReplay?: (scoreId: number, nick: string) => void) {
     super();
     this.onBack = onBack;
     this.onChangeUsername = onChangeUsername;
+    this.onWatchReplay = onWatchReplay;
     void this.build();
   }
 
@@ -141,6 +145,7 @@ export class PersonalScoresOverlay extends Container implements MenuActionsHost 
       });
       this.bodyText.position.set(160, CONTENT_TOP);
       this.scrollLayer.addChild(this.bodyText);
+      this.addReplayButtons(rows);
       this.maxScroll = Math.max(0, this.bodyText.height - (CONTENT_BOTTOM - CONTENT_TOP) + 24);
       this.setScroll(0);
     } catch {
@@ -157,6 +162,44 @@ export class PersonalScoresOverlay extends Container implements MenuActionsHost 
       this.setScroll(this.scrollY);
     } catch {
       this.bodyText.text = 'Could not load scores.';
+    }
+  }
+
+  private addReplayButtons(rows: PersonalScoreRow[]): void {
+    if (!this.onWatchReplay || !this.bodyText) return;
+    const replayRows = rows.filter((r) => r.hasReplay && r.scoreId);
+    if (replayRows.length === 0) return;
+
+    let y = CONTENT_TOP;
+    let lastHeader = '';
+    const lineH = kewlLineHeight(BODY_FONT_SIZE);
+
+    for (const row of rows) {
+      const header = row.modeLabel
+        ? `${row.campaignName} — ${row.modeLabel}`
+        : row.campaignName;
+      if (header !== lastHeader) {
+        if (lastHeader !== '') y += lineH;
+        y += lineH;
+        lastHeader = header;
+      }
+      y += lineH;
+
+      if (!row.hasReplay || !row.scoreId) continue;
+      const levelLabel = row.levelName || row.boardId;
+      const time = formatLevelTimeHms(row.timeMs);
+      const btn = createFocusableButton({
+        id: `replay-${row.scoreId}`,
+        label: `Watch ${levelLabel} ${time}`,
+        x: DESIGN.width - 360,
+        y: y - lineH + 2,
+        w: 180,
+        align: 'right',
+        fontSize: 14,
+        onPress: () => this.onWatchReplay?.(row.scoreId!, row.source === 'online' ? playerProfile.getNick() : playerProfile.getNick()),
+      });
+      this.scrollLayer.addChild(btn.view);
+      this.menuActions.push(btn.action);
     }
   }
 

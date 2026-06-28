@@ -6,6 +6,8 @@ import { effectQualityForGraphics, weatherQualityForGraphics } from '../core/Gra
 import { settingsStore } from '../core/SettingsStore';
 import { LevelSession, UPGRADE_KEYS, type UpgradeKey } from '../core/LevelSession';
 import { computeLevelScore, type LevelWonStats } from '../core/CampaignRun';
+import { SIM_DT } from '../core/SimClock';
+import { newReplaySeed, resetSimRng, simRng } from '../core/SimRng';
 import { BUY_MACRO_STEP_MS, BUY_MACROS } from '../core/BuyScript';
 import { DEV_DEEP_LINK_ENABLED, type DevGameState } from '../core/DevDeepLink';
 import { loadTexture, preloadRound } from '../data/AssetLoader';
@@ -50,6 +52,10 @@ import type { MenuActionsHost } from '../input/MenuActionsHost';
 import type { UiAction } from '../input/UiMenuController';
 import type { UiMenuController } from '../input/UiMenuController';
 import { kewlString, kewlText } from '../ui/KewlFont';
+import { ReplayDriver } from '../replay/ReplayDriver';
+import { ReplayRecorder } from '../replay/ReplayRecorder';
+import type { DecodedReplay, ReplayHeader } from '../replay/replayTypes';
+import { ReplayOverlay } from '../ui/ReplayOverlay';
 
 const HUMAN_FRAME_W = 256;
 const HUMAN_FRAME_H = 344;
@@ -185,6 +191,13 @@ export class GameScene extends Container implements MenuActionsHost {
   private pendingEndScreenTitle: string | null = null;
   private levelAudio!: LevelAudio;
 
+  private replayRecorder: ReplayRecorder | null = null;
+  private replayDriver: ReplayDriver | null = null;
+  private replayOverlay: ReplayOverlay | null = null;
+  private replaySeeking = false;
+  private replayShopCooldown = 0;
+  private onReplayFinished?: (blob: Uint8Array) => void;
+
   /** Return to campaign map (pause / level complete). */
   onReturnToCampaign?: () => void;
   /** Level beaten — persist unlock before the end-screen animation. */
@@ -193,6 +206,86 @@ export class GameScene extends Container implements MenuActionsHost {
   onLevelComplete?: () => void;
   /** Fired when a round/stage begins (for dev URL sync). */
   onRoundStarted?: (state: DevGameState) => void;
+
+  isReplayMode(): boolean {
+    return this.replayDriver !== null;
+  }
+
+  getReplayDriver(): ReplayDriver | null {
+    return this.replayDriver;
+  }
+
+  handleReplayKey(key: string, code: string): boolean {
+    return this.replayOverlay?.handleKey(key, code) ?? false;
+  }
+
+  beginRecording(header: Omit<ReplayHeader, 'formatVersion' | 'simHz' | 'rngSeed'> & { rngSeed?: number }): void {
+    const seed = header.rngSeed ?? newReplaySeed();
+    resetSimRng(seed);
+    this.replayRecorder = new ReplayRecorder({
+      formatVersion: 1,
+      gameVersion: header.gameVersion,
+      levelHash: header.levelHash,
+      boardId: header.boardId,
+      rngSeed: seed,
+      simHz: 60,
+    });
+    this.replayDriver = null;
+  }
+
+  onReplayEncoded(cb: (blob: Uint8Array) => void): void {
+    this.onReplayFinished = cb;
+  }
+
+  async beginReplay(replay: DecodedReplay, nick: string, onExit: () => void): Promise<void> {
+    this.replayDriver = new ReplayDriver(replay);
+    this.replayRecorder = null;
+    resetSimRng(replay.header.rngSeed);
+    this.replayOverlay = new ReplayOverlay(this.replayDriver, nick, onExit);
+    this.uiLayer.addChild(this.replayOverlay);
+    await this.seekReplayTo(0, true);
+  }
+
+  private async seekReplayTo(tick: number, initial = false): Promise<void> {
+    if (!this.replayDriver || !this.level) return;
+    this.replaySeeking = true;
+    this.replayDriver.resetPosition();
+    this.replayDriver.syncPosition(0);
+
+    this.sessionInitialized = false;
+    CombatEntity.resetIdCounter();
+    GameScene.nextCivilianId = 1;
+    resetSimRng(this.replayDriver.replay.header.rngSeed);
+
+    if (this.inputRef) this.releaseTouchFire(this.inputRef);
+    this.closePause();
+    this.closeShop();
+    if (this.endScreenFx) {
+      this.endScreenFx.overlay.destroy({ children: true });
+      this.endScreenFx = null;
+    }
+
+    this.session.initFromLevel(this.level);
+    this.clearAllCivilians();
+    this.levelElapsedMs = 0;
+    this.levelRocketsFired = 0;
+    this.levelCivilianDeaths = 0;
+    this.roundRocketsFired = 0;
+
+    await this.spawnCivilians(this.level.config.startHumans);
+    await this.startRound(0, true);
+    this.replayDriver.onRoundShopStarted(0);
+
+    while (this.replayDriver.getGlobalTick() < tick) {
+      await this.replaySimStep(false);
+      if (this.phase === 'levelComplete' || this.phase === 'gameOver') break;
+    }
+
+    this.replayDriver.syncPosition(this.replayDriver.getGlobalTick());
+    this.replaySeeking = false;
+    if (initial) this.replayDriver.setPlaying(true);
+    this.replayOverlay?.refresh();
+  }
 
   setEndScreenTitle(title: string): void {
     this.pendingEndScreenTitle = title;
@@ -263,6 +356,11 @@ export class GameScene extends Container implements MenuActionsHost {
     if (devBootstrap) this.campaignLevelIndex = devBootstrap.levelIndex;
 
     if (!this.sessionInitialized) {
+      if (!this.replayDriver && !this.replayRecorder) {
+        resetSimRng(newReplaySeed());
+      }
+      CombatEntity.resetIdCounter();
+      GameScene.nextCivilianId = 1;
       this.session.initFromLevel(pack);
       if (devBootstrap?.money != null) this.session.money = devBootstrap.money;
       this.sessionInitialized = true;
@@ -281,7 +379,7 @@ export class GameScene extends Container implements MenuActionsHost {
         const extraHumans = this.session.applyDevPurchases(devBootstrap.upgradePurchases, pack);
         for (let i = 0; i < extraHumans; i++) {
           await this.spawnOneCivilian(
-            CIVILIAN_MIN_X + Math.random() * (CIVILIAN_MAX_X - CIVILIAN_MIN_X),
+            CIVILIAN_MIN_X + simRng().nextFloat(0, CIVILIAN_MAX_X - CIVILIAN_MIN_X),
           );
         }
         this.syncCombatStats();
@@ -297,7 +395,7 @@ export class GameScene extends Container implements MenuActionsHost {
     this.updateHud();
     this.levelAudio = createLevelAudio();
     const startRoundIndex = devBootstrap?.roundIndex ?? roundIndex;
-    const skipIntro = devBootstrap?.skipIntro ?? false;
+    const skipIntro = devBootstrap?.skipIntro ?? this.replayDriver !== null;
     await this.startRound(startRoundIndex, skipIntro);
   }
 
@@ -726,7 +824,7 @@ export class GameScene extends Container implements MenuActionsHost {
     }
   }
 
-  private spawnCivilianAt(x: number, dir: 1 | -1 = Math.random() < 0.5 ? -1 : 1): void {
+  private spawnCivilianAt(x: number, dir: 1 | -1 = simRng().next() < 0.5 ? -1 : 1): void {
     const sprite = new Sprite(Texture.EMPTY);
     this.placeHuman(sprite, x, dir);
     sprite.visible = true;
@@ -1052,12 +1150,23 @@ export class GameScene extends Container implements MenuActionsHost {
     if (this.phase === 'paused') this.phase = this.pauseBeforePhase;
   }
 
-  update(dt: number, input: InputSystem, menu: UiMenuController): void {
+  update(dt: number, input: InputSystem, menu: UiMenuController, opts?: { visuals?: boolean }): void {
+    const visuals = opts?.visuals !== false;
     this.inputRef = input;
+
+    if (this.replayDriver && !this.replaySeeking) {
+      const seek = this.replayDriver.consumeSeekTarget();
+      if (seek !== null) {
+        void this.seekReplayTo(seek);
+        return;
+      }
+      if (visuals) this.replayOverlay?.refresh();
+    }
+
     this.syncHudVisibility();
 
     if (this.endScreenFx) {
-      this.tickEndScreenFx(dt);
+      if (visuals) this.tickEndScreenFx(dt);
       return;
     }
 
@@ -1077,18 +1186,34 @@ export class GameScene extends Container implements MenuActionsHost {
       this.phase === 'levelComplete';
     input.setMode(menuPhase ? 'menu' : 'combat');
 
-    if ((this.phase === 'playing' || this.phase === 'paused') && input.pollPauseToggle()) {
+    if (!this.replayDriver && (this.phase === 'playing' || this.phase === 'paused') && input.pollPauseToggle()) {
       this.togglePause();
+    }
+
+    if (this.replayDriver && this.phase === 'shop') {
+      this.replayShopCooldown = Math.max(0, this.replayShopCooldown - dt);
+      if (this.replayShopCooldown <= 0) {
+        this.processReplayShop();
+        this.replayShopCooldown = this.replaySeeking ? 0 : 0.08;
+      }
+      if (visuals) {
+        if (this.phase === 'shop') this.updateHud();
+        this.explosionManager.update(dt);
+        this.particleFx.update(dt, this.particleBuckets(), { rain: this.round.weather[0] ?? 0 });
+      }
+      return;
     }
 
     if (menuPhase) {
       if (this.phase === 'shop') this.updateHud();
-      if (input.cancelPressed()) this.onMenuCancel();
+      if (!this.replayDriver && input.cancelPressed()) this.onMenuCancel();
       this.syncMenuActions(menu);
-      menu.update(input);
+      if (!this.replayDriver) menu.update(input);
       this.releaseTouchFire(input);
-      this.explosionManager.update(dt);
-      this.particleFx.update(dt, this.particleBuckets(), { rain: this.round.weather[0] ?? 0 });
+      if (visuals) {
+        this.explosionManager.update(dt);
+        this.particleFx.update(dt, this.particleBuckets(), { rain: this.round.weather[0] ?? 0 });
+      }
       return;
     }
 
@@ -1099,34 +1224,40 @@ export class GameScene extends Container implements MenuActionsHost {
 
     beginCollisionFrame();
 
-    this.explosionManager.update(dt);
-    this.particleFx.update(dt, this.particleBuckets(), { rain: this.round.weather[0] ?? 0 });
-    this.killStreaks.tick(dt);
-    this.bossHpBar?.refresh();
-    this.entityHpBars.update(
-      dt,
-      this.entities.living(),
-      this.civilians,
-      input.aimPoints(this.players),
-    );
+    if (visuals) {
+      this.explosionManager.update(dt);
+      this.particleFx.update(dt, this.particleBuckets(), { rain: this.round.weather[0] ?? 0 });
+      this.killStreaks.tick(dt);
+      this.bossHpBar?.refresh();
+      this.entityHpBars.update(
+        dt,
+        this.entities.living(),
+        this.civilians,
+        input.aimPoints(this.players),
+      );
+      this.updateRumble(dt);
+      this.cloudLayer.update(dt);
+      this.weatherLayer.update(dt);
+      this.nightVisionLayer.update(
+        this.round.weather[4] ?? 0,
+        input.aimPoints(this.players).map(({ x, y }) => ({ x, y })),
+      );
+    }
 
-    this.updateRumble(dt);
-    this.cloudLayer.update(dt);
-    this.weatherLayer.update(dt);
-    this.nightVisionLayer.update(
-      this.round.weather[4] ?? 0,
-      input.aimPoints(this.players).map(({ x, y }) => ({ x, y })),
-    );
-    input.updateCombat(this.players, {
-      onJoin: () => {
-        this.players.redistributeCaps(this.session.maxTeamRockets);
-        this.joinPanel?.refresh(this.players);
-      },
-      onLeave: () => {
-        this.players.redistributeCaps(this.session.maxTeamRockets);
-        this.joinPanel?.refresh(this.players);
-      },
-    });
+    if (this.replayDriver) {
+      this.applyReplayCombatInput();
+    } else {
+      input.updateCombat(this.players, {
+        onJoin: () => {
+          this.players.redistributeCaps(this.session.maxTeamRockets);
+          this.joinPanel?.refresh(this.players);
+        },
+        onLeave: () => {
+          this.players.redistributeCaps(this.session.maxTeamRockets);
+          this.joinPanel?.refresh(this.players);
+        },
+      });
+    }
 
     this.joinPanel?.handleInput(input);
     input.setJoinPanelFocused(this.joinPanel?.hasFocus() ?? false);
@@ -1148,6 +1279,8 @@ export class GameScene extends Container implements MenuActionsHost {
         this.tryFireAuto(player, player.rightCannon, 'right');
       }
     }
+    const recordedEdgeL = this.pointerFireEdgeLeft;
+    const recordedEdgeR = this.pointerFireEdgeRight;
     this.pointerFireEdgeLeft = false;
     this.pointerFireEdgeRight = false;
 
@@ -1162,6 +1295,60 @@ export class GameScene extends Container implements MenuActionsHost {
     this.updateNapalmHazards();
     this.checkWinLoss();
     this.updateHud();
+
+    if (this.replayRecorder && this.phase === 'playing') {
+      this.replayRecorder.onCombatTick(this.players.active(), recordedEdgeL, recordedEdgeR);
+    }
+
+    if (this.replayDriver && this.phase === 'playing') {
+      this.replayDriver.advanceTick();
+    }
+  }
+
+  private applyReplayCombatInput(): void {
+    if (!this.replayDriver) return;
+    const row = this.replayDriver.getCombatInput();
+    if (!row) return;
+    const active = this.players.active();
+    for (let i = 0; i < active.length && i < row.length; i++) {
+      const p = active[i]!;
+      const s = row[i]!;
+      p.setAim(s.aimX, s.aimY);
+      p.setFire(s.fireLeft, s.fireRight);
+      if (p.aimSource === 'pointer') {
+        if (s.edgeLeft) this.pointerFireEdgeLeft = true;
+        if (s.edgeRight) this.pointerFireEdgeRight = true;
+      }
+    }
+  }
+
+  private async replaySimStep(visuals: boolean): Promise<void> {
+    if (!this.inputRef || !this.replayDriver) return;
+    const menu = { update: () => {} } as unknown as UiMenuController;
+    if (this.phase === 'shop') {
+      this.processReplayShop();
+      return;
+    }
+    if (this.phase !== 'playing') return;
+    this.update(SIM_DT, this.inputRef, menu, { visuals });
+  }
+
+  private processReplayShop(): void {
+    if (!this.replayDriver || this.phase !== 'shop') return;
+    const ev = this.replayDriver.peekShopEvent();
+    if (!ev) return;
+    if (ev.kind === 'buy') {
+      if (this.buyUpgrade(ev.key, false)) {
+        this.replayDriver.consumeShopEvent();
+      } else {
+        this.replayDriver.consumeShopEvent();
+      }
+      return;
+    }
+    this.replayDriver.consumeShopEvent();
+    const hasMore = this.roundIndex + 1 < this.level.rounds.length;
+    this.replayDriver.onShopContinued();
+    void this.continueFromShop(hasMore);
   }
 
   private updateCivilians(dt: number): void {
@@ -1514,6 +1701,7 @@ export class GameScene extends Container implements MenuActionsHost {
   private openShop(_moneyEarned: number): void {
     const hasMoreRounds = this.roundIndex + 1 < this.level.rounds.length;
     this.phase = 'shop';
+    this.replayDriver?.onRoundShopStarted(this.roundIndex);
     this.rumbleFx.reset();
     this.clearCombat();
     this.clearTransientGameUi();
@@ -1627,9 +1815,11 @@ export class GameScene extends Container implements MenuActionsHost {
 
     if (playSound) this.levelAudio.playPay();
 
+    if (this.replayRecorder) this.replayRecorder.onShopBuy(key);
+
     if (key === 'human') {
       void this.spawnOneCivilian(
-        CIVILIAN_MIN_X + Math.random() * (CIVILIAN_MAX_X - CIVILIAN_MIN_X),
+        CIVILIAN_MIN_X + simRng().nextFloat(0, CIVILIAN_MAX_X - CIVILIAN_MIN_X),
       );
     }
 
@@ -1642,14 +1832,32 @@ export class GameScene extends Container implements MenuActionsHost {
   }
 
   private async continueFromShop(hasMoreRounds: boolean): Promise<void> {
+    if (this.replayRecorder) this.replayRecorder.onShopContinue();
+
     if (hasMoreRounds) {
-      await this.startRound(this.roundIndex + 1);
+      await this.startRound(this.roundIndex + 1, this.replayDriver !== null);
       return;
     }
     const score = computeLevelScore(this.session.money);
+    const timeMs = Math.max(0, Math.floor(this.levelElapsedMs));
+
+    if (this.replayRecorder) {
+      const blob = await this.replayRecorder.finish({ timeMs, score });
+      this.onReplayFinished?.(blob);
+    }
+
+    if (this.replayDriver) {
+      this.replayDriver.setPlaying(false);
+      this.phase = 'levelComplete';
+      this.closeShop();
+      this.clearTransientGameUi();
+      this.replayOverlay?.refresh();
+      return;
+    }
+
     this.onLevelWon?.({
       levelIndex: this.campaignLevelIndex,
-      timeMs: Math.max(0, Math.floor(this.levelElapsedMs)),
+      timeMs,
       score,
     });
     this.phase = 'levelComplete';

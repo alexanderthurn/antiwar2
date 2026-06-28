@@ -28,7 +28,8 @@ final class AwLeaderboard
         int $offset,
     ): array {
         if ($distinct) {
-            $sql = 'SELECT s.id, s.nick, s.time_ms, s.score, s.version, s.submitted_at, s.run_started_at
+            $sql = 'SELECT s.id, s.nick, s.time_ms, s.score, s.version, s.submitted_at, s.run_started_at,
+                           (s.replay IS NOT NULL) AS has_replay
                 FROM scores s
                 WHERE s.board_id = ? AND s.deleted = 0 AND s.flagged = 0
                   AND NOT EXISTS (
@@ -40,7 +41,8 @@ final class AwLeaderboard
                 ORDER BY s.time_ms ASC, s.score DESC
                 LIMIT ? OFFSET ?';
         } else {
-            $sql = 'SELECT id, nick, time_ms, score, version, submitted_at, run_started_at
+            $sql = 'SELECT id, nick, time_ms, score, version, submitted_at, run_started_at,
+                           (replay IS NOT NULL) AS has_replay
                 FROM scores
                 WHERE board_id = ? AND deleted = 0 AND flagged = 0
                 ORDER BY time_ms ASC, score DESC
@@ -102,7 +104,8 @@ final class AwLeaderboard
     public static function fetchByNick(PDO $db, string $nick): array
     {
         $stmt = $db->prepare(
-            'SELECT board_id, nick, time_ms, score, version, submitted_at, run_started_at
+            'SELECT id, board_id, nick, time_ms, score, version, submitted_at, run_started_at,
+                    (replay IS NOT NULL) AS has_replay
              FROM scores
              WHERE nick = ? AND deleted = 0 AND flagged = 0
              ORDER BY board_id ASC, time_ms ASC, score DESC',

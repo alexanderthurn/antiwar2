@@ -5,6 +5,10 @@ import type { EntityMotion, EntityTraits } from './EntityTraits';
 export class CombatEntity {
   private static nextId = 1;
 
+  static resetIdCounter(): void {
+    CombatEntity.nextId = 1;
+  }
+
   readonly id: number;
   readonly traits: EntityTraits;
   readonly sprite: Sprite;

@@ -59,6 +59,9 @@ export class HttpHighscoreProvider implements HighscoreProvider {
     const body = new FormData();
     body.set('payload', hex);
     body.set('clientId', clientId);
+    if (payload.replay && payload.replay.byteLength > 0) {
+      body.set('replay', new Blob([payload.replay as BlobPart]), 'replay.awr');
+    }
 
     try {
       const res = await fetch(`${this.base}/submit.php`, { method: 'POST', body });
@@ -69,6 +72,42 @@ export class HttpHighscoreProvider implements HighscoreProvider {
       return { accepted: true, id: data.id, rank: data.rank };
     } catch {
       return { accepted: false, reason: 'network_error' };
+    }
+  }
+
+  async fetchReplay(scoreId: number): Promise<Uint8Array | null> {
+    const url = `${this.base}/replay.php?id=${encodeURIComponent(String(scoreId))}`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      return new Uint8Array(await res.arrayBuffer());
+    } catch {
+      return null;
+    }
+  }
+
+  async fetchScoreMeta(scoreId: number): Promise<{
+    id: number;
+    boardId: string;
+    nick: string;
+    time: number;
+    score: number;
+    hasReplay: boolean;
+  } | null> {
+    const url = `${this.base}/score.php?id=${encodeURIComponent(String(scoreId))}`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      return (await res.json()) as {
+        id: number;
+        boardId: string;
+        nick: string;
+        time: number;
+        score: number;
+        hasReplay: boolean;
+      };
+    } catch {
+      return null;
     }
   }
 

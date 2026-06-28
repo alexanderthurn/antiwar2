@@ -25,7 +25,9 @@ export class HighscoreService {
     this.boardId = null;
   }
 
-  async submitScore(payload: Omit<ScoreSubmit, 'checksum'> & { boardId: string }): Promise<SubmitResult> {
+  async submitScore(
+    payload: Omit<ScoreSubmit, 'checksum'> & { boardId: string; replay?: Uint8Array },
+  ): Promise<SubmitResult> {
     if (!this.http || !this.checksum) {
       return { accepted: false, reason: 'not_prepared' };
     }
@@ -38,6 +40,23 @@ export class HighscoreService {
     });
     this.clearPrepare();
     return result;
+  }
+
+  async fetchReplay(scoreId: number): Promise<Uint8Array | null> {
+    if (!this.http) return null;
+    return this.http.fetchReplay(scoreId);
+  }
+
+  async fetchScoreMeta(scoreId: number): Promise<{
+    id: number;
+    boardId: string;
+    nick: string;
+    time: number;
+    score: number;
+    hasReplay: boolean;
+  } | null> {
+    if (!this.http) return null;
+    return this.http.fetchScoreMeta(scoreId);
   }
 }
 

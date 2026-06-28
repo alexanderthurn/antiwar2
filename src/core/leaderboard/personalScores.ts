@@ -19,6 +19,8 @@ export interface PersonalScoreRow {
   score: number;
   rank?: number;
   source: 'online' | 'local';
+  scoreId?: number;
+  hasReplay?: boolean;
 }
 
 export async function loadPersonalScoreRows(): Promise<PersonalScoreRow[]> {
@@ -67,6 +69,8 @@ export async function loadPersonalScoreRows(): Promise<PersonalScoreRow[]> {
             score: online.score,
             rank: online.rank,
             source: 'online',
+            scoreId: online.id,
+            hasReplay: online.hasReplay,
           });
         } else if (local && local.nick === nick) {
           rows.push({
@@ -94,6 +98,8 @@ export async function loadPersonalScoreRows(): Promise<PersonalScoreRow[]> {
       score: entry.score,
       rank: entry.rank,
       source: 'online',
+      scoreId: entry.id,
+      hasReplay: entry.hasReplay,
     });
   }
 

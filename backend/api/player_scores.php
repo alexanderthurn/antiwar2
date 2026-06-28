@@ -24,6 +24,7 @@ aw_json_response([
         $timeMs = (int) $row['time_ms'];
         $wallGapMs = ($submittedAt - $runStartedAt) * 1000;
         return [
+            'id' => (int) ($row['id'] ?? 0),
             'boardId' => (string) $row['board_id'],
             'nick' => (string) $row['nick'],
             'rank' => (int) $row['rank'],
@@ -31,6 +32,7 @@ aw_json_response([
             'score' => (int) $row['score'],
             'version' => (int) $row['version'],
             'date' => $submittedAt,
+            'hasReplay' => (bool) ($row['has_replay'] ?? false),
             'wallGapMs' => $wallGapMs,
             'suspicious' => $timeMs > $wallGapMs + 5000,
         ];

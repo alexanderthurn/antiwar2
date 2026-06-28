@@ -37,6 +37,7 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     onPlay: () => void,
     onCredits: () => void,
     onSettings: () => void,
+    private readonly onWatchReplay?: (scoreId: number, nick: string) => void,
   ) {
     super();
     void this.build(onPlay, onCredits, onSettings);
@@ -97,6 +98,7 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     this.personalScoresOverlay = new PersonalScoresOverlay(
       () => this.closePersonalScores(),
       () => this.showSettings({ editUsernameOnOpen: true }),
+      this.onWatchReplay,
     );
     this.addChild(this.personalScoresOverlay);
   }

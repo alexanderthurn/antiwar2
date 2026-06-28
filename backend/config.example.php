@@ -28,7 +28,13 @@ return [
     ],
 
     /**
-     * Allowed CORS origins for api/*.php (browser game).
+     * Game client base URL for admin replay links (no trailing slash).
+     * Example: https://example.com/production
+     * If unset, admin uses relative ../../production/
+     */
+    'game_url' => '',
+
+    /** Allowed CORS origins for api/*.php (browser game).
      * Use ['*'] for dev or list explicit origins in production.
      */
     'cors_origins' => ['*'],
