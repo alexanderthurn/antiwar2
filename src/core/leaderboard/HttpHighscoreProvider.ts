@@ -2,6 +2,7 @@ import { getClientId } from './clientId';
 import type {
   HighscoreProvider,
   LeaderboardEntry,
+  PlayerScoreEntry,
   PrepareResult,
   ScoreSubmit,
   SubmitResult,
@@ -85,6 +86,22 @@ export class HttpHighscoreProvider implements HighscoreProvider {
       return data.entries ?? [];
     } catch {
       return [];
+    }
+  }
+
+  async fetchPlayerScores(clientId: string): Promise<PlayerScoreEntry[]> {
+    const url = `${this.base}/player_scores.php?clientId=${encodeURIComponent(clientId)}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      if (!res.ok) return [];
+      const data = (await res.json()) as { entries?: PlayerScoreEntry[] };
+      return data.entries ?? [];
+    } catch {
+      return [];
+    } finally {
+      clearTimeout(timeout);
     }
   }
 }

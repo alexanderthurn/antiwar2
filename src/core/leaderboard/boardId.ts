@@ -14,3 +14,30 @@ export function buildBoardId(runId: CampaignRunId, levelIndex: number): string {
   }
   return `${runId}_${level}`;
 }
+
+export interface ParsedBoardId {
+  campaignId: string;
+  levelIndex: number;
+  hardcore: boolean;
+}
+
+/** Inverse of {@link buildBoardId} for known campaign board keys. */
+export function parseBoardId(boardId: string): ParsedBoardId | null {
+  const hardcore = boardId.match(/^(.+)_h_(\d+)$/);
+  if (hardcore) {
+    return {
+      campaignId: hardcore[1]!,
+      levelIndex: Number.parseInt(hardcore[2]!, 10),
+      hardcore: true,
+    };
+  }
+  const normal = boardId.match(/^(.+)_(\d+)$/);
+  if (normal) {
+    return {
+      campaignId: normal[1]!,
+      levelIndex: Number.parseInt(normal[2]!, 10),
+      hardcore: false,
+    };
+  }
+  return null;
+}

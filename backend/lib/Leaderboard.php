@@ -93,4 +93,41 @@ final class AwLeaderboard
         $stmt->execute([$boardId]);
         return (int) $stmt->fetchColumn();
     }
+
+    /**
+     * Best non-deleted score per board for a browser client id.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function fetchByClientId(PDO $db, string $clientId): array
+    {
+        $stmt = $db->prepare(
+            'SELECT board_id, nick, time_ms, score, version, submitted_at, run_started_at
+             FROM scores
+             WHERE client_id = ? AND deleted = 0 AND flagged = 0
+             ORDER BY board_id ASC, time_ms ASC, score DESC',
+        );
+        $stmt->execute([$clientId]);
+        $rows = $stmt->fetchAll();
+
+        $bestByBoard = [];
+        foreach ($rows as $row) {
+            $boardId = (string) $row['board_id'];
+            if (!isset($bestByBoard[$boardId])) {
+                $bestByBoard[$boardId] = $row;
+            }
+        }
+
+        $out = [];
+        foreach ($bestByBoard as $row) {
+            $boardId = (string) $row['board_id'];
+            $timeMs = (int) $row['time_ms'];
+            $score = (int) $row['score'];
+            $row['rank'] = self::rankFor($db, $boardId, $timeMs, $score);
+            $out[] = $row;
+        }
+
+        usort($out, static fn (array $a, array $b): int => strcmp((string) $a['board_id'], (string) $b['board_id']));
+        return $out;
+    }
 }

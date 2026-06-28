@@ -11,6 +11,18 @@ export interface LeaderboardEntry {
   suspicious?: boolean;
 }
 
+export interface PlayerScoreEntry {
+  boardId: string;
+  nick: string;
+  rank: number;
+  time: number;
+  score: number;
+  version: number;
+  date: number;
+  wallGapMs?: number;
+  suspicious?: boolean;
+}
+
 export interface SubmitResult {
   accepted: boolean;
   id?: number;

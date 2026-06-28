@@ -2,6 +2,7 @@ import { Container } from 'pixi.js';
 import packageJson from '../../package.json';
 import { playSound, sfxPath } from '../audio/SoundManager';
 import { DESIGN } from '../core/DesignSpace';
+import { playerProfile } from '../core/PlayerProfile';
 import { loadTexture } from '../data/AssetLoader';
 import { createFocusableButton } from '../input/FocusableButton';
 import type { MenuActionsHost } from '../input/MenuActionsHost';
@@ -9,13 +10,13 @@ import type { UiAction } from '../input/UiMenuController';
 import { createMenuBackground } from '../ui/MenuBackground';
 import { MenuLogo } from '../ui/MenuLogo';
 import { HowToPlayOverlay } from '../ui/HowToPlayOverlay';
+import { PersonalScoresOverlay } from '../ui/PersonalScoresOverlay';
 import { SettingsOverlay } from '../ui/SettingsOverlay';
 import { kewlLineHeight, kewlMeasuredSize, kewlTextLeftInset, MENU_BTN_START_Y, MENU_BTN_WIDTH, MENU_FOOTER_FONT_SIZE, MENU_ITEM_FONT_SIZE, menuRowStep, UI_TITLE_MAIN_MENU_Y } from '../ui/KewlFont';
 
 const LOGO_PATH = 'assets/gfx/logo.png';
 const LOGO_HEIGHT = 200;
 const FOOTER_MARGIN = 21;
-const CREDIT_URL = 'https://feuerware.com';
 
 let welcomePlayed = false;
 const VERSION_URL = 'https://github.com/alexanderthurn/antiwar2';
@@ -26,6 +27,7 @@ export class MainMenuScene extends Container implements MenuActionsHost {
   private menuContent = new Container();
   private settingsOverlay: SettingsOverlay | null = null;
   private howToPlayOverlay: HowToPlayOverlay | null = null;
+  private personalScoresOverlay: PersonalScoresOverlay | null = null;
   private logo: MenuLogo | null = null;
 
   constructor(
@@ -71,16 +73,33 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     }
   }
 
+  showPersonalScores(): void {
+    if (this.personalScoresOverlay) return;
+    this.menuContent.visible = false;
+    this.personalScoresOverlay = new PersonalScoresOverlay(() => this.closePersonalScores());
+    this.addChild(this.personalScoresOverlay);
+  }
+
+  closePersonalScores(): void {
+    if (this.personalScoresOverlay) {
+      this.personalScoresOverlay.destroy({ children: true });
+      this.personalScoresOverlay = null;
+      this.menuContent.visible = true;
+    }
+  }
+
   getMenuActions(): UiAction[] {
     return (
-      this.howToPlayOverlay?.getMenuActions()
+      this.personalScoresOverlay?.getMenuActions()
+      ?? this.howToPlayOverlay?.getMenuActions()
       ?? this.settingsOverlay?.getMenuActions()
       ?? this.mainActions
     );
   }
 
   onMenuCancel(): void {
-    if (this.howToPlayOverlay) this.closeHowToPlay();
+    if (this.personalScoresOverlay) this.closePersonalScores();
+    else if (this.howToPlayOverlay) this.closeHowToPlay();
     else if (this.settingsOverlay) this.closeSettings();
   }
 
@@ -120,26 +139,26 @@ export class MainMenuScene extends Container implements MenuActionsHost {
 
     const versionText = `Version: ${packageJson.version}`;
     this.menuContent.addChild(
-      this.makeFooterLink(
+      this.makeFooterButton(
         'menu-version',
         versionText,
         FOOTER_MARGIN - kewlTextLeftInset(MENU_FOOTER_FONT_SIZE),
         footerY,
-        VERSION_URL,
+        () => window.open(VERSION_URL, '_blank', 'noopener,noreferrer'),
       ),
     );
 
-    const creditText = 'Feuerware';
-    const creditW = kewlMeasuredSize(creditText, MENU_FOOTER_FONT_SIZE).width;
+    const playerName = playerProfile.getNick();
+    const playerNameW = kewlMeasuredSize(playerName, MENU_FOOTER_FONT_SIZE).width;
     this.menuContent.addChild(
-      this.makeFooterLink(
-        'menu-credit',
-        creditText,
-        DESIGN.width - FOOTER_MARGIN - creditW - 20,
+      this.makeFooterButton(
+        'menu-player',
+        playerName,
+        DESIGN.width - FOOTER_MARGIN - playerNameW - 20,
         footerY,
-        CREDIT_URL,
+        () => this.showPersonalScores(),
         'right',
-        creditW,
+        playerNameW,
       ),
     );
 
@@ -168,12 +187,12 @@ export class MainMenuScene extends Container implements MenuActionsHost {
     return view;
   }
 
-  private makeFooterLink(
+  private makeFooterButton(
     id: string,
     label: string,
     x: number,
     y: number,
-    url: string,
+    onPress: () => void,
     align: 'left' | 'right' = 'left',
     w?: number,
   ): Container {
@@ -185,7 +204,7 @@ export class MainMenuScene extends Container implements MenuActionsHost {
       w,
       align,
       fontSize: MENU_FOOTER_FONT_SIZE,
-      onPress: () => window.open(url, '_blank', 'noopener,noreferrer'),
+      onPress,
     });
     this.menuActions.push(action);
     return view;
