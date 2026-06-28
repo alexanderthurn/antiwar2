@@ -2,6 +2,14 @@
 
 Single workflow: **Build & Deploy (Feuerware)** (`deploy.yml`).
 
+## Reserved branch names
+
+Do **not** create git branches named `backend` (or other names listed in `RESERVED_FTP_FOLDERS` in `deploy.yml`).
+
+Branch previews deploy to `/<branch>/` on Feuerware. A branch named `backend` would mirror `dist/` over the live PHP highscore API at `/backend/`. Pushes to reserved branch names are skipped (no build/deploy); deleting such a branch will not remove the FTP folder.
+
+Manual **production** deploys are unaffected (they always target `/production/`).
+
 ## Quick reference
 
 | How | Feuerware folder |

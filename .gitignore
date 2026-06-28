@@ -1,5 +1,13 @@
 node_modules
 dist
 .DS_Store
+.env.local
+.env.*.local
 *.local
 /data/
+/old_backend/
+backend/config.php
+backend/cache/*
+!backend/cache/.gitkeep
+backend/admin/.htaccess
+backend/admin/.htpasswd

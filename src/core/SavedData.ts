@@ -1,4 +1,5 @@
 import { runProgressStore } from './CampaignRun';
+import { resetClientIdAfterStorageClear } from './leaderboard/clientId';
 import { playerProfile } from './PlayerProfile';
 import { settingsStore } from './SettingsStore';
 
@@ -12,4 +13,5 @@ export function clearAllGameData(): void {
   runProgressStore.afterStorageClear();
   settingsStore.reloadFromStorage();
   playerProfile.afterStorageClear();
+  resetClientIdAfterStorageClear();
 }

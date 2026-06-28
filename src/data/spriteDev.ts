@@ -3,7 +3,7 @@ import { publicUrl } from '../core/PublicPath';
 /** Must match vite/looseSpritesDev.ts */
 const LOOSE_SPRITES_DEV_ROUTE = '/dev/sprites';
 
-/** Loose sprite overrides — only when started via `npm run art`. */
+/** Loose sprite overrides — dev only, when VITE_LOOSE_SPRITES=true (e.g. npm run art). */
 export function isLooseSpriteDevEnabled(): boolean {
   return import.meta.env.DEV && import.meta.env.VITE_LOOSE_SPRITES === 'true';
 }

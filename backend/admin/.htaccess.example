@@ -1,0 +1,5 @@
+# Copy to .htaccess and set your credentials with: htpasswd -c .htpasswd admin
+AuthType Basic
+AuthName "Antiwar 2 Highscore Admin"
+AuthUserFile /absolute/path/to/backend/admin/.htpasswd
+Require valid-user

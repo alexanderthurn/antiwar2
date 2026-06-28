@@ -1,6 +1,5 @@
 import { Application, Container, Graphics } from 'pixi.js';
 import {
-  campaignIdFromRunId,
   DEFAULT_CAMPAIGN_ID,
   hardcoreRunId,
   HUB_CAMPAIGN_ID,
@@ -10,7 +9,7 @@ import {
   type CampaignRunId,
 } from './core/CampaignRun';
 import { GAME_VERSION_CODE } from './core/GameVersion';
-import { submitHighscore } from './core/HighscoreClient';
+import { buildBoardId, highscoreService, submitHighscore } from './core/HighscoreClient';
 import { playerProfile } from './core/PlayerProfile';
 import { setRunHardcore } from './core/RunMode';
 import { shopDigitFromKeyboard } from './core/BuyScript';
@@ -337,6 +336,10 @@ export class App {
       const game = new GameScene();
       const runId = this.activeRunId;
       const campaignId = this.activeCampaignId;
+      const boardId = buildBoardId(runId, levelIndex);
+      if (highscoreService.enabled) {
+        await highscoreService.prepareForLevel(boardId);
+      }
       game.onReturnToCampaign = () =>
         this.showCampaignViewFor(campaignId, isHardcoreRun(runId));
       game.onLevelWon = (stats) => {
@@ -346,23 +349,19 @@ export class App {
           nick: playerProfile.getNick(),
         };
         const timeMs = Math.max(0, Math.floor(stats.timeMs));
-        const improved = runProgressStore.recordLevelResult(
+        runProgressStore.recordLevelResult(
           runId,
           stats.levelIndex,
           timeMs,
           stats.score,
           meta,
         );
-        if (improved) {
-          void submitHighscore({
-            campaignId: campaignIdFromRunId(runId),
-            levelIndex: stats.levelIndex,
-            hardcore: isHardcoreRun(runId),
-            time: timeMs,
-            score: stats.score,
-            ...meta,
-          });
-        }
+        void submitHighscore({
+          boardId,
+          time: timeMs,
+          score: stats.score,
+          ...meta,
+        });
         const newlyComplete = runProgressStore.completeLevel(
           runId,
           stats.levelIndex,

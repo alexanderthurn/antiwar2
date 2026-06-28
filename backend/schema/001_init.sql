@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS scores (
+  id               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  board_id         VARCHAR(64) NOT NULL,
+  nick             VARCHAR(32) NOT NULL,
+  time_ms          INT UNSIGNED NOT NULL,
+  score            INT NOT NULL,
+  version          INT UNSIGNED NOT NULL,
+  client_id        VARCHAR(64) NOT NULL,
+  ip               VARCHAR(45) NOT NULL,
+  submitted_at     INT UNSIGNED NOT NULL,
+  submit_checksum  VARCHAR(255) NOT NULL,
+  run_started_at   INT UNSIGNED NOT NULL,
+  flagged          TINYINT(1) NOT NULL DEFAULT 0,
+  deleted          TINYINT(1) NOT NULL DEFAULT 0,
+  replay           MEDIUMBLOB NULL,
+  payload_hash     CHAR(40) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_submit_checksum (submit_checksum),
+  KEY idx_board_rank (board_id, deleted, flagged, time_ms, score),
+  KEY idx_client (client_id),
+  KEY idx_ip (ip),
+  KEY idx_submitted (submitted_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
