@@ -40,7 +40,7 @@ htpasswd -c .htpasswd admin
 
 `.htpasswd` and `.htaccess` with real paths should not be committed.
 
-Optional in `config.php`: set `game_url` (e.g. `https://your-host/production`) so admin **watch** links open the game replay viewer. Without it, links use `../../production/?replay=<id>` (sibling folder layout).
+Optional in `config.php`: set `game_url` (default in example: `http://localhost:5173`) so admin **watch** links open the game replay viewer.
 
 ## API
 

@@ -139,3 +139,14 @@ export function formatPersonalScoreRows(rows: PersonalScoreRow[]): string {
 function padRight(text: string, width: number): string {
   return text.length >= width ? `${text} ` : `${text}${' '.repeat(width - text.length)}`;
 }
+
+/** Display label for a score row, e.g. "Training 00:00:01 #1" or "Training 00:00:01 (local)". */
+export function personalScoreRowLabel(row: PersonalScoreRow): string {
+  const levelLabel = row.levelName || row.boardId;
+  const time = formatLevelTimeHms(row.timeMs);
+  const rank =
+    row.source === 'online' && row.rank !== undefined
+      ? `#${row.rank}`
+      : '(local)';
+  return `${levelLabel} ${time} ${rank}`;
+}

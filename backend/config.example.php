@@ -32,7 +32,7 @@ return [
      * Example: https://example.com/production
      * If unset, admin uses relative ../../production/
      */
-    'game_url' => '',
+    'game_url' => 'http://localhost:5173',
 
     /** Allowed CORS origins for api/*.php (browser game).
      * Use ['*'] for dev or list explicit origins in production.

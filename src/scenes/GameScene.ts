@@ -56,6 +56,7 @@ import { ReplayDriver } from '../replay/ReplayDriver';
 import { ReplayRecorder } from '../replay/ReplayRecorder';
 import type { DecodedReplay, ReplayHeader } from '../replay/replayTypes';
 import { ReplayOverlay } from '../ui/ReplayOverlay';
+import { ReplayCrosshairs } from '../ui/ReplayCrosshairs';
 
 const HUMAN_FRAME_W = 256;
 const HUMAN_FRAME_H = 344;
@@ -194,6 +195,7 @@ export class GameScene extends Container implements MenuActionsHost {
   private replayRecorder: ReplayRecorder | null = null;
   private replayDriver: ReplayDriver | null = null;
   private replayOverlay: ReplayOverlay | null = null;
+  private replayCrosshairs: ReplayCrosshairs | null = null;
   private replaySeeking = false;
   private replayShopCooldown = 0;
   private onReplayFinished?: (blob: Uint8Array) => void;
@@ -241,6 +243,10 @@ export class GameScene extends Container implements MenuActionsHost {
     this.replayDriver = new ReplayDriver(replay);
     this.replayRecorder = null;
     resetSimRng(replay.header.rngSeed);
+    const crosshairTex = this.players.slot(0)?.crosshair.texture;
+    this.replayCrosshairs = new ReplayCrosshairs();
+    if (crosshairTex) this.replayCrosshairs.setTexture(crosshairTex);
+    this.uiLayer.addChild(this.replayCrosshairs);
     this.replayOverlay = new ReplayOverlay(this.replayDriver, nick, onExit);
     this.uiLayer.addChild(this.replayOverlay);
     await this.seekReplayTo(0, true);
@@ -1303,6 +1309,11 @@ export class GameScene extends Container implements MenuActionsHost {
     if (this.replayDriver && this.phase === 'playing') {
       this.replayDriver.advanceTick();
     }
+
+    if (opts?.visuals !== false && this.replayDriver) {
+      const showCrosshair = this.phase === 'playing' || this.phase === 'paused';
+      this.replayCrosshairs?.sync(this.players.slots, showCrosshair);
+    }
   }
 
   private applyReplayCombatInput(): void {
@@ -1940,9 +1951,11 @@ export class GameScene extends Container implements MenuActionsHost {
       this.phase === 'playing' || this.phase === 'shop' || this.phase === 'paused';
 
     const showCombatCrosshair = this.phase === 'playing' || this.phase === 'paused';
+    const inReplay = this.replayDriver !== null;
     for (const slot of this.players.slots) {
-      slot.crosshair.visible = slot.active && showCombatCrosshair;
+      slot.crosshair.visible = slot.active && showCombatCrosshair && !inReplay;
     }
+    this.replayCrosshairs?.sync(this.players.slots, showCombatCrosshair && inReplay);
   }
 
   private updateHud(): void {

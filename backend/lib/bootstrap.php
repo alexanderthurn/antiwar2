@@ -74,7 +74,7 @@ function aw_game_replay_url(int $scoreId): string
 {
     $base = trim((string) (aw_config()['game_url'] ?? ''));
     if ($base === '') {
-        return '../../production/?replay=' . $scoreId;
+        return 'http://localhost:5173/?replay=' . $scoreId;
     }
     return rtrim($base, '/') . '/?replay=' . $scoreId;
 }

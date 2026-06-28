@@ -225,6 +225,12 @@ export class App {
   }
 
   private syncMenuCursor(): void {
+    if (this.mode === 'game' && this.game?.isReplayMode()) {
+      this.pixi.canvas.style.cursor = 'default';
+      this.menuCursor.sync(0, 0, false);
+      return;
+    }
+
     const menuVisible =
       this.mode !== 'game' ||
       (this.game !== null && this.input.modeActive() === 'menu');
@@ -281,7 +287,10 @@ export class App {
       () => this.showCampaignViewFor(HUB_CAMPAIGN_ID, false, { returnTo: 'menu' }),
       () => this.showCredits(),
       () => menu.showSettings(),
-      (scoreId, nick) => void this.startReplayById(scoreId, nick),
+      (scoreId, nick) => {
+        stopMusic();
+        void this.startReplayById(scoreId, nick);
+      },
     );
     this.setScene(menu);
     playMenuMusic();
@@ -433,15 +442,13 @@ export class App {
       hasReplay: true,
     };
     if (!meta.hasReplay) {
-      console.warn(`[replay] score ${scoreId} has no replay`);
-      this.showMainMenu(true);
-      return;
+      console.warn(`[replay] score ${scoreId} has no replay flag — trying anyway`);
     }
 
     const blob = await fetchReplay(scoreId);
     if (!blob) {
       console.warn(`[replay] failed to load replay ${scoreId}`);
-      this.showMainMenu(true);
+      this.showMainMenu(false);
       return;
     }
 
@@ -450,7 +457,7 @@ export class App {
       replay = await decodeReplay(blob);
     } catch (err) {
       console.warn('[replay] decode failed', err);
-      this.showMainMenu(true);
+      this.showMainMenu(false);
       return;
     }
 
@@ -458,7 +465,7 @@ export class App {
     const parsed = parseBoardId(boardId);
     if (!parsed) {
       console.warn(`[replay] invalid boardId ${boardId}`);
-      this.showMainMenu(true);
+      this.showMainMenu(false);
       return;
     }
 
@@ -467,7 +474,7 @@ export class App {
     const entry = index.levels[levelIndex];
     if (!entry || !isLevelMapEntry(entry)) {
       console.warn(`[replay] level ${levelIndex} not found`);
-      this.showMainMenu(true);
+      this.showMainMenu(false);
       return;
     }
 
@@ -506,7 +513,7 @@ export class App {
     } catch (err) {
       console.error('[replay] failed to start', err);
       this.game = null;
-      this.showMainMenu(true);
+      this.showMainMenu(false);
     }
   }
 
@@ -598,7 +605,7 @@ export class App {
         this.pointerOverGame = screenToDesign(x, y, this.layout).inGame;
       }
       this.input.onPointerDown(x, y);
-      if (this.mode !== 'game') return;
+      if (this.mode !== 'game' || this.game?.isReplayMode()) return;
       if (this.touchUi) this.game?.handleTouchPointerDown(this.input, x, y);
     };
 
@@ -613,7 +620,7 @@ export class App {
         this.pointerOverGame = screenToDesign(x, y, this.layout).inGame;
       }
       this.input.onPointerMove(x, y);
-      if (this.mode === 'game' && this.game) {
+      if (this.mode === 'game' && this.game && !this.game.isReplayMode()) {
         if (this.touchUi) this.game.handleTouchPointerMove(this.input, x, y);
         else this.game.handlePointerMove(this.input, x, y);
       }
@@ -630,7 +637,7 @@ export class App {
       }
 
       this.input.onPointerUp();
-      if (this.mode !== 'game') return;
+      if (this.mode !== 'game' || this.game?.isReplayMode()) return;
       if (this.touchUi) this.game?.handleTouchPointerUp(this.input);
     };
 
@@ -653,14 +660,14 @@ export class App {
 
     if (!this.touchUi) {
       this.pixi.canvas.addEventListener('mousedown', (e) => {
-        if (this.mode !== 'game') return;
+        if (this.mode !== 'game' || this.game?.isReplayMode()) return;
         if (e.button === 0) this.mouseButtons.left = true;
         if (e.button === 2) this.mouseButtons.right = true;
         this.game?.notifyPointerFireDown(e.button === 0, e.button === 2);
         this.game?.setPointerFire(this.input, this.mouseButtons.left, this.mouseButtons.right);
       });
       window.addEventListener('mouseup', (e) => {
-        if (this.mode !== 'game') return;
+        if (this.mode !== 'game' || this.game?.isReplayMode()) return;
         if (e.button === 0) this.mouseButtons.left = false;
         if (e.button === 2) this.mouseButtons.right = false;
         this.game?.setPointerFire(this.input, this.mouseButtons.left, this.mouseButtons.right);
@@ -674,6 +681,9 @@ export class App {
         return;
       }
       if (e.key === 'Escape') {
+        if (this.mode === 'game' && this.game?.isReplayMode()) {
+          return;
+        }
         if (this.mode === 'game') {
           this.game?.togglePause();
         } else if (this.mode === 'credits' || this.mode === 'campaign') {

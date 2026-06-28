@@ -1,10 +1,9 @@
-import { BitmapText, Container, Graphics } from 'pixi.js';
+import { BitmapText, Container, Graphics, Rectangle } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
-import { formatLevelTimeHms } from '../core/CampaignRun';
 import { playerProfile } from '../core/PlayerProfile';
 import {
-  formatPersonalScoreRows,
   loadPersonalScoreRows,
+  personalScoreRowLabel,
   type PersonalScoreRow,
 } from '../core/leaderboard/personalScores';
 import { createFocusableButton } from '../input/FocusableButton';
@@ -26,22 +25,28 @@ import {
 const SCREEN_MARGIN = 21;
 const CONTENT_TOP = SCREEN_MARGIN + kewlLineHeight(MENU_FOOTER_FONT_SIZE) + 24;
 const CONTENT_BOTTOM = MENU_BTN_START_Y - 24;
+const CONTENT_LEFT = 160;
 const BODY_FONT_SIZE = 20;
 const CHANGE_USERNAME_LABEL = 'Change username';
 
 export class PersonalScoresOverlay extends Container implements MenuActionsHost {
-  private menuActions: UiAction[] = [];
+  private staticActions: UiAction[] = [];
+  private rowActions: UiAction[] = [];
   private scrollY = 0;
   private maxScroll = 0;
-  private bodyText: BitmapText | null = null;
   private titleText: BitmapText | null = null;
   private scrollLayer = new Container();
+  private contentLayer = new Container();
   private onBack: () => void;
   private onChangeUsername: () => void;
   private onWatchReplay?: (scoreId: number, nick: string) => void;
   private unsubNick: (() => void) | null = null;
 
-  constructor(onBack: () => void, onChangeUsername: () => void, onWatchReplay?: (scoreId: number, nick: string) => void) {
+  constructor(
+    onBack: () => void,
+    onChangeUsername: () => void,
+    onWatchReplay?: (scoreId: number, nick: string) => void,
+  ) {
     super();
     this.onBack = onBack;
     this.onChangeUsername = onChangeUsername;
@@ -50,7 +55,7 @@ export class PersonalScoresOverlay extends Container implements MenuActionsHost 
   }
 
   getMenuActions(): UiAction[] {
-    return this.menuActions;
+    return [...this.staticActions, ...this.rowActions];
   }
 
   onMenuCancel(): void {
@@ -93,27 +98,29 @@ export class PersonalScoresOverlay extends Container implements MenuActionsHost 
       onPress: () => this.onChangeUsername(),
     });
     this.addChild(changeUsername.view);
-    this.menuActions.push(changeUsername.action);
+    this.staticActions.push(changeUsername.action);
 
     const mask = new Graphics();
     mask.rect(120, CONTENT_TOP, DESIGN.width - 240, CONTENT_BOTTOM - CONTENT_TOP).fill(0xffffff);
     this.addChild(mask);
 
     this.scrollLayer.mask = mask;
+    this.scrollLayer.eventMode = 'static';
+    this.scrollLayer.hitArea = new Rectangle(
+      120,
+      CONTENT_TOP,
+      DESIGN.width - 240,
+      CONTENT_BOTTOM - CONTENT_TOP,
+    );
+    this.scrollLayer.on('wheel', (event) => {
+      this.setScroll(this.scrollY + event.deltaY * 0.5);
+    });
+    this.scrollLayer.addChild(this.contentLayer);
     this.addChild(this.scrollLayer);
 
     const loading = kewlText({ text: 'Loading...', size: BODY_FONT_SIZE, anchorX: 0.5 });
     loading.position.set(centerX, CONTENT_TOP + 24);
-    this.scrollLayer.addChild(loading);
-
-    const hit = new Graphics();
-    hit.rect(120, CONTENT_TOP, DESIGN.width - 240, CONTENT_BOTTOM - CONTENT_TOP)
-      .fill({ color: 0xffffff, alpha: 0.001 });
-    hit.eventMode = 'static';
-    hit.on('wheel', (event) => {
-      this.setScroll(this.scrollY + event.deltaY * 0.5);
-    });
-    this.addChild(hit);
+    this.contentLayer.addChild(loading);
 
     const btnX = centerX - MENU_BTN_WIDTH / 2;
     const back = createFocusableButton({
@@ -127,7 +134,7 @@ export class PersonalScoresOverlay extends Container implements MenuActionsHost 
       onPress: () => this.onBack(),
     });
     this.addChild(back.view);
-    this.menuActions.push(back.action);
+    this.staticActions.push(back.action);
 
     this.unsubNick = playerProfile.subscribe(() => {
       if (this.titleText) {
@@ -139,40 +146,43 @@ export class PersonalScoresOverlay extends Container implements MenuActionsHost 
     try {
       const rows = await loadPersonalScoreRows();
       loading.destroy();
-      this.bodyText = kewlText({
-        text: formatPersonalScoreRows(rows),
-        size: BODY_FONT_SIZE,
-      });
-      this.bodyText.position.set(160, CONTENT_TOP);
-      this.scrollLayer.addChild(this.bodyText);
-      this.addReplayButtons(rows);
-      this.maxScroll = Math.max(0, this.bodyText.height - (CONTENT_BOTTOM - CONTENT_TOP) + 24);
-      this.setScroll(0);
+      this.renderRows(rows);
     } catch {
       loading.text = 'Could not load scores.';
     }
   }
 
   private async reloadScores(): Promise<void> {
-    if (!this.bodyText) return;
     try {
       const rows = await loadPersonalScoreRows();
-      this.bodyText.text = formatPersonalScoreRows(rows);
-      this.maxScroll = Math.max(0, this.bodyText.height - (CONTENT_BOTTOM - CONTENT_TOP) + 24);
-      this.setScroll(this.scrollY);
+      this.renderRows(rows);
     } catch {
-      this.bodyText.text = 'Could not load scores.';
+      this.renderEmpty('Could not load scores.');
     }
   }
 
-  private addReplayButtons(rows: PersonalScoreRow[]): void {
-    if (!this.onWatchReplay || !this.bodyText) return;
-    const replayRows = rows.filter((r) => r.hasReplay && r.scoreId);
-    if (replayRows.length === 0) return;
+  private renderEmpty(message: string): void {
+    this.contentLayer.removeChildren();
+    this.rowActions = [];
+    const text = kewlText({ text: message, size: BODY_FONT_SIZE });
+    text.position.set(CONTENT_LEFT, 0);
+    this.contentLayer.addChild(text);
+    this.maxScroll = 0;
+    this.setScroll(0);
+  }
 
-    let y = CONTENT_TOP;
-    let lastHeader = '';
+  private renderRows(rows: PersonalScoreRow[]): void {
+    this.contentLayer.removeChildren();
+    this.rowActions = [];
+
+    if (rows.length === 0) {
+      this.renderEmpty('No scores yet.\nFinish a level to see your times here.');
+      return;
+    }
+
     const lineH = kewlLineHeight(BODY_FONT_SIZE);
+    let y = 0;
+    let lastHeader = '';
 
     for (const row of rows) {
       const header = row.modeLabel
@@ -180,33 +190,53 @@ export class PersonalScoresOverlay extends Container implements MenuActionsHost 
         : row.campaignName;
       if (header !== lastHeader) {
         if (lastHeader !== '') y += lineH;
+        const headerText = kewlText({ text: header, size: BODY_FONT_SIZE });
+        headerText.position.set(CONTENT_LEFT, y);
+        this.contentLayer.addChild(headerText);
         y += lineH;
         lastHeader = header;
       }
-      y += lineH;
 
-      if (!row.hasReplay || !row.scoreId) continue;
-      const levelLabel = row.levelName || row.boardId;
-      const time = formatLevelTimeHms(row.timeMs);
-      const btn = createFocusableButton({
-        id: `replay-${row.scoreId}`,
-        label: `Watch ${levelLabel} ${time}`,
-        x: DESIGN.width - 360,
-        y: y - lineH + 2,
-        w: 180,
-        align: 'right',
-        fontSize: 14,
-        onPress: () => this.onWatchReplay?.(row.scoreId!, row.source === 'online' ? playerProfile.getNick() : playerProfile.getNick()),
-      });
-      this.scrollLayer.addChild(btn.view);
-      this.menuActions.push(btn.action);
+      const replayable = this.canWatchReplay(row);
+      const label = personalScoreRowLabel(row);
+
+      if (replayable) {
+        const scoreId = row.scoreId!;
+        const rowBtn = createFocusableButton({
+          id: `personal-score-${scoreId}`,
+          label,
+          x: CONTENT_LEFT,
+          y,
+          w: 480,
+          fontSize: BODY_FONT_SIZE,
+          onPress: () => {
+            this.onWatchReplay?.(scoreId, playerProfile.getNick());
+          },
+        });
+        rowBtn.view.on('wheel', (event) => {
+          this.setScroll(this.scrollY + event.deltaY * 0.5);
+        });
+        this.contentLayer.addChild(rowBtn.view);
+        this.rowActions.push(rowBtn.action);
+      } else {
+        const line = kewlText({ text: label, size: BODY_FONT_SIZE });
+        line.position.set(CONTENT_LEFT, y);
+        this.contentLayer.addChild(line);
+      }
+
+      y += lineH;
     }
+
+    this.maxScroll = Math.max(0, y - (CONTENT_BOTTOM - CONTENT_TOP) + 24);
+    this.setScroll(this.scrollY);
+  }
+
+  private canWatchReplay(row: PersonalScoreRow): boolean {
+    return !!this.onWatchReplay && row.source === 'online' && !!row.scoreId && row.scoreId > 0;
   }
 
   private setScroll(next: number): void {
     this.scrollY = Math.max(0, Math.min(this.maxScroll, next));
-    if (this.bodyText) {
-      this.bodyText.position.y = CONTENT_TOP - this.scrollY;
-    }
+    this.contentLayer.position.y = CONTENT_TOP - this.scrollY;
   }
 }
