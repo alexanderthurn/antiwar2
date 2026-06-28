@@ -12,7 +12,7 @@ import { GAME_VERSION_CODE } from './core/GameVersion';
 import { buildBoardId, fetchReplay, fetchScoreMeta, highscoreService, submitHighscore } from './core/HighscoreClient';
 import { hashLevelFile } from './core/levelHash';
 import { parseBoardId } from './core/leaderboard/boardId';
-import { MAX_SIM_STEPS_PER_FRAME, SIM_DT } from './core/SimClock';
+import { MAX_SIM_STEPS_PER_FRAME, replayMaxStepsPerFrame, SIM_DT } from './core/SimClock';
 import { playerProfile } from './core/PlayerProfile';
 import { setRunHardcore } from './core/RunMode';
 import { shopDigitFromKeyboard } from './core/BuyScript';
@@ -89,6 +89,7 @@ export class App {
 
   private mouseButtons = { left: false, right: false };
   private simAccumulator = 0;
+  private replaySimBusy = false;
   /** Only one touch finger drives aim/fire; ignores extra touches that confuse input. */
   private activeTouchPointerId: number | null = null;
 
@@ -226,8 +227,13 @@ export class App {
 
   private syncMenuCursor(): void {
     if (this.mode === 'game' && this.game?.isReplayMode()) {
-      this.pixi.canvas.style.cursor = 'default';
-      this.menuCursor.sync(0, 0, false);
+      this.pixi.canvas.style.cursor = 'none';
+      this.menuCursor.sync(
+        this.stagePointerPos.x,
+        this.stagePointerPos.y,
+        true,
+        'pointer',
+      );
       return;
     }
 
@@ -502,14 +508,17 @@ export class App {
 
       const bootstrap: DevBootstrap = { levelIndex, roundIndex: 0, skipIntro: true };
       await game.loadLevel(pack, 0, bootstrap);
+      if (this.touchUi) game.enableTouchControls();
+
+      this.game = game;
+      this.setScene(game);
+
       await game.beginReplay(replay, nick, () => {
         clearReplayUrl();
         this.showMainMenu(false);
       });
 
       syncReplayUrl(scoreId);
-      this.game = game;
-      this.setScene(game);
     } catch (err) {
       console.error('[replay] failed to start', err);
       this.game = null;
@@ -530,12 +539,23 @@ export class App {
         this.simAccumulator += frameDt;
       }
 
-      let steps = 0;
-      while (this.simAccumulator >= SIM_DT && steps < MAX_SIM_STEPS_PER_FRAME) {
-        this.simAccumulator -= SIM_DT;
-        steps++;
-        const isLast = steps >= MAX_SIM_STEPS_PER_FRAME || this.simAccumulator < SIM_DT;
-        this.game.update(SIM_DT, this.input, this.menuController, { visuals: isLast });
+      if (this.game.isReplaySeeking() || driver?.isSeeking()) {
+        this.game.update(SIM_DT, this.input, this.menuController, { visuals: true });
+      } else if (this.game.isReplayMode()) {
+        if (!this.replaySimBusy) {
+          this.replaySimBusy = true;
+          void this.runReplaySimBatch(frameDt).finally(() => {
+            this.replaySimBusy = false;
+          });
+        }
+      } else {
+        let steps = 0;
+        while (this.simAccumulator >= SIM_DT && steps < MAX_SIM_STEPS_PER_FRAME) {
+          this.simAccumulator -= SIM_DT;
+          steps++;
+          const isLast = steps >= MAX_SIM_STEPS_PER_FRAME || this.simAccumulator < SIM_DT;
+          this.game.update(SIM_DT, this.input, this.menuController, { visuals: isLast });
+        }
       }
 
       this.syncMenuCursor();
@@ -574,6 +594,38 @@ export class App {
       viewportHeight: this.host.clientHeight,
       devicePixelRatio: window.devicePixelRatio,
     });
+  };
+
+  private async runReplaySimBatch(frameDt: number): Promise<void> {
+    if (!this.game?.isReplayMode()) return;
+    const driver = this.game.getReplayDriver();
+    if (!driver) return;
+
+    if (driver.isPlaying() && !driver.isAtEnd()) {
+      this.simAccumulator += frameDt * driver.getSpeed();
+    }
+
+    if (this.game.isReplayInShop()) {
+      this.simAccumulator = 0;
+      this.game.update(SIM_DT, this.input, this.menuController, { visuals: true });
+      return;
+    }
+
+    if (!driver.isPlaying() || driver.isAtEnd()) {
+      this.game.update(frameDt, this.input, this.menuController, { visuals: true, replayIdle: true });
+      return;
+    }
+
+    const maxSteps = replayMaxStepsPerFrame(driver.getSpeed());
+    let steps = 0;
+    while (this.simAccumulator >= SIM_DT && steps < maxSteps) {
+      await new Promise<void>((resolve) => queueMicrotask(resolve));
+      if (!driver.isPlaying() || driver.isAtEnd()) break;
+      this.simAccumulator -= SIM_DT;
+      steps++;
+      const isLast = steps >= maxSteps || this.simAccumulator < SIM_DT;
+      this.game.update(SIM_DT, this.input, this.menuController, { visuals: isLast });
+    }
   };
 
   private bindInput(): void {

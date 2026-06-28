@@ -56,7 +56,6 @@ import { ReplayDriver } from '../replay/ReplayDriver';
 import { ReplayRecorder } from '../replay/ReplayRecorder';
 import type { DecodedReplay, ReplayHeader } from '../replay/replayTypes';
 import { ReplayOverlay } from '../ui/ReplayOverlay';
-import { ReplayCrosshairs } from '../ui/ReplayCrosshairs';
 
 const HUMAN_FRAME_W = 256;
 const HUMAN_FRAME_H = 344;
@@ -195,9 +194,15 @@ export class GameScene extends Container implements MenuActionsHost {
   private replayRecorder: ReplayRecorder | null = null;
   private replayDriver: ReplayDriver | null = null;
   private replayOverlay: ReplayOverlay | null = null;
-  private replayCrosshairs: ReplayCrosshairs | null = null;
   private replaySeeking = false;
-  private replayShopCooldown = 0;
+  private replaySeekReady = false;
+  private replaySeekTargetTick = 0;
+  private replaySeekInitial = false;
+  private seekBatchInFlight = false;
+  private seekGeneration = 0;
+  private seekCompleteResolvers: Array<() => void> = [];
+  private static readonly SEEK_TICKS_PER_FRAME = 900;
+  private replayShopBusy = false;
   private onReplayFinished?: (blob: Uint8Array) => void;
 
   /** Return to campaign map (pause / level complete). */
@@ -211,6 +216,14 @@ export class GameScene extends Container implements MenuActionsHost {
 
   isReplayMode(): boolean {
     return this.replayDriver !== null;
+  }
+
+  isReplaySeeking(): boolean {
+    return this.replaySeeking;
+  }
+
+  isReplayInShop(): boolean {
+    return this.replayDriver !== null && this.phase === 'shop';
   }
 
   getReplayDriver(): ReplayDriver | null {
@@ -243,18 +256,68 @@ export class GameScene extends Container implements MenuActionsHost {
     this.replayDriver = new ReplayDriver(replay);
     this.replayRecorder = null;
     resetSimRng(replay.header.rngSeed);
-    const crosshairTex = this.players.slot(0)?.crosshair.texture;
-    this.replayCrosshairs = new ReplayCrosshairs();
-    if (crosshairTex) this.replayCrosshairs.setTexture(crosshairTex);
-    this.uiLayer.addChild(this.replayCrosshairs);
     this.replayOverlay = new ReplayOverlay(this.replayDriver, nick, onExit);
+    this.replayOverlay.zIndex = 10_000;
+    this.uiLayer.sortableChildren = true;
     this.uiLayer.addChild(this.replayOverlay);
-    await this.seekReplayTo(0, true);
+    void this.prepareSeekReplay(0, true);
+    await this.whenSeekComplete();
   }
 
-  private async seekReplayTo(tick: number, initial = false): Promise<void> {
-    if (!this.replayDriver || !this.level) return;
+  private whenSeekComplete(): Promise<void> {
+    if (!this.replaySeeking) return Promise.resolve();
+    return new Promise((resolve) => this.seekCompleteResolvers.push(resolve));
+  }
+
+  private handleReplaySeekRequest(tick: number): void {
+    if (!this.replayDriver) return;
+    const current = this.replayDriver.getGlobalTick();
+    if (tick === current && !this.replaySeeking) {
+      this.replayDriver.setPlaying(this.replayDriver.wasPlayingBeforeSeek());
+      return;
+    }
+
+    if (tick < current) {
+      void this.prepareSeekReplay(tick);
+      return;
+    }
+
+    this.replaySeekTargetTick = tick;
+    if (this.replaySeeking) return;
+
     this.replaySeeking = true;
+    this.replaySeekReady = true;
+  }
+
+  private renderSeekFrame(dt: number, input: InputSystem): void {
+    this.explosionManager.update(dt);
+    this.particleFx.update(dt, this.particleBuckets(), { rain: this.round.weather[0] ?? 0 });
+    this.killStreaks.tick(dt);
+    this.bossHpBar?.refresh();
+    this.entityHpBars.update(
+      dt,
+      this.entities.living(),
+      this.civilians,
+      input.aimPoints(this.players),
+    );
+    this.updateRumble(dt);
+    this.cloudLayer.update(dt);
+    this.weatherLayer.update(dt);
+    this.nightVisionLayer.update(
+      this.round.weather[4] ?? 0,
+      input.aimPoints(this.players).map(({ x, y }) => ({ x, y })),
+    );
+    this.updateHud();
+  }
+
+  private async prepareSeekReplay(tick: number, initial = false): Promise<void> {
+    if (!this.replayDriver || !this.level) return;
+    const gen = ++this.seekGeneration;
+    this.replaySeeking = true;
+    this.replaySeekReady = false;
+    this.replaySeekTargetTick = tick;
+    this.replaySeekInitial = initial;
+    this.seekBatchInFlight = false;
     this.replayDriver.resetPosition();
     this.replayDriver.syncPosition(0);
 
@@ -280,17 +343,84 @@ export class GameScene extends Container implements MenuActionsHost {
 
     await this.spawnCivilians(this.level.config.startHumans);
     await this.startRound(0, true);
+    if (gen !== this.seekGeneration) return;
+
     this.replayDriver.onRoundShopStarted(0);
-
-    while (this.replayDriver.getGlobalTick() < tick) {
-      await this.replaySimStep(false);
-      if (this.phase === 'levelComplete' || this.phase === 'gameOver') break;
+    this.replaySeekReady = true;
+    if (this.replayDriver.getGlobalTick() >= this.replaySeekTargetTick) {
+      this.finishSeekReplay();
     }
+  }
 
+  private finishSeekReplay(): void {
+    if (!this.replayDriver) return;
     this.replayDriver.syncPosition(this.replayDriver.getGlobalTick());
     this.replaySeeking = false;
-    if (initial) this.replayDriver.setPlaying(true);
-    this.replayOverlay?.refresh();
+    this.replaySeekReady = false;
+    this.seekBatchInFlight = false;
+    if (this.replaySeekInitial) {
+      this.replayDriver.setPlaying(true);
+      this.replaySeekInitial = false;
+    } else {
+      this.replayDriver.setPlaying(this.replayDriver.wasPlayingBeforeSeek());
+    }
+    this.replayOverlay?.refresh({ seeking: this.replaySeeking });
+    for (const resolve of this.seekCompleteResolvers) resolve();
+    this.seekCompleteResolvers = [];
+  }
+
+  private async runSeekBatch(): Promise<void> {
+    if (!this.replaySeeking || !this.replaySeekReady || !this.replayDriver || this.seekBatchInFlight) return;
+    this.seekBatchInFlight = true;
+    const target = this.replaySeekTargetTick;
+    const gen = this.seekGeneration;
+    try {
+      let steps = 0;
+      let stagnant = 0;
+      let lastTick = this.replayDriver.getGlobalTick();
+      while (
+        steps < GameScene.SEEK_TICKS_PER_FRAME &&
+        this.replayDriver.getGlobalTick() < target
+      ) {
+        await this.replaySimStep(false);
+        steps++;
+        const now = this.replayDriver.getGlobalTick();
+        if (now === lastTick) {
+          stagnant++;
+          if (stagnant >= 8) {
+            await this.unstickReplaySeek();
+            stagnant = 0;
+          }
+        } else {
+          stagnant = 0;
+          lastTick = now;
+        }
+        if (this.phase === 'levelComplete' || this.phase === 'gameOver') break;
+        if (this.replaySeekTargetTick !== target || this.seekGeneration !== gen) return;
+      }
+      if (
+        this.replayDriver.getGlobalTick() >= target ||
+        this.phase === 'levelComplete' ||
+        this.phase === 'gameOver'
+      ) {
+        this.finishSeekReplay();
+      }
+    } finally {
+      this.seekBatchInFlight = false;
+    }
+  }
+
+  private async unstickReplaySeek(): Promise<void> {
+    if (!this.replayDriver) return;
+    if (this.phase === 'shop') {
+      if (this.replayDriver.peekShopEvent()) {
+        await this.processReplayShopAsync();
+      }
+      return;
+    }
+    if (this.phase !== 'playing') {
+      this.finishSeekReplay();
+    }
   }
 
   setEndScreenTitle(title: string): void {
@@ -1156,17 +1286,44 @@ export class GameScene extends Container implements MenuActionsHost {
     if (this.phase === 'paused') this.phase = this.pauseBeforePhase;
   }
 
-  update(dt: number, input: InputSystem, menu: UiMenuController, opts?: { visuals?: boolean }): void {
+  update(dt: number, input: InputSystem, menu: UiMenuController, opts?: { visuals?: boolean; fastForward?: boolean; replayIdle?: boolean }): void {
     const visuals = opts?.visuals !== false;
+    const fastForward = opts?.fastForward === true;
+    const replayIdle = opts?.replayIdle === true;
     this.inputRef = input;
 
-    if (this.replayDriver && !this.replaySeeking) {
+    if (this.replayDriver && !fastForward) {
       const seek = this.replayDriver.consumeSeekTarget();
       if (seek !== null) {
-        void this.seekReplayTo(seek);
-        return;
+        this.handleReplaySeekRequest(seek);
       }
-      if (visuals) this.replayOverlay?.refresh();
+    }
+
+    if (this.replaySeeking && !fastForward) {
+      if (visuals && this.replaySeekReady && !this.seekBatchInFlight) {
+        void this.runSeekBatch();
+      }
+      if (visuals) {
+        if (this.replaySeekReady && this.round) {
+          this.renderSeekFrame(dt, input);
+        }
+        this.replayOverlay?.refresh({ seeking: true });
+      }
+      this.syncHudVisibility();
+      return;
+    }
+
+    if (replayIdle && !fastForward) {
+      if (visuals) {
+        if (this.round) this.renderSeekFrame(dt, input);
+        this.replayOverlay?.refresh();
+      }
+      this.syncHudVisibility();
+      return;
+    }
+
+    if (this.replayDriver && visuals) {
+      this.replayOverlay?.refresh({ seeking: this.replaySeeking });
     }
 
     this.syncHudVisibility();
@@ -1197,13 +1354,10 @@ export class GameScene extends Container implements MenuActionsHost {
     }
 
     if (this.replayDriver && this.phase === 'shop') {
-      this.replayShopCooldown = Math.max(0, this.replayShopCooldown - dt);
-      if (this.replayShopCooldown <= 0) {
+      if (!this.replayShopBusy) {
         this.processReplayShop();
-        this.replayShopCooldown = this.replaySeeking ? 0 : 0.08;
       }
       if (visuals) {
-        if (this.phase === 'shop') this.updateHud();
         this.explosionManager.update(dt);
         this.particleFx.update(dt, this.particleBuckets(), { rain: this.round.weather[0] ?? 0 });
       }
@@ -1226,7 +1380,13 @@ export class GameScene extends Container implements MenuActionsHost {
     this.menuSource = null;
     this.menuActionsKey = '';
 
-    if (this.phase === 'gameOver' || this.phase === 'levelComplete') return;
+    if (this.phase === 'gameOver' || this.phase === 'levelComplete') {
+      if (this.replayDriver && visuals) {
+        this.renderSeekFrame(dt, input);
+        this.replayOverlay?.refresh();
+      }
+      return;
+    }
 
     beginCollisionFrame();
 
@@ -1306,13 +1466,8 @@ export class GameScene extends Container implements MenuActionsHost {
       this.replayRecorder.onCombatTick(this.players.active(), recordedEdgeL, recordedEdgeR);
     }
 
-    if (this.replayDriver && this.phase === 'playing') {
+    if (this.replayDriver?.isPlaying() && this.phase === 'playing') {
       this.replayDriver.advanceTick();
-    }
-
-    if (opts?.visuals !== false && this.replayDriver) {
-      const showCrosshair = this.phase === 'playing' || this.phase === 'paused';
-      this.replayCrosshairs?.sync(this.players.slots, showCrosshair);
     }
   }
 
@@ -1337,15 +1492,15 @@ export class GameScene extends Container implements MenuActionsHost {
     if (!this.inputRef || !this.replayDriver) return;
     const menu = { update: () => {} } as unknown as UiMenuController;
     if (this.phase === 'shop') {
-      this.processReplayShop();
+      await this.processReplayShopAsync();
       return;
     }
     if (this.phase !== 'playing') return;
-    this.update(SIM_DT, this.inputRef, menu, { visuals });
+    this.update(SIM_DT, this.inputRef, menu, { visuals, fastForward: true });
   }
 
   private processReplayShop(): void {
-    if (!this.replayDriver || this.phase !== 'shop') return;
+    if (!this.replayDriver || this.phase !== 'shop' || this.replayShopBusy) return;
     const ev = this.replayDriver.peekShopEvent();
     if (!ev) return;
     if (ev.kind === 'buy') {
@@ -1360,6 +1515,24 @@ export class GameScene extends Container implements MenuActionsHost {
     const hasMore = this.roundIndex + 1 < this.level.rounds.length;
     this.replayDriver.onShopContinued();
     void this.continueFromShop(hasMore);
+  }
+
+  private async processReplayShopAsync(): Promise<void> {
+    if (!this.replayDriver || this.phase !== 'shop' || this.replayShopBusy) return;
+    const ev = this.replayDriver.peekShopEvent();
+    if (!ev) return;
+    if (ev.kind === 'buy') {
+      if (this.buyUpgrade(ev.key, false)) {
+        this.replayDriver.consumeShopEvent();
+      } else {
+        this.replayDriver.consumeShopEvent();
+      }
+      return;
+    }
+    this.replayDriver.consumeShopEvent();
+    const hasMore = this.roundIndex + 1 < this.level.rounds.length;
+    this.replayDriver.onShopContinued();
+    await this.continueFromShop(hasMore);
   }
 
   private updateCivilians(dt: number): void {
@@ -1717,6 +1890,9 @@ export class GameScene extends Container implements MenuActionsHost {
     this.clearCombat();
     this.clearTransientGameUi();
     this.closeShop();
+    if (this.replayDriver) {
+      return;
+    }
     this.shopOverlay = new ShopOverlay(
       this.level,
       this.session,
@@ -1843,45 +2019,52 @@ export class GameScene extends Container implements MenuActionsHost {
   }
 
   private async continueFromShop(hasMoreRounds: boolean): Promise<void> {
-    if (this.replayRecorder) this.replayRecorder.onShopContinue();
+    if (this.replayShopBusy) return;
+    this.replayShopBusy = true;
+    try {
+      if (this.replayRecorder) this.replayRecorder.onShopContinue();
 
-    if (hasMoreRounds) {
-      await this.startRound(this.roundIndex + 1, this.replayDriver !== null);
-      return;
-    }
-    const score = computeLevelScore(this.session.money);
-    const timeMs = Math.max(0, Math.floor(this.levelElapsedMs));
+      if (hasMoreRounds) {
+        await this.startRound(this.roundIndex + 1, this.replayDriver !== null);
+        return;
+      }
+      const score = computeLevelScore(this.session.money);
+      const timeMs = Math.max(0, Math.floor(this.levelElapsedMs));
 
-    if (this.replayRecorder) {
-      const blob = await this.replayRecorder.finish({ timeMs, score });
-      this.onReplayFinished?.(blob);
-    }
+      if (this.replayRecorder) {
+        const blob = await this.replayRecorder.finish({ timeMs, score });
+        this.onReplayFinished?.(blob);
+      }
 
-    if (this.replayDriver) {
-      this.replayDriver.setPlaying(false);
+      if (this.replayDriver) {
+        this.replayDriver.syncPosition(this.replayDriver.getTotalTicks());
+        this.replayDriver.setPlaying(false);
+        this.phase = 'levelComplete';
+        this.closeShop();
+        this.clearTransientGameUi();
+        this.replayOverlay?.refresh({ seeking: this.replaySeeking });
+        return;
+      }
+
+      this.onLevelWon?.({
+        levelIndex: this.campaignLevelIndex,
+        timeMs,
+        score,
+      });
       this.phase = 'levelComplete';
       this.closeShop();
       this.clearTransientGameUi();
-      this.replayOverlay?.refresh();
-      return;
+      this.levelAudio.playLevelWin();
+      const title = this.pendingEndScreenTitle
+        ?? (this.level.id === 1 ? 'Tutorial complete!' : 'Level complete');
+      this.pendingEndScreenTitle = null;
+      this.startEndScreenFx(
+        title,
+        () => this.onLevelComplete?.(),
+      );
+    } finally {
+      this.replayShopBusy = false;
     }
-
-    this.onLevelWon?.({
-      levelIndex: this.campaignLevelIndex,
-      timeMs,
-      score,
-    });
-    this.phase = 'levelComplete';
-    this.closeShop();
-    this.clearTransientGameUi();
-    this.levelAudio.playLevelWin();
-    const title = this.pendingEndScreenTitle
-      ?? (this.level.id === 1 ? 'Tutorial complete!' : 'Level complete');
-    this.pendingEndScreenTitle = null;
-    this.startEndScreenFx(
-      title,
-      () => this.onLevelComplete?.(),
-    );
   }
 
   private startEndScreenFx(title: string, onDone: () => void): void {
@@ -1947,15 +2130,15 @@ export class GameScene extends Container implements MenuActionsHost {
 
   private syncHudVisibility(): void {
     if (!this.gameHud) return;
-    this.gameHud.visible =
-      this.phase === 'playing' || this.phase === 'shop' || this.phase === 'paused';
+    const showHud =
+      !this.replayDriver &&
+      (this.phase === 'playing' || this.phase === 'shop' || this.phase === 'paused');
+    this.gameHud.visible = showHud;
 
     const showCombatCrosshair = this.phase === 'playing' || this.phase === 'paused';
-    const inReplay = this.replayDriver !== null;
     for (const slot of this.players.slots) {
-      slot.crosshair.visible = slot.active && showCombatCrosshair && !inReplay;
+      slot.crosshair.visible = slot.active && showCombatCrosshair;
     }
-    this.replayCrosshairs?.sync(this.players.slots, showCombatCrosshair && inReplay);
   }
 
   private updateHud(): void {

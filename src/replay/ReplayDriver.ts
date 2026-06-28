@@ -9,6 +9,7 @@ export class ReplayDriver {
   private playing = true;
   private speed = 1;
   private seekTarget: number | null = null;
+  private playingBeforeSeek = false;
 
   constructor(replay: DecodedReplay) {
     this.replay = replay;
@@ -35,10 +36,12 @@ export class ReplayDriver {
   }
 
   cycleSpeed(): void {
-    const steps = [0.5, 1, 2, 4, 8];
-    const i = steps.indexOf(this.speed);
+    const steps = ReplayDriver.SPEEDS;
+    const i = steps.indexOf(this.speed as (typeof steps)[number]);
     this.speed = steps[(i + 1) % steps.length] ?? 1;
   }
+
+  static readonly SPEEDS = [0.25, 0.5, 1, 2, 4, 8] as const;
 
   getGlobalTick(): number {
     return this.globalTick;
@@ -72,8 +75,13 @@ export class ReplayDriver {
   }
 
   requestSeek(tick: number): void {
+    this.playingBeforeSeek = this.playing;
     this.seekTarget = Math.max(0, Math.min(this.getTotalTicks(), Math.floor(tick)));
     this.playing = false;
+  }
+
+  wasPlayingBeforeSeek(): boolean {
+    return this.playingBeforeSeek;
   }
 
   seekBySeconds(deltaSec: number): void {

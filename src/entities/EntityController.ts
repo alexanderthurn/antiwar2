@@ -1,5 +1,6 @@
 import { Graphics, Sprite, type Container } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
+import { simRng } from '../core/SimRng';
 import type { AirplaneDef, BombDef, LevelPack } from '../data/types';
 import { combatSpeedMultiplier } from '../core/RunMode';
 import {
@@ -337,9 +338,10 @@ export class EntityController {
     if (!childDef) return;
 
     const count = def.onDeath.count;
+    const rng = simRng();
     for (let i = 0; i < count; i++) {
-      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
-      const radius = 12 + Math.random() * 40;
+      const angle = (Math.PI * 2 * i) / count + rng.nextFloat(-0.5, 0.5) * 0.5;
+      const radius = 12 + rng.nextFloat(0, 40);
       const sx = entity.x + Math.cos(angle) * radius;
       const sy = entity.y + Math.sin(angle) * radius * 0.35;
       void this.spawnFallingBomb(
