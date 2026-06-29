@@ -15,7 +15,7 @@ import { parseBoardId } from './core/leaderboard/boardId';
 import { MAX_SIM_STEPS_PER_FRAME, replayMaxStepsPerFrame, SIM_DT } from './core/SimClock';
 import { playerProfile } from './core/PlayerProfile';
 import { setRunHardcore } from './core/RunMode';
-import { shopDigitFromKeyboard } from './core/BuyScript';
+import { shopSlotFromKeyboard } from './shop/ShopBindings';
 import { DESIGN } from './core/DesignSpace';
 import {
   clearDevUrl,
@@ -79,6 +79,8 @@ export class App {
   private input = new InputSystem();
   private menuController = new UiMenuController();
   private menuCursor = new MenuCursor();
+  /** Recorded player's shop pointer — separate from the spectator cursor. */
+  private replayPlayerCursor = new MenuCursor();
   private letterbox = new LetterboxOverlay();
   private blurBackdrop = new BlurBackdrop();
   private debugOverlay: DebugOverlay | null = null;
@@ -113,6 +115,7 @@ export class App {
     this.gameRoot.mask = this.viewportMask;
     this.gameRoot.addChild(this.viewportMask);
     pixi.stage.addChild(this.letterbox);
+    pixi.stage.addChild(this.replayPlayerCursor);
     pixi.stage.addChild(this.menuCursor);
     this.touchUi = wantsTouchUi();
     this.pixi.ticker.add(this.tick);
@@ -231,9 +234,16 @@ export class App {
       this.menuCursor.sync(
         this.stagePointerPos.x,
         this.stagePointerPos.y,
-        true,
-        'pointer',
+        this.pointerOverGame,
+        'gamepad',
       );
+      if (this.game.isReplayInShop()) {
+        const { x, y } = this.input.cursor();
+        const stage = this.designToStage(x, y);
+        this.replayPlayerCursor.sync(stage.x, stage.y, true, 'pointer');
+      } else {
+        this.replayPlayerCursor.sync(0, 0, false);
+      }
       return;
     }
 
@@ -289,6 +299,10 @@ export class App {
     this.activeRunId = normalRunId(DEFAULT_CAMPAIGN_ID);
     this.mode = 'menu';
     this.game = null;
+    this.input.setReplayPlayback(false);
+    this.replayPlayerCursor.sync(0, 0, false);
+    this.input.setReplayPlayback(false);
+    this.replayPlayerCursor.sync(0, 0, false);
     const menu = new MainMenuScene(
       () => this.showCampaignViewFor(HUB_CAMPAIGN_ID, false, { returnTo: 'menu' }),
       () => this.showCredits(),
@@ -500,6 +514,7 @@ export class App {
     this.activeCampaignId = campaignId;
     this.activeRunId = hardcore ? hardcoreRunId(campaignId) : normalRunId(campaignId);
     this.simAccumulator = 0;
+    this.input.setReplayPlayback(true);
 
     try {
       const pack = await loadLevelPack(campaignId, entry.file);
@@ -529,6 +544,7 @@ export class App {
     } catch (err) {
       console.error('[replay] failed to start', err);
       this.game = null;
+      this.input.setReplayPlayback(false);
       this.showMainMenu(false);
     }
   }
@@ -540,9 +556,7 @@ export class App {
 
     if (this.mode === 'game' && this.game) {
       const driver = this.game.getReplayDriver();
-      if (driver?.isPlaying() && !driver.isSeeking() && !driver.isAtEnd()) {
-        this.simAccumulator += frameDt * driver.getSpeed();
-      } else if (!this.game.isReplayMode()) {
+      if (!this.game.isReplayMode()) {
         this.simAccumulator += frameDt;
       }
 
@@ -619,12 +633,6 @@ export class App {
 
     if (driver.isPlaying() && !driver.isAtEnd()) {
       this.simAccumulator += frameDt * driver.getSpeed();
-    }
-
-    if (this.game.isReplayInShop()) {
-      this.simAccumulator = 0;
-      this.game.update(SIM_DT, this.input, this.menuController, { visuals: true });
-      return;
     }
 
     if (driver.isPlaying() && driver.isAtEnd()) {
@@ -787,9 +795,9 @@ export class App {
         }
         return;
       }
-      const shopDigit = shopDigitFromKeyboard(e);
-      if (shopDigit !== null && this.mode === 'game' && this.game) {
-        this.game.runBuyMacro(shopDigit);
+      const shopSlot = shopSlotFromKeyboard(e);
+      if (shopSlot !== null && this.mode === 'game' && this.game) {
+        this.input.pushShopShortcut(shopSlot);
       }
     });
   }

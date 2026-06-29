@@ -1,5 +1,4 @@
 import { DESIGN } from '../core/DesignSpace';
-import { UPGRADE_KEYS, type UpgradeKey } from '../core/LevelSession';
 import { deflateBytes, inflateBytes } from './compress';
 import {
   REPLAY_FORMAT_VERSION,
@@ -8,11 +7,13 @@ import {
   type PlayerTickInput,
   type ReplayFooter,
   type ReplayHeader,
-  type RoundReplay,
-  type ShopEvent,
+  type ReplayTick,
+  type ShopTickInput,
 } from './replayTypes';
 
 const AIM_SCALE = 4095;
+const PHASE_COMBAT = 0;
+const PHASE_SHOP = 1;
 
 function quantizeAim(v: number, max: number): number {
   return Math.max(0, Math.min(AIM_SCALE, Math.round((v / max) * AIM_SCALE)));
@@ -20,15 +21,6 @@ function quantizeAim(v: number, max: number): number {
 
 function dequantizeAim(q: number, max: number): number {
   return (q / AIM_SCALE) * max;
-}
-
-function upgradeIndex(key: UpgradeKey): number {
-  const i = UPGRADE_KEYS.indexOf(key);
-  return i >= 0 ? i : 0;
-}
-
-function upgradeFromIndex(i: number): UpgradeKey {
-  return UPGRADE_KEYS[Math.max(0, Math.min(UPGRADE_KEYS.length - 1, i))] ?? 'rocket';
 }
 
 function writeU8(buf: number[], v: number): void {
@@ -61,7 +53,7 @@ function readU16(data: Uint8Array, off: { i: number }): number {
 
 function readU32(data: Uint8Array, off: { i: number }): number {
   const v =
-  (data[off.i]! << 24) | (data[off.i + 1]! << 16) | (data[off.i + 2]! << 8) | data[off.i + 3]!;
+    (data[off.i]! << 24) | (data[off.i + 1]! << 16) | (data[off.i + 2]! << 8) | data[off.i + 3]!;
   off.i += 4;
   return v >>> 0;
 }
@@ -100,58 +92,70 @@ function unpackPlayerTick(data: Uint8Array, off: { i: number }): PlayerTickInput
   };
 }
 
-function encodeCombatBlock(ticks: PlayerTickInput[][]): Uint8Array {
+function packShopTick(s: ShopTickInput): number[] {
+  const out: number[] = [];
+  writeU16(out, quantizeAim(s.cursorX, DESIGN.width));
+  writeU16(out, quantizeAim(s.cursorY, DESIGN.height));
+  let flags = 0;
+  if (s.confirmEdge) flags |= 1;
+  flags |= (Math.max(0, Math.min(15, s.shortcutSlot)) & 0xf) << 1;
+  writeU8(out, flags);
+  return out;
+}
+
+function unpackShopTick(data: Uint8Array, off: { i: number }): ShopTickInput {
+  const cx = readU16(data, off);
+  const cy = readU16(data, off);
+  const flags = readU8(data, off);
+  return {
+    cursorX: dequantizeAim(cx, DESIGN.width),
+    cursorY: dequantizeAim(cy, DESIGN.height),
+    confirmEdge: (flags & 1) !== 0,
+    shortcutSlot: (flags >> 1) & 0xf,
+  };
+}
+
+function encodeTickStream(ticks: ReplayTick[], playerCount: number): Uint8Array {
   const buf: number[] = [];
-  writeU16(buf, ticks.length > 0 ? ticks[0]!.length : 1);
+  writeU16(buf, playerCount);
   writeU32(buf, ticks.length);
   for (const tick of ticks) {
-    for (const player of tick) buf.push(...packPlayerTick(player));
-  }
-  return new Uint8Array(buf);
-}
-
-function decodeCombatBlock(raw: Uint8Array): PlayerTickInput[][] {
-  const off = { i: 0 };
-  const playerCount = readU16(raw, off);
-  const tickCount = readU32(raw, off);
-  const ticks: PlayerTickInput[][] = [];
-  for (let t = 0; t < tickCount; t++) {
-    const row: PlayerTickInput[] = [];
-    for (let p = 0; p < playerCount; p++) row.push(unpackPlayerTick(raw, off));
-    ticks.push(row);
-  }
-  return ticks;
-}
-
-function encodeShopEvents(events: ShopEvent[]): Uint8Array {
-  const buf: number[] = [];
-  writeU16(buf, events.length);
-  for (const ev of events) {
-    if (ev.kind === 'buy') {
-      writeU8(buf, 1);
-      writeU8(buf, upgradeIndex(ev.key));
+    if (tick.phase === 'shop') {
+      writeU8(buf, PHASE_SHOP);
+      buf.push(...packShopTick(tick.shop ?? emptyShopTick()));
     } else {
-      writeU8(buf, 2);
+      writeU8(buf, PHASE_COMBAT);
+      const row = tick.combat ?? [];
+      for (let p = 0; p < playerCount; p++) {
+        buf.push(...packPlayerTick(row[p] ?? emptyPlayerTick()));
+      }
     }
   }
   return new Uint8Array(buf);
 }
 
-function decodeShopEvents(raw: Uint8Array): ShopEvent[] {
+function decodeTickStream(raw: Uint8Array): { playerCount: number; ticks: ReplayTick[] } {
   const off = { i: 0 };
-  const count = readU16(raw, off);
-  const out: ShopEvent[] = [];
-  for (let i = 0; i < count; i++) {
-    const kind = readU8(raw, off);
-    if (kind === 1) out.push({ kind: 'buy', key: upgradeFromIndex(readU8(raw, off)) });
-    else out.push({ kind: 'continue' });
+  const playerCount = readU16(raw, off);
+  const tickCount = readU32(raw, off);
+  const ticks: ReplayTick[] = [];
+  for (let t = 0; t < tickCount; t++) {
+    const phase = readU8(raw, off);
+    if (phase === PHASE_SHOP) {
+      ticks.push({ phase: 'shop', shop: unpackShopTick(raw, off) });
+    } else {
+      const row: PlayerTickInput[] = [];
+      for (let p = 0; p < playerCount; p++) row.push(unpackPlayerTick(raw, off));
+      ticks.push({ phase: 'combat', combat: row });
+    }
   }
-  return out;
+  return { playerCount, ticks };
 }
 
 export interface EncodeReplayInput {
   header: ReplayHeader;
-  rounds: RoundReplay[];
+  playerCount: number;
+  ticks: ReplayTick[];
   footer: ReplayFooter;
 }
 
@@ -164,16 +168,10 @@ export async function encodeReplay(input: EncodeReplayInput): Promise<Uint8Array
   writeStr(body, input.header.boardId);
   writeU32(body, input.header.rngSeed);
   writeU8(body, input.header.simHz);
-  writeU8(body, input.rounds.length);
 
-  for (const round of input.rounds) {
-    const shop = await deflateBytes(encodeShopEvents(round.shopEvents));
-    writeU32(body, shop.length);
-    body.push(...shop);
-    const combat = await deflateBytes(encodeCombatBlock(round.ticks));
-    writeU32(body, combat.length);
-    body.push(...combat);
-  }
+  const stream = await deflateBytes(encodeTickStream(input.ticks, input.playerCount));
+  writeU32(body, stream.length);
+  body.push(...stream);
 
   writeU32(body, input.footer.timeMs);
   writeU32(body, input.footer.score);
@@ -199,20 +197,10 @@ export async function decodeReplay(blob: Uint8Array): Promise<DecodedReplay> {
     simHz: readU8(blob, off),
   };
 
-  const roundCount = readU8(blob, off);
-  const rounds: RoundReplay[] = [];
-  for (let r = 0; r < roundCount; r++) {
-    const shopLen = readU32(blob, off);
-    const shopRaw = await inflateBytes(blob.subarray(off.i, off.i + shopLen));
-    off.i += shopLen;
-    const combatLen = readU32(blob, off);
-    const combatRaw = await inflateBytes(blob.subarray(off.i, off.i + combatLen));
-    off.i += combatLen;
-    rounds.push({
-      shopEvents: decodeShopEvents(shopRaw),
-      ticks: decodeCombatBlock(combatRaw),
-    });
-  }
+  const streamLen = readU32(blob, off);
+  const streamRaw = await inflateBytes(blob.subarray(off.i, off.i + streamLen));
+  off.i += streamLen;
+  const { playerCount, ticks } = decodeTickStream(streamRaw);
 
   const footer: ReplayFooter = {
     timeMs: readU32(blob, off),
@@ -220,7 +208,7 @@ export async function decodeReplay(blob: Uint8Array): Promise<DecodedReplay> {
     totalSimTicks: readU32(blob, off),
   };
 
-  return { header, rounds, footer };
+  return { header, playerCount, ticks, footer };
 }
 
 export function capturePlayerTick(
@@ -242,5 +230,14 @@ export function emptyPlayerTick(): PlayerTickInput {
     fireRight: false,
     edgeLeft: false,
     edgeRight: false,
+  };
+}
+
+export function emptyShopTick(): ShopTickInput {
+  return {
+    cursorX: DESIGN.width / 2,
+    cursorY: DESIGN.height / 2,
+    confirmEdge: false,
+    shortcutSlot: 0,
   };
 }

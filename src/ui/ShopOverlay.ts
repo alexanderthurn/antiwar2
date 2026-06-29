@@ -1,4 +1,4 @@
-import { BitmapText, Container, Graphics, Rectangle, Sprite, type Texture } from 'pixi.js';
+import { BitmapText, Container, Graphics, Rectangle, Sprite, Ticker, type Texture } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
 import type { LevelSession, UpgradeKey } from '../core/LevelSession';
 import type { LevelPack } from '../data/types';
@@ -60,13 +60,14 @@ interface ShopRow {
   label: BitmapText;
   row: Container & { rowW: number };
   key: UpgradeKey;
+  btnGfx: Container;
+  syncBtnVisual: () => void;
 }
 
 export class ShopOverlay extends Container {
   readonly menuActions: UiAction[] = [];
 
   private moneyText!: BitmapText;
-  private waveText!: BitmapText;
   private priceLabels = new Map<UpgradeKey, BitmapText>();
   private shopRows = new Map<UpgradeKey, ShopRow>();
   private lockedTex!: Texture;
@@ -76,6 +77,8 @@ export class ShopOverlay extends Container {
   private canBuy: (key: UpgradeKey) => boolean;
   private autoBuyView: Container | null = null;
   private autoBuyAction: UiAction | null = null;
+  private continueView: Container | null = null;
+  private readonly purchaseFxTickers = new Set<(t: Ticker) => void>();
 
   constructor(
     pack: LevelPack,
@@ -108,6 +111,74 @@ export class ShopOverlay extends Container {
     this.refreshAutoBuyVisibility();
   }
 
+  /** Brief punch + ring flash when an upgrade is purchased. */
+  playPurchaseEffect(key: UpgradeKey): void {
+    const shopRow = this.shopRows.get(key);
+    if (!shopRow || shopRow.row.destroyed) return;
+
+    const { btnGfx, icon, label, row } = shopRow;
+    const cx = SHOP_BTN_SIZE / 2;
+    const cy = SHOP_BTN_SIZE / 2;
+
+    const ring = new Graphics();
+    ring.position.set(cx, cy);
+    row.addChild(ring);
+
+    const iconTint = icon.tint;
+    let elapsed = 0;
+    const duration = 0.34;
+
+    const tick = (t: Ticker) => {
+      if (row.destroyed || btnGfx.destroyed) {
+        Ticker.shared.remove(tick);
+        this.purchaseFxTickers.delete(tick);
+        return;
+      }
+      elapsed += t.deltaTime / 60;
+      const u = Math.min(1, elapsed / duration);
+
+      const punch =
+        u < 0.28 ? 1 + 0.24 * (u / 0.28) : 1 + 0.24 * (1 - (u - 0.28) / 0.72);
+      btnGfx.scale.set(punch);
+
+      const ringR = SHOP_BTN_SIZE * 0.3 + u * SHOP_BTN_SIZE * 0.65;
+      ring.clear();
+      ring.circle(0, 0, ringR).stroke({ color: 0xffee66, width: 4, alpha: (1 - u) * 0.95 });
+      ring.circle(0, 0, ringR * 0.72).stroke({ color: 0xffffff, width: 2, alpha: (1 - u) * 0.55 });
+
+      icon.tint = u < 0.5 ? 0xccffcc : iconTint;
+      label.alpha = 0.55 + 0.45 * Math.cos(u * Math.PI);
+
+      if (u >= 1) {
+        icon.tint = iconTint;
+        label.alpha = 1;
+        ring.destroy();
+        shopRow.syncBtnVisual();
+        Ticker.shared.remove(tick);
+        this.purchaseFxTickers.delete(tick);
+      }
+    };
+    this.purchaseFxTickers.add(tick);
+    Ticker.shared.add(tick);
+  }
+
+  override destroy(options?: Parameters<Container['destroy']>[0]): void {
+    for (const tick of this.purchaseFxTickers) Ticker.shared.remove(tick);
+    this.purchaseFxTickers.clear();
+    super.destroy(options);
+  }
+
+  /** Disable Pixi pointer hits so spectator mouse cannot trigger shop actions. */
+  setSpectatorOnly(enabled: boolean): void {
+    const mode = enabled ? 'none' : 'static';
+    this.eventMode = mode;
+    for (const row of this.shopRows.values()) {
+      row.row.eventMode = mode;
+    }
+    if (this.autoBuyView) this.autoBuyView.eventMode = mode;
+    if (this.continueView) this.continueView.eventMode = mode;
+  }
+
   private hasBuyableItem(): boolean {
     for (const key of this.shopRows.keys()) {
       if (this.canBuy(key)) return true;
@@ -127,9 +198,9 @@ export class ShopOverlay extends Container {
   private async build(
     pack: LevelPack,
     session: LevelSession,
-    roundNumber: number,
-    roundTotal: number,
-    hasMoreRounds: boolean,
+    _roundNumber: number,
+    _roundTotal: number,
+    _hasMoreRounds: boolean,
   ): Promise<void> {
     this.lockedTex = await loadTexture(SHOP_LOCKED);
 
@@ -188,6 +259,7 @@ export class ShopOverlay extends Container {
       icon: autoTex,
       onPress: () => this.onAutoBuy(),
       enabled: () => this.hasBuyableItem(),
+      pointerActivates: false,
     });
     this.autoBuyView = auto.view;
     this.autoBuyAction = auto.action;
@@ -204,8 +276,10 @@ export class ShopOverlay extends Container {
       base: baseTex,
       icon: goTex,
       onPress: () => this.onContinue(),
+      pointerActivates: false,
     });
     this.addChild(cont.view);
+    this.continueView = cont.view;
     this.menuActions.push(cont.action);
 
     this.refresh(session);
@@ -232,6 +306,7 @@ export class ShopOverlay extends Container {
       icon: affordable ? normalTex : this.lockedTex,
       onPress: () => this.onBuy(key),
       enabled: () => this.canBuy(key),
+      pointerActivates: false,
     });
     row.addChild(btn.view);
     btn.view.eventMode = 'none';
@@ -253,7 +328,6 @@ export class ShopOverlay extends Container {
     const activate = () => {
       if (this.canBuy(key)) this.onBuy(key);
     };
-    row.on('pointertap', activate);
 
     let rowHovered = false;
     let rowFocused = false;
@@ -272,6 +346,8 @@ export class ShopOverlay extends Container {
       rowHovered = false;
       applyRowVisual();
     });
+
+    const syncBtnVisual = () => applyRowVisual();
 
     const setFocused = (focused: boolean) => {
       rowFocused = focused;
@@ -293,6 +369,8 @@ export class ShopOverlay extends Container {
       label,
       row,
       key,
+      btnGfx: btn.view.children[0] as Container,
+      syncBtnVisual,
     };
     this.shopRows.set(key, shopRow);
     return shopRow;

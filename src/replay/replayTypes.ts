@@ -1,7 +1,7 @@
 import type { UpgradeKey } from '../core/LevelSession';
 
-export const REPLAY_MAGIC = 'AWR1';
-export const REPLAY_FORMAT_VERSION = 1;
+export const REPLAY_MAGIC = 'AWR2';
+export const REPLAY_FORMAT_VERSION = 2;
 
 export interface ReplayHeader {
   formatVersion: number;
@@ -18,10 +18,6 @@ export interface ReplayFooter {
   totalSimTicks: number;
 }
 
-export type ShopEvent =
-  | { kind: 'buy'; key: UpgradeKey }
-  | { kind: 'continue' };
-
 export interface PlayerTickInput {
   aimX: number;
   aimY: number;
@@ -31,13 +27,30 @@ export interface PlayerTickInput {
   edgeRight: boolean;
 }
 
-export interface RoundReplay {
-  shopEvents: ShopEvent[];
-  ticks: PlayerTickInput[][];
+export interface ShopTickInput {
+  cursorX: number;
+  cursorY: number;
+  confirmEdge: boolean;
+  /** 0 = none, 1–9 = shop shortcut slot */
+  shortcutSlot: number;
+}
+
+export type ReplayPhase = 'combat' | 'shop';
+
+export interface ReplayTick {
+  phase: ReplayPhase;
+  combat?: PlayerTickInput[];
+  shop?: ShopTickInput;
 }
 
 export interface DecodedReplay {
   header: ReplayHeader;
-  rounds: RoundReplay[];
+  playerCount: number;
+  ticks: ReplayTick[];
   footer: ReplayFooter;
 }
+
+/** @deprecated AWR2 uses unified ticks only */
+export type ShopEvent =
+  | { kind: 'buy'; key: UpgradeKey }
+  | { kind: 'continue' };

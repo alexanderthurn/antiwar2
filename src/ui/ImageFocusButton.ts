@@ -18,6 +18,8 @@ export interface ImageFocusButtonOptions {
   iconPlateW?: number;
   onPress: () => void;
   enabled?: () => boolean;
+  /** When false, pointertap does not fire onPress (menu confirm handles activation). */
+  pointerActivates?: boolean;
 }
 
 /** Uniform scale so overlay sprites keep their native size relative to the base plate. */
@@ -88,7 +90,9 @@ export function createImageFocusButton(
 
   view.on('pointerover', () => setHovered(true));
   view.on('pointerout', () => setHovered(false));
-  view.on('pointertap', activate);
+  if (opts.pointerActivates !== false) {
+    view.on('pointertap', activate);
+  }
 
   const action: UiAction = {
     id: opts.id,

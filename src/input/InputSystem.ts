@@ -1,4 +1,8 @@
 import { DESIGN, TOUCH_AIM_EXTRA_CM } from '../core/DesignSpace';
+import {
+  emptyGamepadShopPrev,
+  shopSlotFromGamepad,
+} from '../shop/ShopBindings';
 import { screenToDesign, stickToDesign, type ViewportLayout } from '../core/Viewport';
 import { pollGamepads } from '../multiplayer/GamepadInput';
 import type { PlayerManager } from '../multiplayer/PlayerManager';
@@ -44,6 +48,15 @@ export class InputSystem {
   private joinConfirmEdge = false;
   private joinPanelFocused = false;
   private pointerDrivesMenu = true;
+  private shopShortcutsEnabled = false;
+  private shopShortcutEdge = 0;
+  private shopTapConfirm = false;
+  private shopPointerConfirmEnabled = false;
+  private gamepadShopPrev = emptyGamepadShopPrev();
+  /** When true, `cursor()` tracks the recorded player; pointer/gamepad do not move it. */
+  private replayPlayback = false;
+  private replayPlayerCursorX = DESIGN.width / 2;
+  private replayPlayerCursorY = DESIGN.height / 2;
 
   setLayout(layout: ViewportLayout): void {
     this.layout = layout;
@@ -58,16 +71,45 @@ export class InputSystem {
   }
 
   cursor(): { x: number; y: number } {
+    if (this.replayPlayback) {
+      return { x: this.replayPlayerCursorX, y: this.replayPlayerCursorY };
+    }
     return { x: this.cursorX, y: this.cursorY };
   }
 
+  setReplayPlayback(active: boolean): void {
+    this.replayPlayback = active;
+    if (active) {
+      this.replayPlayerCursorX = this.cursorX;
+      this.replayPlayerCursorY = this.cursorY;
+    }
+  }
+
+  isReplayPlayback(): boolean {
+    return this.replayPlayback;
+  }
+
   snapCursor(x: number, y: number): void {
+    if (this.replayPlayback) {
+      this.setReplayPlayerCursor(x, y);
+      return;
+    }
     this.cursorX = Math.max(0, Math.min(DESIGN.width, x));
     this.cursorY = Math.max(0, Math.min(DESIGN.height, y));
   }
 
+  setReplayPlayerCursor(x: number, y: number): void {
+    this.replayPlayerCursorX = Math.max(0, Math.min(DESIGN.width, x));
+    this.replayPlayerCursorY = Math.max(0, Math.min(DESIGN.height, y));
+  }
+
   confirmPressed(): boolean {
     return this.confirmEdge;
+  }
+
+  /** After menu handled confirm — prevents duplicate buys across sim steps in one frame. */
+  clearConfirmEdge(): void {
+    this.confirmEdge = false;
   }
 
   cancelPressed(): boolean {
@@ -106,8 +148,41 @@ export class InputSystem {
     return this.pointerDrivesMenu;
   }
 
+  setShopShortcutsEnabled(enabled: boolean): void {
+    this.shopShortcutsEnabled = enabled;
+    if (!enabled) this.gamepadShopPrev = emptyGamepadShopPrev();
+  }
+
+  setShopPointerConfirmEnabled(enabled: boolean): void {
+    this.shopPointerConfirmEnabled = enabled;
+    if (!enabled) this.shopTapConfirm = false;
+  }
+
+  /** Digit shortcut edge this frame (1–9), consumed when read. */
+  consumeShopShortcut(): number {
+    const slot = this.shopShortcutEdge;
+    this.shopShortcutEdge = 0;
+    return slot;
+  }
+
+  pushShopShortcut(slot: number): void {
+    if (slot >= 1 && slot <= 9) this.shopShortcutEdge = slot;
+  }
+
+  /** Pointer release in menu mode — consumed once per frame in shop/combat menu. */
+  consumeShopTapConfirm(): boolean {
+    const v = this.shopTapConfirm;
+    this.shopTapConfirm = false;
+    return v;
+  }
+
+  /** Replay playback — inject confirm for the current sim tick. */
+  injectConfirmEdge(): void {
+    this.confirmEdge = true;
+  }
+
   onPointerMove(clientX: number, clientY: number): void {
-    if (!this.layout) return;
+    if (!this.layout || this.replayPlayback) return;
     this.pointerDrivesMenu = true;
     const { x, y, inGame } = screenToDesign(clientX, clientY, this.layout);
     if (inGame) {
@@ -117,7 +192,7 @@ export class InputSystem {
   }
 
   onPointerDown(clientX: number, clientY: number): void {
-    if (!this.layout) return;
+    if (!this.layout || this.replayPlayback) return;
     this.pointerDrivesMenu = true;
     const { x, y, inGame } = screenToDesign(clientX, clientY, this.layout);
     if (!inGame) return;
@@ -128,6 +203,15 @@ export class InputSystem {
   }
 
   onPointerUp(): void {
+    if (this.replayPlayback) return;
+    if (
+      this.shopPointerConfirmEnabled &&
+      this.mode === 'menu' &&
+      this.pointerDown &&
+      this.pointerDrivesMenu
+    ) {
+      this.shopTapConfirm = true;
+    }
     this.pointerDown = false;
   }
 
@@ -141,9 +225,12 @@ export class InputSystem {
     this.joinNavPrevEdge = false;
     this.joinNavNextEdge = false;
     this.joinConfirmEdge = false;
-
     if (this.mode === 'menu') {
-      this.pollMenuGamepads(dt);
+      if (this.shopShortcutsEnabled) {
+        this.pollShopGamepads();
+      } else if (!this.replayPlayback) {
+        this.pollMenuGamepads(dt);
+      }
       // Pointer/touch activate via Pixi pointertap on release; gamepad uses confirm here.
       if (this.pointerDownEdge && !this.pointerDrivesMenu) this.confirmEdge = true;
     } else if (this.mode === 'combat') {
@@ -254,6 +341,29 @@ export class InputSystem {
     this.gamepadPrevA.set(pad.index, pad.buttonA);
     this.gamepadPrevDpadUp = pad.dpadUp;
     this.gamepadPrevDpadDown = pad.dpadDown;
+  }
+
+  private pollShopGamepads(): void {
+    const pad = pollGamepads()[0];
+    if (!pad) {
+      this.gamepadShopPrev = emptyGamepadShopPrev();
+      return;
+    }
+    const slot = shopSlotFromGamepad(pad, this.gamepadShopPrev);
+    if (slot !== null) this.shopShortcutEdge = slot;
+    if (pad.buttonA && !this.gamepadPrevA.get(pad.index)) this.confirmEdge = true;
+    this.gamepadPrevA.set(pad.index, pad.buttonA);
+    this.gamepadShopPrev = {
+      dpadUp: pad.dpadUp,
+      dpadRight: pad.dpadRight,
+      dpadDown: pad.dpadDown,
+      dpadLeft: pad.dpadLeft,
+      buttonL1: pad.buttonL1,
+      buttonR1: pad.buttonR1,
+      buttonA: pad.buttonA,
+      buttonB: pad.buttonB,
+      buttonStart: pad.buttonStart,
+    };
   }
 
   private pollMenuGamepads(dt: number): void {

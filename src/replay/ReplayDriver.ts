@@ -1,11 +1,8 @@
-import type { DecodedReplay, PlayerTickInput, ShopEvent } from './replayTypes';
+import type { DecodedReplay, PlayerTickInput, ReplayTick, ShopTickInput } from './replayTypes';
 
 export class ReplayDriver {
   readonly replay: DecodedReplay;
   private globalTick = 0;
-  private roundIndex = 0;
-  private roundTick = 0;
-  private shopEventIndex = 0;
   private playing = true;
   private speed = 1;
   private seekTarget: number | null = null;
@@ -101,80 +98,36 @@ export class ReplayDriver {
 
   resetPosition(): void {
     this.globalTick = 0;
-    this.roundIndex = 0;
-    this.roundTick = 0;
-    this.shopEventIndex = 0;
   }
 
   syncPosition(globalTick: number): void {
-    this.globalTick = 0;
-    this.roundIndex = 0;
-    this.roundTick = 0;
-    this.shopEventIndex = 0;
-    for (let r = 0; r < this.replay.rounds.length && this.globalTick < globalTick; r++) {
-      const round = this.replay.rounds[r]!;
-      const ticksInRound = round.ticks.length;
-      if (this.globalTick + ticksInRound <= globalTick) {
-        this.globalTick += ticksInRound;
-        this.roundIndex = r + 1;
-        this.roundTick = 0;
-        this.shopEventIndex = round.shopEvents.length;
-      } else {
-        this.roundIndex = r;
-        const remaining = globalTick - this.globalTick;
-        this.roundTick = remaining;
-        this.globalTick = globalTick;
-        break;
-      }
-    }
+    this.globalTick = Math.max(0, Math.min(this.getTotalTicks(), globalTick));
   }
 
-  currentRoundShopEvents(): ShopEvent[] {
-    const round = this.replay.rounds[this.roundIndex];
-    return round?.shopEvents ?? [];
+  getCurrentTick(): ReplayTick | null {
+    return this.replay.ticks[this.globalTick] ?? null;
   }
 
-  peekShopEvent(): ShopEvent | null {
-    const events = this.currentRoundShopEvents();
-    return events[this.shopEventIndex] ?? null;
-  }
-
-  consumeShopEvent(): ShopEvent | null {
-    const ev = this.peekShopEvent();
-    if (ev) this.shopEventIndex += 1;
-    return ev;
+  getPhase(): 'combat' | 'shop' | null {
+    return this.getCurrentTick()?.phase ?? null;
   }
 
   getCombatInput(): PlayerTickInput[] | null {
-    const round = this.replay.rounds[this.roundIndex];
-    if (!round) return null;
-    const row = round.ticks[this.roundTick];
-    if (!row) return null;
-    return row.map((t) => ({ ...t }));
+    const tick = this.getCurrentTick();
+    if (!tick || tick.phase !== 'combat' || !tick.combat) return null;
+    return tick.combat.map((t) => ({ ...t }));
   }
 
-  /** Advance one sim tick after combat step. Returns false when replay ended. */
+  getShopInput(): ShopTickInput | null {
+    const tick = this.getCurrentTick();
+    if (!tick || tick.phase !== 'shop' || !tick.shop) return null;
+    return { ...tick.shop };
+  }
+
+  /** Advance one sim tick after the step completes. */
   advanceTick(): boolean {
-    const round = this.replay.rounds[this.roundIndex];
-    if (!round) return false;
-    if (this.roundTick + 1 < round.ticks.length) {
-      this.roundTick += 1;
-      this.globalTick += 1;
-      return this.globalTick < this.getTotalTicks();
-    }
+    if (this.globalTick >= this.getTotalTicks()) return false;
     this.globalTick += 1;
     return this.globalTick < this.getTotalTicks();
-  }
-
-  onRoundShopStarted(roundIdx: number): void {
-    this.roundIndex = roundIdx;
-    this.roundTick = 0;
-    this.shopEventIndex = 0;
-  }
-
-  onShopContinued(): void {
-    this.roundIndex += 1;
-    this.roundTick = 0;
-    this.shopEventIndex = 0;
   }
 }

@@ -8,7 +8,8 @@ import { LevelSession, UPGRADE_KEYS, type UpgradeKey } from '../core/LevelSessio
 import { computeLevelScore, type LevelWonStats } from '../core/CampaignRun';
 import { SIM_DT } from '../core/SimClock';
 import { newReplaySeed, resetSimRng, simRng } from '../core/SimRng';
-import { BUY_MACRO_STEP_MS, BUY_MACROS } from '../core/BuyScript';
+import { shopSlotAction } from '../shop/ShopBindings';
+import { shopSlotCenter } from '../shop/ShopLayout';
 import { DEV_DEEP_LINK_ENABLED, type DevGameState } from '../core/DevDeepLink';
 import { loadTexture, preloadRound } from '../data/AssetLoader';
 import {
@@ -54,7 +55,7 @@ import type { UiMenuController } from '../input/UiMenuController';
 import { kewlString, kewlText } from '../ui/KewlFont';
 import { ReplayDriver } from '../replay/ReplayDriver';
 import { ReplayRecorder } from '../replay/ReplayRecorder';
-import type { DecodedReplay, ReplayHeader } from '../replay/replayTypes';
+import { REPLAY_FORMAT_VERSION, type DecodedReplay, type ReplayHeader, type ShopTickInput } from '../replay/replayTypes';
 import { ReplayOverlay } from '../ui/ReplayOverlay';
 import { syncReplayPlaybackUrl } from '../replay/ReplayDeepLink';
 
@@ -159,7 +160,6 @@ export class GameScene extends Container implements MenuActionsHost {
   private gameHud: GameHud | null = null;
   private levelElapsedMs = 0;
   private shopOverlay: ShopOverlay | null = null;
-  private buyMacroRunning = false;
   private roundElapsedMs = 0;
   private levelRocketsFired = 0;
   private roundRocketsFired = 0;
@@ -205,6 +205,8 @@ export class GameScene extends Container implements MenuActionsHost {
   private seekCompleteResolvers: Array<() => void> = [];
   private static readonly SEEK_TICKS_PER_FRAME = 1800;
   private replayShopBusy = false;
+  /** Blocks sync from re-opening shop while continueFromShop is in flight. */
+  private replayLeavingShop = false;
   private onReplayFinished?: (blob: Uint8Array) => void;
 
   /** Return to campaign map (pause / level complete). */
@@ -250,7 +252,7 @@ export class GameScene extends Container implements MenuActionsHost {
     const seed = header.rngSeed ?? newReplaySeed();
     resetSimRng(seed);
     this.replayRecorder = new ReplayRecorder({
-      formatVersion: 1,
+      formatVersion: REPLAY_FORMAT_VERSION,
       gameVersion: header.gameVersion,
       levelHash: header.levelHash,
       boardId: header.boardId,
@@ -342,6 +344,10 @@ export class GameScene extends Container implements MenuActionsHost {
     this.replaySeekTargetTick = tick;
     this.replaySeekInitial = initial;
     this.seekBatchInFlight = false;
+    this.replayShopBusy = false;
+    this.replayLeavingShop = false;
+    this.wonRound = false;
+    this.phase = 'playing';
     this.replayDriver.resetPosition();
     this.replayDriver.syncPosition(0);
 
@@ -369,7 +375,6 @@ export class GameScene extends Container implements MenuActionsHost {
     await this.startRound(0, true);
     if (gen !== this.seekGeneration) return;
 
-    this.replayDriver.onRoundShopStarted(0);
     this.replaySeekReady = true;
     if (this.replayDriver.getGlobalTick() >= this.replaySeekTargetTick) {
       this.finishSeekReplay();
@@ -438,13 +443,8 @@ export class GameScene extends Container implements MenuActionsHost {
 
   private async unstickReplaySeek(): Promise<void> {
     if (!this.replayDriver) return;
-    if (this.phase === 'shop') {
-      if (this.replayDriver.peekShopEvent()) {
-        await this.processReplayShopAsync();
-      } else {
-        const hasMore = this.roundIndex + 1 < this.level.rounds.length;
-        await this.continueFromShop(hasMore);
-      }
+    if (this.phase === 'shop' && !this.replayShopBusy) {
+      this.replayDriver.advanceTick();
       return;
     }
     if (this.phase !== 'playing') {
@@ -1377,24 +1377,55 @@ export class GameScene extends Container implements MenuActionsHost {
       this.phase === 'gameOver' ||
       this.phase === 'levelComplete';
     input.setMode(menuPhase ? 'menu' : 'combat');
+    input.setShopPointerConfirmEnabled(this.phase === 'shop' && !this.replayDriver);
 
     if (!this.replayDriver && (this.phase === 'playing' || this.phase === 'paused') && input.pollPauseToggle()) {
       this.togglePause();
     }
 
-    if (this.replayDriver && this.phase === 'shop') {
-      if (!this.replayShopBusy) {
-        this.processReplayShop();
+    if (this.replayDriver && !replayIdle) {
+      this.syncReplayPhaseFromDriver();
+    }
+
+    if (this.phase === 'shop') {
+      input.setShopShortcutsEnabled(!this.replayDriver);
+      let recordedShortcut = 0;
+      let recordedConfirm = false;
+      if (this.replayDriver) {
+        const shopIn = this.replayDriver.getShopInput();
+        if (shopIn) {
+          recordedConfirm = shopIn.confirmEdge;
+          this.applyReplayShopInput(shopIn, menu);
+        }
+      } else {
+        recordedShortcut = input.consumeShopShortcut();
+        if (recordedShortcut > 0) {
+          this.executeShopSlot(recordedShortcut);
+        } else {
+          recordedConfirm = this.runLiveShopMenu(input, menu);
+        }
       }
+      if (this.replayRecorder) {
+        const c = input.cursor();
+        this.replayRecorder.onShopTick(c.x, c.y, recordedConfirm, recordedShortcut);
+      }
+      this.updateHud();
+      this.releaseTouchFire(input);
       if (visuals) {
         this.explosionManager.update(dt);
         this.particleFx.update(dt, this.particleBuckets(), { rain: this.round.weather[0] ?? 0 });
+      }
+      if (
+        this.replayDriver &&
+        (this.replayDriver.isPlaying() || this.replaySeeking) &&
+        !this.replayShopBusy
+      ) {
+        this.replayDriver.advanceTick();
       }
       return;
     }
 
     if (menuPhase) {
-      if (this.phase === 'shop') this.updateHud();
       if (!this.replayDriver && input.cancelPressed()) this.onMenuCancel();
       this.syncMenuActions(menu);
       if (!this.replayDriver) menu.update(input);
@@ -1488,19 +1519,47 @@ export class GameScene extends Container implements MenuActionsHost {
       this.civilians,
     );
     this.updateNapalmHazards();
-    this.checkWinLoss();
-    this.updateHud();
-
     if (this.replayRecorder && this.phase === 'playing') {
       this.replayRecorder.onCombatTick(this.players.active(), recordedEdgeL, recordedEdgeR);
     }
+    this.checkWinLoss();
+    this.updateHud();
 
     if (
       this.replayDriver &&
       this.phase === 'playing' &&
+      !this.replayShopBusy &&
       (this.replayDriver.isPlaying() || this.replaySeeking)
     ) {
       this.replayDriver.advanceTick();
+    }
+  }
+
+  private syncReplayPhaseFromDriver(): void {
+    if (!this.replayDriver || this.replayShopBusy) return;
+    const tickPhase = this.replayDriver.getPhase();
+    if (!tickPhase) return;
+
+    if (tickPhase === 'shop' && this.phase === 'playing') {
+      if (this.replayLeavingShop) return;
+      if (!this.wonRound) {
+        this.wonRound = true;
+        const survivors = this.civilians.filter((c) => c.alive).length;
+        this.session.payoutSurvivors(survivors, this.level.config.moneyFactor);
+      }
+      if (!this.shopOverlay) this.openShop();
+      return;
+    }
+
+    if (tickPhase === 'combat' && this.phase === 'shop') {
+      if (this.replaySeeking) {
+        // Seek/fast-forward can reach combat ticks before the go tick was processed.
+        void this.continueFromShop(this.hasMoreRounds());
+      } else {
+        // Normal playback: go already triggered continueFromShop; just close the shop UI.
+        this.closeShop();
+        this.phase = 'playing';
+      }
     }
   }
 
@@ -1524,48 +1583,48 @@ export class GameScene extends Container implements MenuActionsHost {
   private async replaySimStep(visuals: boolean): Promise<void> {
     if (!this.inputRef || !this.replayDriver) return;
     const menu = { update: () => {} } as unknown as UiMenuController;
-    if (this.phase === 'shop') {
-      await this.processReplayShopAsync();
-      return;
-    }
-    if (this.phase !== 'playing') return;
+    if (this.phase !== 'playing' && this.phase !== 'shop') return;
     this.update(SIM_DT, this.inputRef, menu, { visuals, fastForward: true });
   }
 
-  private processReplayShop(): void {
-    if (!this.replayDriver || this.phase !== 'shop' || this.replayShopBusy) return;
-    const ev = this.replayDriver.peekShopEvent();
-    if (!ev) return;
-    if (ev.kind === 'buy') {
-      if (this.buyUpgrade(ev.key, false)) {
-        this.replayDriver.consumeShopEvent();
-      } else {
-        this.replayDriver.consumeShopEvent();
-      }
-      return;
-    }
-    this.replayDriver.consumeShopEvent();
-    const hasMore = this.roundIndex + 1 < this.level.rounds.length;
-    this.replayDriver.onShopContinued();
-    void this.continueFromShop(hasMore);
+  private runLiveShopMenu(input: InputSystem, menu: UiMenuController): boolean {
+    if (input.consumeShopTapConfirm()) input.injectConfirmEdge();
+    const confirmed = input.confirmPressed();
+    this.syncMenuActions(menu);
+    menu.update(input);
+    input.clearConfirmEdge();
+    return confirmed;
   }
 
-  private async processReplayShopAsync(): Promise<void> {
-    if (!this.replayDriver || this.phase !== 'shop' || this.replayShopBusy) return;
-    const ev = this.replayDriver.peekShopEvent();
-    if (!ev) return;
-    if (ev.kind === 'buy') {
-      if (this.buyUpgrade(ev.key, false)) {
-        this.replayDriver.consumeShopEvent();
-      } else {
-        this.replayDriver.consumeShopEvent();
-      }
+  private applyReplayShopInput(shop: ShopTickInput, menu: UiMenuController): void {
+    if (!this.inputRef) return;
+    this.inputRef.setReplayPlayerCursor(shop.cursorX, shop.cursorY);
+    this.syncMenuActions(menu);
+    if (shop.shortcutSlot > 0) {
+      this.executeShopSlot(shop.shortcutSlot);
       return;
     }
-    this.replayDriver.consumeShopEvent();
-    const hasMore = this.roundIndex + 1 < this.level.rounds.length;
-    this.replayDriver.onShopContinued();
-    await this.continueFromShop(hasMore);
+    if (shop.confirmEdge) this.inputRef.injectConfirmEdge();
+    menu.update(this.inputRef);
+    this.inputRef.clearConfirmEdge();
+  }
+
+  private executeShopSlot(slot: number): void {
+    if (this.phase !== 'shop') return;
+    const center = shopSlotCenter(slot, this.level);
+    if (center && this.inputRef) {
+      if (this.replayDriver) this.inputRef.setReplayPlayerCursor(center.x, center.y);
+      else this.inputRef.snapCursor(center.x, center.y);
+    }
+    const action = shopSlotAction(slot);
+    if (!action) return;
+    if (action.kind === 'buy') {
+      this.buyUpgrade(action.key, !this.replayDriver);
+    } else if (action.kind === 'autobuy') {
+      this.autoBuyUpgrades();
+    } else if (action.kind === 'continue') {
+      void this.continueFromShop(this.hasMoreRounds());
+    }
   }
 
   private updateCivilians(dt: number): void {
@@ -1912,7 +1971,7 @@ export class GameScene extends Container implements MenuActionsHost {
       if (this.hasMoreRounds()) {
         this.playRoundWinSound();
         this.openShop();
-      } else {
+      } else if (!this.replayDriver) {
         void this.finishLevel();
       }
     }
@@ -1925,14 +1984,10 @@ export class GameScene extends Container implements MenuActionsHost {
   private openShop(): void {
     const hasMoreRounds = this.hasMoreRounds();
     this.phase = 'shop';
-    this.replayDriver?.onRoundShopStarted(this.roundIndex);
     this.rumbleFx.reset();
     this.clearCombat();
     this.clearTransientGameUi();
     this.closeShop();
-    if (this.replayDriver) {
-      return;
-    }
     this.shopOverlay = new ShopOverlay(
       this.level,
       this.session,
@@ -1945,6 +2000,7 @@ export class GameScene extends Container implements MenuActionsHost {
       hasMoreRounds,
     );
     this.uiLayer.addChild(this.shopOverlay);
+    if (this.replayDriver) this.shopOverlay.setSpectatorOnly(true);
     this.updateHud();
   }
 
@@ -1986,38 +2042,12 @@ export class GameScene extends Container implements MenuActionsHost {
     while (true) {
       const key = this.findCheapestBuyableUpgrade();
       if (!key) break;
-      if (this.buyUpgrade(key, false)) purchased = true;
+      if (!this.buyUpgrade(key, false)) break;
+      purchased = true;
     }
     if (purchased) {
       this.levelAudio.playPay();
       this.shopOverlay?.refresh(this.session);
-    }
-  }
-
-  /** v1 buyscript.txt keys 1–9 — shop phase only. */
-  runBuyMacro(digit: number): void {
-    if (this.phase !== 'shop' || this.buyMacroRunning) return;
-    const sequence = BUY_MACROS[digit];
-    if (!sequence?.length) return;
-    void this.executeBuyMacro(sequence);
-  }
-
-  private async executeBuyMacro(sequence: readonly UpgradeKey[]): Promise<void> {
-    this.buyMacroRunning = true;
-    try {
-      let purchased = false;
-      for (let i = 0; i < sequence.length; i++) {
-        if (i > 0) {
-          await new Promise<void>((resolve) => {
-            window.setTimeout(resolve, BUY_MACRO_STEP_MS * i);
-          });
-        }
-        if (this.phase !== 'shop') return;
-        if (this.buyUpgrade(sequence[i]!, false)) purchased = true;
-      }
-      if (purchased) this.levelAudio.playPay();
-    } finally {
-      this.buyMacroRunning = false;
     }
   }
 
@@ -2042,8 +2072,6 @@ export class GameScene extends Container implements MenuActionsHost {
 
     if (playSound) this.levelAudio.playPay();
 
-    if (this.replayRecorder) this.replayRecorder.onShopBuy(key);
-
     if (key === 'human') {
       void this.spawnOneCivilian(
         CIVILIAN_MIN_X + simRng().nextFloat(0, CIVILIAN_MAX_X - CIVILIAN_MIN_X),
@@ -2052,6 +2080,7 @@ export class GameScene extends Container implements MenuActionsHost {
 
     this.syncCombatStats();
     this.refreshCivilianHp();
+    this.shopOverlay?.playPurchaseEffect(key);
     this.shopOverlay?.refresh(this.session);
     this.updateHud();
     this.notifyRoundStarted();
@@ -2061,27 +2090,22 @@ export class GameScene extends Container implements MenuActionsHost {
   private async continueFromShop(hasMoreRounds: boolean): Promise<void> {
     if (this.replayShopBusy) return;
     this.replayShopBusy = true;
+    this.replayLeavingShop = true;
     try {
-      if (this.replayRecorder) this.replayRecorder.onShopContinue();
-
+      this.closeShop();
       if (hasMoreRounds) {
         await this.startRound(this.roundIndex + 1, this.replayDriver !== null);
+        if (this.replayDriver) this.replayDriver.advanceTick();
+        return;
+      }
+      if (this.replayDriver) {
+        this.phase = 'playing';
         return;
       }
       await this.finishLevel();
     } finally {
+      this.replayLeavingShop = false;
       this.replayShopBusy = false;
-    }
-  }
-
-  private applyReplayFinalShopEvents(): void {
-    if (!this.replayDriver) return;
-    this.replayDriver.onRoundShopStarted(this.roundIndex);
-    while (true) {
-      const ev = this.replayDriver.peekShopEvent();
-      if (!ev) break;
-      if (ev.kind === 'buy') this.buyUpgrade(ev.key, false);
-      this.replayDriver.consumeShopEvent();
     }
   }
 
@@ -2090,7 +2114,6 @@ export class GameScene extends Container implements MenuActionsHost {
     this.clearCombat();
     this.clearTransientGameUi();
     this.closeShop();
-    this.applyReplayFinalShopEvents();
 
     const score = computeLevelScore(this.session.money);
     const timeMs = Math.max(0, Math.floor(this.levelElapsedMs));
@@ -2101,13 +2124,7 @@ export class GameScene extends Container implements MenuActionsHost {
     }
 
     if (this.replayDriver) {
-      if (this.replayDriver.isPlaying()) {
-        void this.prepareSeekReplay(0, true);
-      } else {
-        this.replayDriver.syncPosition(this.replayDriver.getTotalTicks());
-        this.phase = 'levelComplete';
-        this.replayOverlay?.refresh({ seeking: this.replaySeeking });
-      }
+      // Replay runs to the recorded tick end; loopReplayIfAtEnd restarts playback.
       return;
     }
 
