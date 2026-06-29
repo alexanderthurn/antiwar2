@@ -143,16 +143,6 @@ export class ShopOverlay extends Container {
     this.moneyText.position.set(centerX, UI_TITLE_Y);
     this.addChild(this.moneyText);
 
-    const waveLabel = hasMoreRounds
-      ? `Wave ${roundNumber} of ${roundTotal} cleared — continue for next wave`
-      : `Final wave (${roundNumber} of ${roundTotal}) — finish level when ready`;
-    this.waveText = kewlText({ text: waveLabel, size: 20, anchorX: 0.5 });
-    this.waveText.position.set(
-      centerX,
-      UI_TITLE_Y + kewlLineHeight(28) + kewlBlockGap(20),
-    );
-    this.addChild(this.waveText);
-
     const baseTex = await loadTexture(SHOP_BASE);
     const goTex = await loadTexture(SHOP_GO);
     const autoTex = await loadTexture(SHOP_AUTO);
