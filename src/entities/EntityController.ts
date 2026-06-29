@@ -28,6 +28,8 @@ const MAX_SUBMUNITION_DEPTH = 4;
 /** Draw order inside entityLayer (sortableChildren). */
 export const ENTITY_Z_HOMING_LINE = -10;
 export const ENTITY_Z_BOMB = 0;
+export const ENTITY_Z_AIRPLANE = 10;
+export const ENTITY_Z_PLAYER_ROCKET = 20;
 
 function tagCombatSprite(sprite: Sprite, kind: string, name: string, id: number): void {
   sprite.label = `${kind}:${name}#${id}`;
