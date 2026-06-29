@@ -7,7 +7,9 @@
     "dev": "vite",
     "art": "vite --mode art",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "optimize:png": "bash scripts/optimize-pngs.sh",
+    "optimize:png:dry": "DRY_RUN=1 bash scripts/optimize-pngs.sh"
   },
   "devDependencies": {
     "typescript": "~5.9.3",
