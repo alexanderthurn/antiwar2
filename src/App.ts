@@ -584,6 +584,10 @@ export class App {
         }
       }
 
+      if (this.game.isReplayMode()) {
+        this.game.refreshReplayOverlay();
+      }
+
       this.syncMenuCursor();
       this.syncBackdrop();
     } else {

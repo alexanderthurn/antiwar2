@@ -234,6 +234,15 @@ export class GameScene extends Container implements MenuActionsHost {
     return this.replayDriver;
   }
 
+  /** Keep replay scrubber in sync every display frame (not only on sim steps). */
+  refreshReplayOverlay(): void {
+    if (!this.replayOverlay || !this.replayDriver) return;
+    this.replayOverlay.refresh({
+      seeking: this.replaySeeking,
+      fastForward: this.replaySeeking,
+    });
+  }
+
   /** Restart from tick 0 and keep playing when a replay run finishes. */
   loopReplayIfAtEnd(): boolean {
     if (!this.replayDriver || !this.replayDriver.isPlaying() || !this.replayDriver.isAtEnd()) {
@@ -338,6 +347,7 @@ export class GameScene extends Container implements MenuActionsHost {
 
   private async prepareSeekReplay(tick: number, initial = false): Promise<void> {
     if (!this.replayDriver || !this.level) return;
+    this.replayOverlay?.cancelScrub();
     const gen = ++this.seekGeneration;
     this.replaySeeking = true;
     this.replaySeekReady = false;
@@ -465,6 +475,7 @@ export class GameScene extends Container implements MenuActionsHost {
     this.weatherLayer.label = 'weatherLayer';
     this.trailLayer.label = 'trailLayer';
     this.entityLayer.label = 'entityLayer';
+    this.entityLayer.sortableChildren = true;
     this.fxLayer.label = 'fxLayer';
     this.groundLayer.label = 'groundLayer';
     this.groundEntityLayer.label = 'groundEntityLayer';

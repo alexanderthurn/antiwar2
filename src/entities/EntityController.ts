@@ -25,6 +25,12 @@ import { shapeKeyFromImagePath } from '../data/CollisionShapes';
 
 const MAX_SUBMUNITION_DEPTH = 4;
 
+/** Draw order inside entityLayer (sortableChildren). */
+export const ENTITY_Z_BOMB = 0;
+export const ENTITY_Z_AIRPLANE = 10;
+export const ENTITY_Z_PLAYER_ROCKET = 20;
+export const ENTITY_Z_HOMING_LINE = 25;
+
 function tagCombatSprite(sprite: Sprite, kind: string, name: string, id: number): void {
   sprite.label = `${kind}:${name}#${id}`;
 }
@@ -103,7 +109,8 @@ export class EntityController {
 
   attachHomingLines(layer: Container): void {
     this.homingLines.label = 'homingLines';
-    layer.addChildAt(this.homingLines, 0);
+    this.homingLines.zIndex = ENTITY_Z_HOMING_LINE;
+    layer.addChild(this.homingLines);
   }
 
   clear(): void {
@@ -152,12 +159,20 @@ export class EntityController {
 
   findLockTargetAt(x: number, y: number): CombatEntity | null {
     const pad = 10;
+    const matches = (e: CombatEntity): boolean => {
+      if (!e.alive || !e.traits.lockOnTarget || e.stealthHidden || e.crashing) return false;
+      const body = getBroadPhaseBounds(e.sprite, pad);
+      if (!boxesOverlap(body, { minX: x, maxX: x, minY: y, maxY: y })) return false;
+      return pointHitsSprite(e.sprite, x, y, pad);
+    };
     for (let i = this.entities.length - 1; i >= 0; i--) {
       const e = this.entities[i]!;
-      if (!e.alive || !e.traits.lockOnTarget || e.stealthHidden || e.crashing) continue;
-      const body = getBroadPhaseBounds(e.sprite, pad);
-      if (!boxesOverlap(body, { minX: x, maxX: x, minY: y, maxY: y })) continue;
-      if (pointHitsSprite(e.sprite, x, y, pad)) return e;
+      if (e.motion.kind !== 'patrol') continue;
+      if (matches(e)) return e;
+    }
+    for (let i = this.entities.length - 1; i >= 0; i--) {
+      const e = this.entities[i]!;
+      if (matches(e)) return e;
     }
     return null;
   }
@@ -190,6 +205,7 @@ export class EntityController {
     } else if (x >= DESIGN.width / 2) {
       sprite.scale.x = -Math.abs(sprite.scale.x);
     }
+    sprite.zIndex = ENTITY_Z_AIRPLANE;
     layer.addChild(sprite);
 
     const motion = createPatrolMotion(def, x, spawnIndex, isEndmaster);
@@ -228,6 +244,7 @@ export class EntityController {
     },
     layer: { addChild(s: Sprite): void },
   ): CombatEntity {
+    sprite.zIndex = ENTITY_Z_PLAYER_ROCKET;
     layer.addChild(sprite);
     bindSpriteCollisionPath(sprite, def.image, def.scale);
     const entity = new CombatEntity(sprite, traitsForPlayerProjectile(def), { kind: 'projectile' }, {
@@ -262,6 +279,7 @@ export class EntityController {
     sprite.anchor.set(0.5);
     sprite.scale.set(def.scale[0], def.scale[1]);
     bindSpriteCollisionPath(sprite, def.image, def.scale);
+    sprite.zIndex = ENTITY_Z_BOMB;
     layer.addChild(sprite);
 
     const bulletSpeed = def.speed * combatSpeedMultiplier();

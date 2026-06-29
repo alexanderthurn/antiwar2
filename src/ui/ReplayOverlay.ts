@@ -28,6 +28,7 @@ export class ReplayOverlay extends Container {
   private driver: ReplayDriver;
   private scoreId: number;
   private onExit: () => void;
+  private scrubbing = false;
   private previewProgress: number | null = null;
 
   constructor(driver: ReplayDriver, scoreId: number, _nick: string, onExit: () => void) {
@@ -47,11 +48,12 @@ export class ReplayOverlay extends Container {
     this.scrubHit.hitArea = new Rectangle(0, 0, BAR_W, BAR_H);
     this.scrubHit.on('pointerdown', (e) => {
       e.stopPropagation();
+      this.scrubbing = true;
       this.previewProgress = this.fractionFromEvent(e.globalX, e.globalY);
       this.refresh();
     });
     this.scrubHit.on('globalpointermove', (e) => {
-      if (!e.buttons) return;
+      if (!this.scrubbing) return;
       this.previewProgress = this.fractionFromEvent(e.globalX, e.globalY);
       this.refresh();
     });
@@ -62,6 +64,10 @@ export class ReplayOverlay extends Container {
     this.scrubHit.on('pointerupoutside', (e) => {
       e.stopPropagation();
       this.commitScrub();
+    });
+    this.scrubHit.on('pointercancel', (e) => {
+      e.stopPropagation();
+      this.cancelScrub();
     });
     this.addChild(this.scrubHit);
 
@@ -133,18 +139,30 @@ export class ReplayOverlay extends Container {
   }
 
   private commitScrub(): void {
-    if (this.previewProgress === null) return;
-    const tick = Math.floor(this.previewProgress * this.driver.getTotalTicks());
-    this.previewProgress = null;
+    if (!this.scrubbing) return;
+    const progress = this.previewProgress;
+    this.cancelScrub();
+    if (progress === null) return;
+    const tick = Math.floor(progress * this.driver.getTotalTicks());
     this.driver.requestSeek(tick);
     this.refresh({ seeking: true, fastForward: true });
+  }
+
+  /** Drop scrub preview when seek/loop interrupts an in-progress drag. */
+  cancelScrub(): void {
+    this.scrubbing = false;
+    this.previewProgress = null;
   }
 
   refresh(opts?: { seeking?: boolean; fastForward?: boolean }): void {
     const total = this.driver.getTotalTicks();
     const tick = this.driver.getGlobalTick();
     const progress =
-      this.previewProgress ?? (total > 0 ? tick / total : 0);
+      this.scrubbing && this.previewProgress !== null
+        ? this.previewProgress
+        : total > 0
+          ? Math.min(1, tick / total)
+          : 0;
     const cur = formatLevelTimeHms(this.driver.getTimeMs());
     const end = formatLevelTimeHms(this.driver.getFooterTimeMs());
     const playing = this.driver.isPlaying();
