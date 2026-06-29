@@ -120,10 +120,10 @@ function aw_game_replay_watch_links(int $scoreId): array
     }
     $production = trim((string) ($cfg['game_url_production'] ?? $cfg['game_url'] ?? ''));
     $links = [
-        ['label' => 'Local', 'url' => aw_game_replay_url($scoreId, $local)],
+        ['short' => 'WL', 'title' => 'Watch on localhost', 'url' => aw_game_replay_url($scoreId, $local)],
     ];
     if ($production !== '') {
-        $links[] = ['label' => 'Prod', 'url' => aw_game_replay_url($scoreId, $production)];
+        $links[] = ['short' => 'WP', 'title' => 'Watch on production', 'url' => aw_game_replay_url($scoreId, $production)];
     }
     return $links;
 }
