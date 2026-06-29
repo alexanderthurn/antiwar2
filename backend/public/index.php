@@ -44,6 +44,18 @@ function fmt_time(int $ms): string
     $s = $total % 60;
     return sprintf('%02d:%02d:%02d', $h, $m, $s);
 }
+
+function board_href(string $boardId, bool $distinct, int $limit): string
+{
+    $params = ['boardId' => $boardId];
+    if (!$distinct) {
+        $params['distinct'] = '0';
+    }
+    if ($limit !== 25) {
+        $params['limit'] = (string) $limit;
+    }
+    return '?' . http_build_query($params);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -59,7 +71,26 @@ function fmt_time(int $ms): string
   td.num, th.num { text-align: right; }
     tr.suspicious { background: #3a2222; }
     .error { color: #f88; }
-    form { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+    form { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 0.75rem; }
+    .boards { margin: 0 0 1.25rem; max-width: 960px; }
+    .boards h2 { font-size: 0.95rem; font-weight: 600; margin: 0 0 0.5rem; color: #bbb; }
+    .board-list { display: flex; flex-wrap: wrap; gap: 0.35rem 0.5rem; list-style: none; padding: 0; margin: 0; }
+    .board-list a {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border: 1px solid #444;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 13px;
+      background: #1a1a1a;
+    }
+    .board-list a:hover { border-color: #8cf; background: #222; }
+    .board-list a.current {
+      border-color: #8cf;
+      background: #243;
+      color: #fff;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -79,6 +110,22 @@ function fmt_time(int $ms): string
     <label><input type="checkbox" name="distinct" value="1" <?= $distinct ? 'checked' : '' ?>/> Best per nick</label>
     <button type="submit">Show</button>
   </form>
+  <?php if (count($boards) > 0): ?>
+    <nav class="boards" aria-label="Boards">
+      <h2>Boards</h2>
+      <ul class="board-list">
+        <?php foreach ($boards as $b): ?>
+          <li>
+            <?php if ($b === $boardId): ?>
+              <a class="current" href="<?= h(board_href($b, $distinct, $limit)) ?>" aria-current="page"><?= h($b) ?></a>
+            <?php else: ?>
+              <a href="<?= h(board_href($b, $distinct, $limit)) ?>"><?= h($b) ?></a>
+            <?php endif; ?>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+    </nav>
+  <?php endif; ?>
   <?php if ($boardId !== ''): ?>
     <p><?= h($boardId) ?> — <?= (int) $total ?> entries<?= $distinct ? ' (distinct)' : '' ?></p>
     <table>
@@ -91,11 +138,12 @@ function fmt_time(int $ms): string
           <th class="num">Version</th>
           <th>Submitted</th>
           <th class="num">Wall gap</th>
+          <th>Replay</th>
         </tr>
       </thead>
       <tbody>
         <?php if (count($entries) === 0): ?>
-          <tr><td colspan="7">No entries.</td></tr>
+          <tr><td colspan="8">No entries.</td></tr>
         <?php else: ?>
           <?php foreach ($entries as $row): ?>
             <?php
@@ -113,6 +161,14 @@ function fmt_time(int $ms): string
               <td class="num"><?= (int) $row['version'] ?></td>
               <td><?= h(date('Y-m-d H:i:s', $submittedAt)) ?></td>
               <td class="num"><?= h(fmt_time($wallGapMs)) ?></td>
+              <td>
+                <?php if ((int) ($row['has_replay'] ?? 0)): ?>
+                  <?php $watchUrl = aw_game_production_replay_url((int) $row['id']); ?>
+                  <?php if ($watchUrl !== ''): ?>
+                    <a href="<?= h($watchUrl) ?>" target="_blank" rel="noopener">Watch</a>
+                  <?php endif; ?>
+                <?php endif; ?>
+              </td>
             </tr>
           <?php endforeach; ?>
         <?php endif; ?>

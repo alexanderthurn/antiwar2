@@ -26,7 +26,7 @@ Plain PHP backend for leaderboard prepare/submit, public viewer, and admin tools
 
 5. Point your webserver:
    - `backend/api/` → API endpoints
-   - `backend/public/` → public leaderboard page
+   - `backend/public/` → public leaderboard page (replay **Watch** links use `game_url_production`)
    - `backend/admin/` → password-protected admin (see below)
 
 ## Admin auth
@@ -40,7 +40,7 @@ htpasswd -c .htpasswd admin
 
 `.htpasswd` and `.htaccess` with real paths should not be committed.
 
-Optional in `config.php`: set `game_url` (default in example: `http://localhost:5173`) so admin **watch** links open the game replay viewer.
+Optional in `config.php`: set `game_url_localhost` and `game_url_production` (no trailing slash) so admin scores show **Watch (Localhost)** and **Watch (Production)** replay links. Legacy `game_url` is used as production if `game_url_production` is unset.
 
 ## API
 

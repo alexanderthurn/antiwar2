@@ -28,11 +28,11 @@ return [
     ],
 
     /**
-     * Game client base URL for admin replay links (no trailing slash).
-     * Example: https://example.com/production
-     * If unset, admin uses relative ../../production/
+     * Game client base URLs for admin replay watch links (no trailing slash).
+     * Scores admin shows Watch (Localhost) and Watch (Production) when a replay exists.
      */
-    'game_url' => 'http://localhost:5173',
+    'game_url_localhost' => 'http://localhost:5173',
+    'game_url_production' => 'https://antiwar.feuerware.com',
 
     /** Allowed CORS origins for api/*.php (browser game).
      * Use ['*'] for dev or list explicit origins in production.

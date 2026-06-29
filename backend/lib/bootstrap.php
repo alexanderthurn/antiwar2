@@ -69,12 +69,48 @@ function aw_cache_dir(): string
     return $dir;
 }
 
-/** URL to open the game client in replay mode for a score row. */
-function aw_game_replay_url(int $scoreId): string
+/** Build replay viewer URL for a game client base (no trailing slash). */
+function aw_game_replay_url(int $scoreId, ?string $base = null): string
 {
-    $base = trim((string) (aw_config()['game_url'] ?? ''));
+    if ($base === null) {
+        $cfg = aw_config();
+        $base = trim((string) ($cfg['game_url_production'] ?? $cfg['game_url'] ?? ''));
+        if ($base === '') {
+            $base = 'http://localhost:5173';
+        }
+    }
+    $base = trim($base);
     if ($base === '') {
-        return 'http://localhost:5173/?replay=' . $scoreId;
+        return '';
     }
     return rtrim($base, '/') . '/?replay=' . $scoreId;
+}
+
+/** Admin watch links for localhost and production game clients. */
+function aw_game_replay_watch_links(int $scoreId): array
+{
+    $cfg = aw_config();
+    $local = trim((string) ($cfg['game_url_localhost'] ?? ''));
+    if ($local === '') {
+        $local = 'http://localhost:5173';
+    }
+    $production = trim((string) ($cfg['game_url_production'] ?? $cfg['game_url'] ?? ''));
+    $links = [
+        ['label' => 'Localhost', 'url' => aw_game_replay_url($scoreId, $local)],
+    ];
+    if ($production !== '') {
+        $links[] = ['label' => 'Production', 'url' => aw_game_replay_url($scoreId, $production)];
+    }
+    return $links;
+}
+
+/** Public leaderboard / production replay link (no localhost fallback). */
+function aw_game_production_replay_url(int $scoreId): string
+{
+    $cfg = aw_config();
+    $base = trim((string) ($cfg['game_url_production'] ?? $cfg['game_url'] ?? ''));
+    if ($base === '') {
+        return '';
+    }
+    return aw_game_replay_url($scoreId, $base);
 }
