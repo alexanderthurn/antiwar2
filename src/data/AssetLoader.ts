@@ -5,8 +5,27 @@ import {
   looseSpriteCacheToken,
   looseSpriteDevUrl,
 } from './spriteDev';
+import { loadCollisionShapes } from './CollisionShapes';
 import { resolveRoundVisuals } from './RoundSettings';
 import type { LevelPack } from './types';
+
+const BOOTSTRAP_LOGO = 'assets/gfx/logo.png';
+const BOOTSTRAP_MENU = 'assets/gfx/menu.jpg';
+
+const EFFECT_TEXTURES = [
+  'assets/gfx/explosion.png',
+  'assets/gfx/explosion_nuke.png',
+  'assets/gfx/particle.png',
+] as const;
+
+const UI_TEXTURES = ['assets/gfx/hand-cursor.png', 'assets/gfx/nightshot.png'] as const;
+
+export type PreloadProgress = (done: number, total: number, label: string) => void;
+
+export interface BootstrapTextures {
+  logo: Texture;
+  menu: Texture;
+}
 
 const ATLAS_DIR = 'assets/gfx/atlas';
 const ATLAS_ENTRY_JSON = [`${ATLAS_DIR}/game-0.json`, `${ATLAS_DIR}/game.json`];
@@ -199,4 +218,29 @@ export async function preloadRound(pack: LevelPack, roundIndex: number): Promise
   if (!round) throw new Error(`Round ${roundIndex} missing`);
   await loadSpriteAtlas();
   await Promise.all(collectAssetPaths(pack, roundIndex).map(loadTexture));
+}
+
+/** Small standalone set for the boot loading screen (does not load the sprite atlas). */
+export async function preloadBootstrap(): Promise<BootstrapTextures> {
+  const [logo, menu] = await Promise.all([
+    loadTexture(BOOTSTRAP_LOGO),
+    loadTexture(BOOTSTRAP_MENU),
+  ]);
+  return { logo, menu };
+}
+
+/** One-shot preload at app start — atlas, FX sheets, collision, misc UI textures. */
+export async function preloadEverything(onProgress?: PreloadProgress): Promise<void> {
+  const steps: { label: string; run: () => Promise<unknown> }[] = [
+    { label: 'Loading sprites…', run: () => loadSpriteAtlas() },
+    { label: 'Loading effects…', run: () => Promise.all(EFFECT_TEXTURES.map(loadTexture)) },
+    { label: 'Loading collisions…', run: () => loadCollisionShapes() },
+    { label: 'Loading UI…', run: () => Promise.all(UI_TEXTURES.map(loadTexture)) },
+  ];
+  const total = steps.length;
+  for (let i = 0; i < steps.length; i++) {
+    onProgress?.(i, total, steps[i]!.label);
+    await steps[i]!.run();
+  }
+  onProgress?.(total, total, 'Ready');
 }

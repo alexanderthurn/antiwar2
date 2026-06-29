@@ -131,9 +131,23 @@ export class App {
     this.blurBackdrop.setEnabled(blurBackdropEnabled(settingsStore.get().graphicsQuality));
   }
 
-  init(): void {
+  prepareForBoot(): void {
     this.applyLayout();
     watchViewportResize(this.host, () => this.applyLayout());
+  }
+
+  mountBootLoader(loader: Container): void {
+    this.gameRoot.removeChildren();
+    this.gameRoot.addChild(loader);
+    this.gameRoot.addChild(this.viewportMask);
+  }
+
+  clearBootLoader(): void {
+    this.gameRoot.removeChildren();
+  }
+
+  init(): void {
+    this.applyLayout();
 
     const playback = parseReplayUrlPlayback();
     if (playback) {

@@ -3,12 +3,16 @@ import { App } from './App';
 import { DESIGN } from './core/DesignSpace';
 import { DEV_DEEP_LINK_ENABLED } from './core/DevDeepLink';
 import { isDebugMode } from './core/DebugMode';
+import { preloadEverything } from './data/AssetLoader';
+import { BootLoader, waitFrames } from './ui/BootLoader';
+import { hideHtmlBootSplash, setHtmlBootMessage } from './ui/htmlBootSplash';
 import { installKewlFont } from './ui/KewlFont';
 
 async function main(): Promise<void> {
   const host = document.getElementById('app');
   if (!host) throw new Error('#app missing');
 
+  setHtmlBootMessage('Loading…');
   await installKewlFont();
 
   const pixi = new Application();
@@ -18,6 +22,21 @@ async function main(): Promise<void> {
   });
 
   const app = new App(pixi, host);
+  app.prepareForBoot();
+
+  const loader = new BootLoader(pixi);
+  app.mountBootLoader(loader);
+  loader.showTextOnly();
+
+  const bootstrap = await loader.loadBootstrap();
+  loader.showBranded(bootstrap);
+  hideHtmlBootSplash();
+  await waitFrames(2);
+
+  await preloadEverything((done, total, label) => loader.setProgress(done, total, label));
+
+  loader.destroy({ children: true });
+  app.clearBootLoader();
   app.init();
 
   console.info(`Antiwar — ${DESIGN.width}×${DESIGN.height}`);
