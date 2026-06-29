@@ -40,7 +40,7 @@ htpasswd -c .htpasswd admin
 
 `.htpasswd` and `.htaccess` with real paths should not be committed.
 
-Optional in `config.php`: set `game_url_localhost` and `game_url_production` (no trailing slash) so admin scores show **Watch (Localhost)** and **Watch (Production)** replay links. Legacy `game_url` is used as production if `game_url_production` is unset.
+Optional in `config.php`: set `game_url_localhost` and `game_url_production` (no trailing slash) so admin scores show **Watch (Local)** and **Watch (Prod)** replay links. Legacy `game_url` is used as production if `game_url_production` is unset.
 
 ## API
 

@@ -2,17 +2,19 @@ import { BitmapText, Container, Graphics, Rectangle } from 'pixi.js';
 import { DESIGN } from '../core/DesignSpace';
 import { formatLevelTimeHms } from '../core/CampaignRun';
 import { ReplayDriver } from '../replay/ReplayDriver';
+import { syncReplayPlaybackUrl } from '../replay/ReplayDeepLink';
 import { kewlText } from './KewlFont';
 
 const BAR_H = 28;
 const BAR_Y = DESIGN.height - BAR_H - 12;
 const BAR_X = 80;
 const BAR_W = DESIGN.width - 160;
-const CTRL_Y = BAR_Y - 44;
+const CTRL_X = BAR_X;
+const PLAY_Y = BAR_Y - 44;
 const BTN_H = 30;
-const SPEED_BTN_W = 58;
-const SPEED_GAP = 6;
-const PLAY_BTN_W = 56;
+const SPEED_BTN_W = 72;
+const SPEED_GAP = 4;
+const PLAY_BTN_W = 68;
 
 export class ReplayOverlay extends Container {
   private bar = new Graphics();
@@ -24,12 +26,14 @@ export class ReplayOverlay extends Container {
   private speedBtns: Container[] = [];
   private speedBgs: Graphics[] = [];
   private driver: ReplayDriver;
+  private scoreId: number;
   private onExit: () => void;
   private previewProgress: number | null = null;
 
-  constructor(driver: ReplayDriver, _nick: string, onExit: () => void) {
+  constructor(driver: ReplayDriver, scoreId: number, _nick: string, onExit: () => void) {
     super();
     this.driver = driver;
+    this.scoreId = scoreId;
     this.onExit = onExit;
     this.eventMode = 'static';
     this.interactiveChildren = true;
@@ -68,11 +72,11 @@ export class ReplayOverlay extends Container {
       anchorX: 1,
       anchorY: 0.5,
     });
-    this.timeText.position.set(BAR_X + BAR_W, CTRL_Y);
+    this.timeText.position.set(BAR_X + BAR_W, PLAY_Y);
     this.timeText.eventMode = 'none';
     this.addChild(this.timeText);
 
-    this.playBtn.position.set(BAR_X, CTRL_Y);
+    this.playBtn.position.set(CTRL_X, PLAY_Y);
     this.playBtn.eventMode = 'static';
     this.playBtn.cursor = 'pointer';
     this.playBtn.hitArea = new Rectangle(-PLAY_BTN_W / 2, -BTN_H / 2, PLAY_BTN_W, BTN_H);
@@ -83,13 +87,15 @@ export class ReplayOverlay extends Container {
       e.stopPropagation();
       this.driver.togglePlaying();
       this.refresh();
+      this.syncUrl();
     });
     this.addChild(this.playBtn);
 
-    let speedX = BAR_X + PLAY_BTN_W + 12;
-    for (const speed of ReplayDriver.SPEEDS) {
+    const speeds = ReplayDriver.SPEEDS;
+    for (let i = 0; i < speeds.length; i++) {
+      const speed = speeds[i]!;
       const btn = new Container();
-      btn.position.set(speedX + SPEED_BTN_W / 2, CTRL_Y);
+      btn.position.set(CTRL_X, PLAY_Y - (i + 1) * (BTN_H + SPEED_GAP));
       btn.eventMode = 'static';
       btn.cursor = 'pointer';
       btn.hitArea = new Rectangle(-SPEED_BTN_W / 2, -BTN_H / 2, SPEED_BTN_W, BTN_H);
@@ -106,15 +112,19 @@ export class ReplayOverlay extends Container {
         e.stopPropagation();
         this.driver.setSpeed(speed);
         this.refresh();
+        this.syncUrl();
       });
 
       this.speedBtns.push(btn);
       this.speedBgs.push(bg);
       this.addChild(btn);
-      speedX += SPEED_BTN_W + SPEED_GAP;
     }
 
     this.refresh();
+  }
+
+  private syncUrl(): void {
+    syncReplayPlaybackUrl(this.scoreId, this.driver);
   }
 
   private fractionFromEvent(globalX: number, globalY: number): number {
@@ -146,7 +156,7 @@ export class ReplayOverlay extends Container {
     } else {
       this.timeText.text = `${cur} / ${end}`;
     }
-    this.playLabel.text = playing ? '>' : '||';
+    this.playLabel.text = playing ? '||' : '>';
     this.drawBtn(this.playBg, PLAY_BTN_W, playing ? 0x226633 : 0x333333);
 
     const speed = this.driver.getSpeed();
@@ -180,6 +190,7 @@ export class ReplayOverlay extends Container {
     if (key === ' ' || code === 'Space') {
       this.driver.togglePlaying();
       this.refresh();
+      this.syncUrl();
       return true;
     }
     if (key === '[') {
@@ -187,17 +198,20 @@ export class ReplayOverlay extends Container {
       const i = steps.indexOf(this.driver.getSpeed() as (typeof steps)[number]);
       this.driver.setSpeed(steps[Math.max(0, i - 1)] ?? 0.25);
       this.refresh();
+      this.syncUrl();
       return true;
     }
     if (key === ']') {
       this.driver.cycleSpeed();
       this.refresh();
+      this.syncUrl();
       return true;
     }
     for (let i = 0; i < ReplayDriver.SPEEDS.length; i++) {
       if (key === String(i + 1)) {
         this.driver.setSpeed(ReplayDriver.SPEEDS[i]!);
         this.refresh();
+        this.syncUrl();
         return true;
       }
     }

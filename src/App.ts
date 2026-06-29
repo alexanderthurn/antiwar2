@@ -23,7 +23,7 @@ import {
   syncDevUrl,
   type DevGameState,
 } from './core/DevDeepLink';
-import { clearReplayUrl, parseReplayUrl, syncReplayUrl } from './replay/ReplayDeepLink';
+import { clearReplayUrl, parseReplayUrlPlayback, syncReplayPlaybackUrl } from './replay/ReplayDeepLink';
 import { decodeReplay } from './replay/ReplayFormat';
 import {
   computeLayout,
@@ -132,9 +132,9 @@ export class App {
     this.applyLayout();
     watchViewportResize(this.host, () => this.applyLayout());
 
-    const replayId = parseReplayUrl();
-    if (replayId) {
-      void this.startReplayById(replayId);
+    const playback = parseReplayUrlPlayback();
+    if (playback) {
+      void this.startReplayById(playback.scoreId, undefined, playback);
       return;
     }
 
@@ -398,7 +398,7 @@ export class App {
           nick: playerProfile.getNick(),
         };
         const timeMs = Math.max(0, Math.floor(stats.timeMs));
-        runProgressStore.recordLevelResult(
+        const newRecord = runProgressStore.recordLevelResult(
           runId,
           stats.levelIndex,
           timeMs,
@@ -419,6 +419,8 @@ export class App {
         );
         if (newlyComplete && runId === normalRunId(campaignId)) {
           game.setEndScreenTitle('Campaign complete!\nHardcore mode unlocked.');
+        } else if (newRecord) {
+          game.setEndScreenTitle('New highscore!');
         }
       };
       game.onLevelComplete = () =>
@@ -438,7 +440,11 @@ export class App {
     }
   }
 
-  private async startReplayById(scoreId: number, nickHint?: string): Promise<void> {
+  private async startReplayById(
+    scoreId: number,
+    nickHint?: string,
+    urlPlayback?: { speed: number; playing: boolean },
+  ): Promise<void> {
     const meta = (await fetchScoreMeta(scoreId)) ?? {
       id: scoreId,
       boardId: '',
@@ -516,9 +522,10 @@ export class App {
       await game.beginReplay(replay, nick, () => {
         clearReplayUrl();
         this.showMainMenu(false);
-      });
+      }, scoreId, urlPlayback);
 
-      syncReplayUrl(scoreId);
+      const driver = game.getReplayDriver();
+      if (driver) syncReplayPlaybackUrl(scoreId, driver);
     } catch (err) {
       console.error('[replay] failed to start', err);
       this.game = null;
@@ -618,6 +625,11 @@ export class App {
       this.simAccumulator = 0;
       this.game.update(SIM_DT, this.input, this.menuController, { visuals: true });
       return;
+    }
+
+    if (driver.isPlaying() && driver.isAtEnd()) {
+      this.simAccumulator = 0;
+      if (this.game.loopReplayIfAtEnd()) return;
     }
 
     if (!driver.isPlaying() || driver.isAtEnd()) {

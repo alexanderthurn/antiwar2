@@ -56,6 +56,7 @@ import { ReplayDriver } from '../replay/ReplayDriver';
 import { ReplayRecorder } from '../replay/ReplayRecorder';
 import type { DecodedReplay, ReplayHeader } from '../replay/replayTypes';
 import { ReplayOverlay } from '../ui/ReplayOverlay';
+import { syncReplayPlaybackUrl } from '../replay/ReplayDeepLink';
 
 const HUMAN_FRAME_W = 256;
 const HUMAN_FRAME_H = 344;
@@ -193,6 +194,7 @@ export class GameScene extends Container implements MenuActionsHost {
 
   private replayRecorder: ReplayRecorder | null = null;
   private replayDriver: ReplayDriver | null = null;
+  private replayScoreId: number | null = null;
   private replayOverlay: ReplayOverlay | null = null;
   private replaySeeking = false;
   private replaySeekReady = false;
@@ -230,6 +232,16 @@ export class GameScene extends Container implements MenuActionsHost {
     return this.replayDriver;
   }
 
+  /** Restart from tick 0 and keep playing when a replay run finishes. */
+  loopReplayIfAtEnd(): boolean {
+    if (!this.replayDriver || !this.replayDriver.isPlaying() || !this.replayDriver.isAtEnd()) {
+      return false;
+    }
+    if (this.replaySeeking) return false;
+    void this.prepareSeekReplay(0, true);
+    return true;
+  }
+
   handleReplayKey(key: string, code: string): boolean {
     return this.replayOverlay?.handleKey(key, code) ?? false;
   }
@@ -252,16 +264,39 @@ export class GameScene extends Container implements MenuActionsHost {
     this.onReplayFinished = cb;
   }
 
-  async beginReplay(replay: DecodedReplay, nick: string, onExit: () => void): Promise<void> {
+  async beginReplay(
+    replay: DecodedReplay,
+    nick: string,
+    onExit: () => void,
+    scoreId: number,
+    initialPlayback?: { speed: number; playing: boolean },
+  ): Promise<void> {
     this.replayDriver = new ReplayDriver(replay);
+    this.replayScoreId = scoreId;
     this.replayRecorder = null;
     resetSimRng(replay.header.rngSeed);
-    this.replayOverlay = new ReplayOverlay(this.replayDriver, nick, onExit);
+    this.replayOverlay = new ReplayOverlay(this.replayDriver, scoreId, nick, onExit);
     this.replayOverlay.zIndex = 10_000;
     this.uiLayer.sortableChildren = true;
     this.uiLayer.addChild(this.replayOverlay);
-    void this.prepareSeekReplay(0, true);
+    void this.prepareSeekReplay(0, initialPlayback?.playing !== false);
     await this.whenSeekComplete();
+    if (this.replayDriver) {
+      if (initialPlayback?.speed !== undefined) {
+        this.replayDriver.setSpeed(initialPlayback.speed);
+      }
+      if (initialPlayback?.playing !== undefined) {
+        this.replayDriver.setPlaying(initialPlayback.playing);
+      }
+      this.replayOverlay.refresh();
+      this.syncReplayDeepLink();
+    }
+  }
+
+  private syncReplayDeepLink(): void {
+    if (this.replayDriver && this.replayScoreId !== null) {
+      syncReplayPlaybackUrl(this.replayScoreId, this.replayDriver);
+    }
   }
 
   private whenSeekComplete(): Promise<void> {
@@ -354,6 +389,7 @@ export class GameScene extends Container implements MenuActionsHost {
       this.replayDriver.setPlaying(false);
     }
     this.replayOverlay?.refresh({ seeking: this.replaySeeking });
+    this.syncReplayDeepLink();
     for (const resolve of this.seekCompleteResolvers) resolve();
     this.seekCompleteResolvers = [];
   }
@@ -1862,16 +1898,23 @@ export class GameScene extends Container implements MenuActionsHost {
     }
   }
 
+  private hasMoreRounds(): boolean {
+    return this.roundIndex + 1 < this.level.rounds.length;
+  }
+
   private checkWinLoss(): void {
     if (this.wonRound || this.phase !== 'playing') return;
     if (this.roundBootstrapping || this.pendingAirplaneSpawns > 0) return;
     if (this.entities.roundWinTargetsAlive() === 0 && this.airplaneSpawnQueue.length === 0) {
       this.wonRound = true;
       const survivors = this.civilians.filter((c) => c.alive).length;
-      const earned = survivors * this.session.humanMoney;
       this.session.payoutSurvivors(survivors, this.level.config.moneyFactor);
-      this.playRoundWinSound();
-      this.openShop(earned);
+      if (this.hasMoreRounds()) {
+        this.playRoundWinSound();
+        this.openShop();
+      } else {
+        void this.finishLevel();
+      }
     }
   }
 
@@ -1879,8 +1922,8 @@ export class GameScene extends Container implements MenuActionsHost {
     this.levelAudio.playRoundWin(this.round.winSound);
   }
 
-  private openShop(_moneyEarned: number): void {
-    const hasMoreRounds = this.roundIndex + 1 < this.level.rounds.length;
+  private openShop(): void {
+    const hasMoreRounds = this.hasMoreRounds();
     this.phase = 'shop';
     this.replayDriver?.onRoundShopStarted(this.roundIndex);
     this.rumbleFx.reset();
@@ -2025,43 +2068,63 @@ export class GameScene extends Container implements MenuActionsHost {
         await this.startRound(this.roundIndex + 1, this.replayDriver !== null);
         return;
       }
-      const score = computeLevelScore(this.session.money);
-      const timeMs = Math.max(0, Math.floor(this.levelElapsedMs));
-
-      if (this.replayRecorder) {
-        const blob = await this.replayRecorder.finish({ timeMs, score });
-        this.onReplayFinished?.(blob);
-      }
-
-      if (this.replayDriver) {
-        this.replayDriver.syncPosition(this.replayDriver.getTotalTicks());
-        this.replayDriver.setPlaying(false);
-        this.phase = 'levelComplete';
-        this.closeShop();
-        this.clearTransientGameUi();
-        this.replayOverlay?.refresh({ seeking: this.replaySeeking });
-        return;
-      }
-
-      this.onLevelWon?.({
-        levelIndex: this.campaignLevelIndex,
-        timeMs,
-        score,
-      });
-      this.phase = 'levelComplete';
-      this.closeShop();
-      this.clearTransientGameUi();
-      this.levelAudio.playLevelWin();
-      const title = this.pendingEndScreenTitle
-        ?? (this.level.id === 1 ? 'Tutorial complete!' : 'Level complete');
-      this.pendingEndScreenTitle = null;
-      this.startEndScreenFx(
-        title,
-        () => this.onLevelComplete?.(),
-      );
+      await this.finishLevel();
     } finally {
       this.replayShopBusy = false;
     }
+  }
+
+  private applyReplayFinalShopEvents(): void {
+    if (!this.replayDriver) return;
+    this.replayDriver.onRoundShopStarted(this.roundIndex);
+    while (true) {
+      const ev = this.replayDriver.peekShopEvent();
+      if (!ev) break;
+      if (ev.kind === 'buy') this.buyUpgrade(ev.key, false);
+      this.replayDriver.consumeShopEvent();
+    }
+  }
+
+  private async finishLevel(): Promise<void> {
+    this.rumbleFx.reset();
+    this.clearCombat();
+    this.clearTransientGameUi();
+    this.closeShop();
+    this.applyReplayFinalShopEvents();
+
+    const score = computeLevelScore(this.session.money);
+    const timeMs = Math.max(0, Math.floor(this.levelElapsedMs));
+
+    if (this.replayRecorder) {
+      const blob = await this.replayRecorder.finish({ timeMs, score });
+      this.onReplayFinished?.(blob);
+    }
+
+    if (this.replayDriver) {
+      if (this.replayDriver.isPlaying()) {
+        void this.prepareSeekReplay(0, true);
+      } else {
+        this.replayDriver.syncPosition(this.replayDriver.getTotalTicks());
+        this.phase = 'levelComplete';
+        this.replayOverlay?.refresh({ seeking: this.replaySeeking });
+      }
+      return;
+    }
+
+    this.onLevelWon?.({
+      levelIndex: this.campaignLevelIndex,
+      timeMs,
+      score,
+    });
+    this.phase = 'levelComplete';
+    this.levelAudio.playLevelWin();
+    const title = this.pendingEndScreenTitle
+      ?? (this.level.id === 1 ? 'Tutorial complete!' : 'Victory');
+    this.pendingEndScreenTitle = null;
+    this.startEndScreenFx(
+      title,
+      () => this.onLevelComplete?.(),
+    );
   }
 
   private startEndScreenFx(title: string, onDone: () => void): void {
