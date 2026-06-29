@@ -18,8 +18,8 @@ return [
     /** Checksum validity window in seconds (default 24h). */
     'checksum_ttl' => 86400,
 
-    /** Max replay blob size per submit (bytes). Default 1 MiB. */
-    'replay_max_bytes' => 1048576,
+    /** Max replay blob per submit (bytes). Default: MySQL MEDIUMBLOB (16 MiB). */
+    'replay_max_bytes' => 16777216,
 
     /** Rate limits per IP per hour. */
     'rate_limit' => [

@@ -54,7 +54,11 @@ Form fields:
 
 - `payload` — hex-encoded XOR blob (includes checksum, board_id, time_ms, nick, score, date, version)
 - `clientId` — stable browser id
-- `replay` — optional file upload
+- `replay` — optional file upload (AWR1 blob, deflate-compressed combat + shop per round; max **16 MiB**)
+
+Replay size is limited by `replay_max_bytes` in `config.php` (default **16 MiB**, matching the `MEDIUMBLOB` column). There is no fixed duration cap — long runs (e.g. 1 h+) are allowed as long as the compressed blob fits.
+
+On the server, ensure PHP accepts large uploads, e.g. `upload_max_filesize` and `post_max_size` ≥ **16M** in `php.ini`.
 
 ### `GET api/replay.php?id=123`
 

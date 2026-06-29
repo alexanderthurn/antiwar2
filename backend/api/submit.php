@@ -55,7 +55,7 @@ if ($boardId !== $checksumInfo['boardId']) {
 
 $replay = null;
 if (!empty($_FILES['replay']) && is_uploaded_file($_FILES['replay']['tmp_name'])) {
-    $maxBytes = (int) ($config['replay_max_bytes'] ?? 1048576);
+    $maxBytes = aw_replay_max_bytes();
     $size = (int) ($_FILES['replay']['size'] ?? 0);
     if ($size > $maxBytes) {
         aw_json_response(['error' => 'replay_too_large'], 400);

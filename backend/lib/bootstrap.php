@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+/** MySQL `MEDIUMBLOB` max size for `scores.replay` (16 MiB). */
+const AW_REPLAY_MEDIUMBLOB_BYTES = 16777216;
+
 function aw_config(): array
 {
     static $config = null;
@@ -67,6 +70,17 @@ function aw_cache_dir(): string
         mkdir($dir, 0755, true);
     }
     return $dir;
+}
+
+/** Max replay upload size (bytes); capped at MEDIUMBLOB capacity. */
+function aw_replay_max_bytes(): int
+{
+    $cap = AW_REPLAY_MEDIUMBLOB_BYTES;
+    $n = (int) (aw_config()['replay_max_bytes'] ?? $cap);
+    if ($n < 1) {
+        return $cap;
+    }
+    return min($n, $cap);
 }
 
 /** Build replay viewer query string for a score row. */

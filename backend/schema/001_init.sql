@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS scores (
   run_started_at   INT UNSIGNED NOT NULL,
   flagged          TINYINT(1) NOT NULL DEFAULT 0,
   deleted          TINYINT(1) NOT NULL DEFAULT 0,
-  replay           MEDIUMBLOB NULL,
+  replay           MEDIUMBLOB NULL,  -- max 16 MiB per row
   payload_hash     CHAR(40) NOT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_submit_checksum (submit_checksum),
