@@ -1,5 +1,11 @@
 /** Instant splash from index.html — remove once the Pixi boot loader is ready. */
 export function hideHtmlBootSplash(): void {
+  const api = (window as Window & { HtmlBoot?: { hide: () => void } }).HtmlBoot;
+  if (api) {
+    api.hide();
+    return;
+  }
+
   const el = document.getElementById('html-boot');
   if (!el) return;
   el.classList.add('is-hidden');
@@ -9,6 +15,6 @@ export function hideHtmlBootSplash(): void {
 
 /** Optional status line while JS is still parsing / initializing. */
 export function setHtmlBootMessage(message: string): void {
-  const el = document.querySelector('#html-boot p');
+  const el = document.getElementById('html-boot-label');
   if (el) el.textContent = message;
 }

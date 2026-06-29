@@ -5,14 +5,13 @@ import { DEV_DEEP_LINK_ENABLED } from './core/DevDeepLink';
 import { isDebugMode } from './core/DebugMode';
 import { preloadEverything } from './data/AssetLoader';
 import { BootLoader, waitFrames } from './ui/BootLoader';
-import { hideHtmlBootSplash, setHtmlBootMessage } from './ui/htmlBootSplash';
+import { hideHtmlBootSplash } from './ui/htmlBootSplash';
 import { installKewlFont } from './ui/KewlFont';
 
 async function main(): Promise<void> {
   const host = document.getElementById('app');
   if (!host) throw new Error('#app missing');
 
-  setHtmlBootMessage('Loading…');
   await installKewlFont();
 
   const pixi = new Application();
